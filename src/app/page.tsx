@@ -1,10 +1,14 @@
-import { Bitcoin, Plus, ArrowUpRight, TrendingUp, Sparkles, Filter } from "lucide-react";
+"use client";
+
+import { useState, useEffect } from "react";
+import { Bitcoin, Plus, ArrowUpRight, TrendingUp, Sparkles, Filter, LogIn, UserPlus, LogOut, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { GameCard } from "@/components/features/GameCard";
 import { LiveWinsTable } from "@/components/features/LiveWinsTable";
 import { cn } from "@/lib/utils";
 
-// Mock Data for Games
+// --- MOCK DATA ---
 const FEATURED_GAMES = [
   { title: "Sugar Rush", provider: "Pragmatic Play", image: "from-pink-500 to-rose-500", isHot: true, RTP: "96.5" },
   { title: "Big Bass Splash", provider: "Reel Kingdom", image: "from-blue-600 to-cyan-400", isNew: true, RTP: "95.8" },
@@ -22,47 +26,131 @@ const NEW_GAMES = [
 ];
 
 export default function Home() {
+  const router = useRouter();
+  
+  // --- ÉTATS  ---
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [balance, setBalance] = useState("0");
+  const [isLoading, setIsLoading] = useState(true);
+
+  // --- 1. VÉRIFICATION LA CONNEXION AU CHARGEMENT ---
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        // On tente de récupérer la balance. Si ça marche = Connecté.
+        const res = await fetch("/api/wallet/balance");
+        if (res.ok) {
+          const data = await res.json();
+          setBalance(data.balance); 
+          setIsLoggedIn(true);
+        } else {
+          setIsLoggedIn(false);
+        }
+      } catch (error) {
+        setIsLoggedIn(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  // ---  DÉCONNEXION ---
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      setIsLoggedIn(false);
+      setBalance("0");
+      router.refresh(); 
+    } catch (error) {
+      console.error("Erreur logout", error);
+    }
+  };
+
   return (
     <div className="space-y-8">
-      {/* 1. HERO SECTION */}
+      
+      {/* 1. HERO SECTION (Dynamique) */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Balance Card (Main Hero) */}
-        <div className="lg:col-span-2 relative h-64 md:h-80 rounded-2xl overflow-hidden shadow-glow-purple/20 group">
+        
+        {/* --- CARTE PRINCIPALE (Balance OU Login) --- */}
+        <div className="lg:col-span-2 relative h-64 md:h-80 rounded-2xl overflow-hidden shadow-glow-purple/20 group transition-all">
           <div className="absolute inset-0 bg-gradient-to-r from-accent-violet to-indigo-900" />
           <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
           {/* Abstract Shapes */}
           <div className="absolute -right-10 -top-10 w-64 h-64 bg-accent-cyan/30 blur-[100px] rounded-full mix-blend-screen animate-pulse-slow" />
 
-          <div className="relative z-10 w-full h-full p-6 md:p-10 flex flex-col justify-center">
-            <h2 className="text-text-secondary text-sm md:text-base font-medium mb-1 flex items-center gap-2">
-              <span className="w-2 h-2 bg-success rounded-full" /> Total Balance
-            </h2>
-            <div className="flex items-baseline gap-2 mb-6">
-              <span className="text-4xl md:text-6xl font-display font-bold text-white">0.0245</span>
-              <span className="text-2xl md:text-4xl font-display text-white/50">BTC</span>
+          {isLoading ? (
+            // SQUELETTE DE CHARGEMENT
+            <div className="relative z-10 w-full h-full flex items-center justify-center">
+              <Loader2 className="w-10 h-10 text-white/50 animate-spin" />
             </div>
+          ) : isLoggedIn ? (
+            // --- MODE CONNECTÉ : AFFICHER BALANCE ---
+            <div className="relative z-10 w-full h-full p-6 md:p-10 flex flex-col justify-center animate-in fade-in duration-500">
+              <div className="flex justify-between items-start">
+                <h2 className="text-text-secondary text-sm md:text-base font-medium mb-1 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-success rounded-full" /> Live Wallet
+                </h2>
+                
+                {/* Bouton Logout */}
+                <button 
+                  onClick={handleLogout}
+                  className="text-xs font-bold text-white/50 hover:text-white flex items-center gap-1 bg-black/20 hover:bg-black/40 px-3 py-1.5 rounded-full transition-colors"
+                >
+                  <LogOut className="w-3 h-3" /> Logout
+                </button>
+              </div>
 
-            <div className="flex items-center gap-3">
-              <Link href="/wallet" className="flex-1 max-w-[160px] h-12 flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-background font-bold rounded-full transition-all shadow-glow-gold hover:scale-105 active:scale-95">
-                <Plus className="w-5 h-5" />
-                Deposit
-              </Link>
-              <Link href="/wallet" className="flex-1 max-w-[160px] h-12 flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white font-bold rounded-full border border-white/5 backdrop-blur-md transition-all">
-                <ArrowUpRight className="w-5 h-5" />
-                Withdraw
-              </Link>
-            </div>
+              <div className="flex items-baseline gap-2 mb-6">
+                {/* BALANCE  */}
+                <span className="text-4xl md:text-6xl font-display font-bold text-white">{parseInt(balance).toLocaleString()}</span>
+                <span className="text-2xl md:text-4xl font-display text-white/50">SATS</span>
+              </div>
 
-            <div className="absolute bottom-6 right-6 hidden md:block">
-              <Bitcoin className="w-24 h-24 text-white/10 rotate-12" />
+              <div className="flex items-center gap-3">
+                <Link href="/wallet" className="flex-1 max-w-[160px] h-12 flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-background font-bold rounded-full transition-all shadow-glow-gold hover:scale-105 active:scale-95">
+                  <Plus className="w-5 h-5" />
+                  Deposit
+                </Link>
+                <Link href="/wallet" className="flex-1 max-w-[160px] h-12 flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white font-bold rounded-full border border-white/5 backdrop-blur-md transition-all">
+                  <ArrowUpRight className="w-5 h-5" />
+                  Withdraw
+                </Link>
+              </div>
+
+              <div className="absolute bottom-6 right-6 hidden md:block">
+                <Bitcoin className="w-24 h-24 text-white/10 rotate-12" />
+              </div>
             </div>
-          </div>
+          ) : (
+            // --- MODE NON CONNECTÉ : AFFICHER LOGIN/REGISTER ---
+            <div className="relative z-10 w-full h-full p-6 md:p-10 flex flex-col justify-center animate-in fade-in duration-500">
+              <h2 className="text-white text-3xl md:text-5xl font-display font-bold mb-4">
+                Welcome to <span className="text-primary">CoinPawa</span>
+              </h2>
+              <p className="text-text-secondary text-lg mb-8 max-w-md">
+                The next generation crypto casino. Instant deposits, fast withdrawals, and anonymous play.
+              </p>
+
+              <div className="flex items-center gap-3">
+                <Link href="/login" className="flex-1 max-w-[160px] h-12 flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-background font-bold rounded-full transition-all shadow-glow-gold hover:scale-105">
+                  <LogIn className="w-5 h-5" />
+                  Log In
+                </Link>
+                <Link href="/login?tab=register" className="flex-1 max-w-[160px] h-12 flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white font-bold rounded-full border border-white/5 backdrop-blur-md transition-all">
+                  <UserPlus className="w-5 h-5" />
+                  Register
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Promotions / Mini Banner */}
+        {/* Promotions / Mini Banner  */}
         <div className="hidden lg:block h-80 rounded-2xl bg-gradient-to-br from-surface to-background-secondary border border-white/5 relative overflow-hidden group">
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 z-10" />
-          {/* Placeholder for Promo Image */}
           <div className="absolute inset-0 bg-gradient-to-tr from-accent-rose/20 to-orange-500/20" />
 
           <div className="relative z-20 h-full p-6 flex flex-col justify-end">
@@ -73,14 +161,14 @@ export default function Home() {
               Double Your <br /> First Deposit
             </h3>
             <p className="text-text-secondary text-sm mb-4">Up to 1 BTC + 50 Free Spins</p>
-            <Link href="/login?tab=register" className="w-full py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-white text-sm font-bold transition-colors flex items-center justify-center">
-              Claim Bonus
+            <Link href="/wallet" className="w-full py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-white text-sm font-bold transition-colors flex items-center justify-center">
+              {isLoggedIn ? "Deposit Now" : "Claim Bonus"}
             </Link>
           </div>
         </div>
       </section>
 
-      {/* 2. GAME CATEGORIES / FILTERS */}
+      {/* 2. GAME CATEGORIES  */}
       <section className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
         {["Lobby", "Slots", "Live Casino", "Table Games", "Originals", "New Releases"].map((cat, i) => (
           <button
@@ -119,12 +207,10 @@ export default function Home() {
 
       {/* 4. LIVE WINS & NEW GAMES */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Live Feed */}
         <div className="lg:col-span-1">
           <LiveWinsTable />
         </div>
 
-        {/* New Games Grid */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="w-5 h-5 text-accent-cyan" />

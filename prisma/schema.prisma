@@ -1,0 +1,152 @@
+// Fichier: prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- 1. ENUMS (Les types fixes) ---
+
+enum TxType {
+  DEPOSIT
+  WITHDRAW
+}
+
+enum TxStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum GameType {
+  LOTTERY   // Tirage journalier
+  INSTANT   // Dice, Wheel
+  SESSION   // Blackjack, Mines
+}
+
+enum RoundStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+// --- 2. MODÈLES ---
+
+model User {
+  id           String   @id @default(uuid())
+  
+  // Auth Hybride : Optionnels pour permettre le mode "Anonyme" au départ
+  username     String  @unique
+  email        String?  @unique
+  passwordHash String 
+  
+  // Système de Parrainage
+  referrerId   String?
+  referrer     User?    @relation("ReferralHistory", fields: [referrerId], references: [id])
+  referrals    User[]   @relation("ReferralHistory")
+  
+  referralEarningsSats BigInt @default(0)
+
+  // Relation
+  wallet       Wallet?  // Relation 1-1
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Wallet {
+  id              String   @id @default(uuid())
+  
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id])
+  
+  balanceSats     BigInt   @default(0) 
+  
+  // Wager Requirement (Validé par ton Chef de Projet)
+  // Règle : totalWagered doit être >= totalDeposited pour retirer
+  totalDepositedSats BigInt @default(0)
+  totalWageredSats   BigInt @default(0)
+  
+  lastFaucetClaim DateTime?
+
+  transactions    Transaction[]
+  gameRounds      GameRound[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Transaction {
+  id          String   @id @default(uuid())
+  
+  walletId    String
+  wallet      Wallet   @relation(fields: [walletId], references: [id])
+  
+  type        TxType
+  amountSats  BigInt
+  
+  paymentRef  String   @unique // Hash de la facture Lightning ou TxID
+  status      TxStatus @default(PENDING)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Game {
+  id          String   @id @default(uuid())
+  
+  slug        String   @unique // ex: "dice", "mines"
+  name        String
+  type        GameType
+  isActive    Boolean  @default(true)
+  
+  // UX / Marketing (Description des jeux)
+  shortDesc   String?
+  rules       String?  @db.Text // Support du Markdown long
+  imageUrl    String?
+  
+  // Config Technique
+  config      Json?    // ex: { "houseEdge": 1.0 }
+  maxWinSats  BigInt?  // Sécurité Bankroll
+
+  rounds      GameRound[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model GameRound {
+  id          String   @id @default(uuid())
+  
+  walletId    String
+  wallet      Wallet   @relation(fields: [walletId], references: [id])
+  
+  gameId      String
+  game        Game     @relation(fields: [gameId], references: [id])
+  
+  status      RoundStatus @default(ACTIVE)
+
+  // Finances de la partie
+  betAmountSats    BigInt
+  payoutAmountSats BigInt @default(0)
+  
+  // État du jeu (JSON flexible selon le jeu)
+  gameData    Json 
+
+  // Provably Fair
+  clientSeed     String
+  serverSeedHash String
+  serverSeed     String?
+  nonce          Int
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Index pour la performance des historiques
+  @@index([walletId])
+  @@index([gameId])
+}
