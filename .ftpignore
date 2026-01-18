@@ -1,0 +1,26 @@
+# Dépendances (Elles sont trop lourdes, on ne les envoie jamais par FTP)
+node_modules/
+
+# Dossiers de développement et tests
+.git/
+.github/
+tests/
+__tests__/
+.pytest_cache/
+playwright-report/
+test-results/
+
+# Fichiers de configuration locale
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Fichiers de build inutiles sur le serveur
+.next/cache/
+src/
+README.md
+.gitignore
+.ftpignore
+vitest.config.ts
+playwright.config.ts
