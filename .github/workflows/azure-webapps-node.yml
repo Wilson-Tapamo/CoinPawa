@@ -33,8 +33,11 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
 
-      - name: 🏗️ Build de l'application Next.js
-        run: NEXT_DISABLE_ESLINT=true npm run build
+      - name: 🏗️ Build Next.js (sans lint / sans typecheck)
+        run: |
+          rm -rf .next
+          npm run build
+
 
 
       - name: 📤 Archivage du build
