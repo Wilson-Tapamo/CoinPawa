@@ -43,7 +43,7 @@ export default function DiceGame() {
                 setIsRolling(false);
             }
 
-        } catch (e) {
+        } catch (_) {
             setError("Erreur de connexion");
             setIsRolling(false);
         }

@@ -8,7 +8,7 @@ export async function POST(request: Request) {
         if (!userId) return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
 
         const body = await request.json()
-        const { amount, segment } = body // amount: Sats, segment: string (risk level: 'low' | 'medium' | 'high') or specific multiplier?
+        const { amount } = body // amount: Sats, segment: string (risk level: 'low' | 'medium' | 'high') or specific multiplier?
 
         // Spin Wheel Logic Simplifiée :
         // Segments: 10x, 2x, 50x, 0x, ...
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
                 }
             })
 
-            const round = await tx.gameRound.create({
+            await tx.gameRound.create({
                 data: {
                     walletId: wallet.id,
                     gameId: game.id,
