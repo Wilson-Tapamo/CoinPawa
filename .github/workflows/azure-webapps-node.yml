@@ -22,7 +22,7 @@ jobs:
       - name: 📦 Installation des dépendances
         run: npm ci
 
-      - name: 🧬 Génération du client Prisma
+      - name: 🔄 Génération du client Prisma
         run: npx prisma generate
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
