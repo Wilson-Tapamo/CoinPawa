@@ -20,9 +20,16 @@ const GAME_DATA = {
     description: "Get ready for a sugar overdose! Sugar Rush is a 7x7 cluster pays slot featuring multipliers up to 128x, free spins, and tumble mechanics. Match different sweets to win big in this colorful adventure.",
 };
 
-export default function GameDetailsPage({ }: { params: { id: string } }) {
+import DiceGame from "@/components/games/DiceGame";
+import RouletteGame from "@/components/games/RouletteGame";
+
+export default function GameDetailsPage({ params }: { params: { id: string } }) {
     const [isPlaying, setIsPlaying] = useState(false);
     const [isFavorite, setIsFavorite] = useState(false);
+
+    // --- GAME MAPPING ---
+    if (params.id === 'dice') return <DiceGame />;
+    if (params.id === 'roulette') return <RouletteGame />;
 
     return (
         <div className="max-w-6xl mx-auto space-y-6">
