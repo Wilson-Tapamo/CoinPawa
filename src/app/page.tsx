@@ -10,12 +10,10 @@ import { cn } from "@/lib/utils";
 
 // --- MOCK DATA ---
 const FEATURED_GAMES = [
-  { title: "Sugar Rush", provider: "Pragmatic Play", image: "from-pink-500 to-rose-500", isHot: true, RTP: "96.5" },
-  { title: "Big Bass Splash", provider: "Reel Kingdom", image: "from-blue-600 to-cyan-400", isNew: true, RTP: "95.8" },
-  { title: "Razor Returns", provider: "Push Gaming", image: "from-slate-700 to-emerald-600", isHot: true, RTP: "97.2" },
-  { title: "Wanted Dead", provider: "Hacksaw", image: "from-gray-800 to-gray-600", isHot: false, RTP: "96.1" },
-  { title: "Plinko", provider: "BGaming", image: "from-indigo-600 to-purple-500", isHot: true, RTP: "99.0" },
-  { title: "Aviator", provider: "Spribe", image: "from-red-600 to-red-400", isHot: true, RTP: "97.0" },
+  { title: "Dice", provider: "CoinPawa Originals", image: "from-blue-600 to-indigo-600", isHot: true, RTP: "99.0", link: "/games/dice" },
+  { title: "Roulette", provider: "CoinPawa Originals", image: "from-red-600 to-rose-600", isHot: true, RTP: "97.3", link: "/games/roulette" },
+  { title: "Spin Wheel", provider: "CoinPawa Originals", image: "from-purple-600 to-violet-500", isNew: true, RTP: "95.0", link: "/games/wheel" },
+  { title: "Crash", provider: "CoinPawa Originals", image: "from-orange-600 to-amber-500", isHot: false, RTP: "99.0", link: "/games/crash" }, // Coming Soon
 ];
 
 const NEW_GAMES = [
@@ -200,7 +198,9 @@ export default function Home() {
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {FEATURED_GAMES.map((game, i) => (
-            <GameCard key={i} {...game} />
+            <Link key={i} href={game.link || '#'}>
+              <GameCard {...game} />
+            </Link>
           ))}
         </div>
       </section>
