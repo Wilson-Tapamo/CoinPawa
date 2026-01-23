@@ -59,7 +59,7 @@ export async function POST(request: Request) {
         txHash: fakeTxHash,
         confirmations: 1,
         metadata: {
-          ...transaction.metadata,
+          ...(transaction.metadata as any),
           simulated: true,
           test_mode: true,
           completed_at: new Date().toISOString(),
