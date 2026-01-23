@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifySession } from '@/lib/auth'
+import { Prisma } from '@prisma/client'
 
 export async function POST(request: Request) {
   try {
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
     }
 
     // TRANSACTION : On débite le solde CoinPawa
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // 1. On DÉBITE le solde interne (- amount)
       await tx.wallet.update({
         where: { id: wallet.id },
