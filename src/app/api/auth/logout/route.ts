@@ -7,12 +7,12 @@ export async function POST() {
     // suppression du cookie de session
     cookies().delete('session_token')
 
-    return NextResponse.json({ 
-      success: true, 
-      message: "Déconnexion réussie" 
+    return NextResponse.json({
+      success: true,
+      message: "Déconnexion réussie"
     }, { status: 200 })
 
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 })
   }
 }

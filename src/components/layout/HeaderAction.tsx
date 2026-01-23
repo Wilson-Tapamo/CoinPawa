@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, Wallet, LogOut, User, Loader2 } from "lucide-react";
+import { Bell, Wallet, LogOut, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatToUSD } from "@/lib/utils";
@@ -10,7 +10,7 @@ import { formatToUSD } from "@/lib/utils";
 interface HeaderActionsProps {
   isLoggedIn: boolean;
   initialBalance: number;
-  username?: string; 
+  username?: string;
 }
 
 export function HeaderActions({ isLoggedIn, initialBalance, username }: HeaderActionsProps) {
@@ -22,10 +22,10 @@ export function HeaderActions({ isLoggedIn, initialBalance, username }: HeaderAc
     try {
       // Appel API
       await fetch("/api/auth/logout", { method: "POST" });
-      
+
       // ✅ CORRECTION : On force la redirection vers login au lieu de juste refresh
       // Ça "nettoie" l'état et arrête le spinner car la page change.
-      router.push("/login"); 
+      router.push("/login");
       router.refresh();
     } catch (error) {
       console.error("Logout failed", error);
@@ -61,7 +61,7 @@ export function HeaderActions({ isLoggedIn, initialBalance, username }: HeaderAc
           </div>
           <div className="flex flex-col md:flex-row md:items-baseline gap-1">
             <span className="text-sm font-bold text-white font-display">
-                {formatToUSD(initialBalance)}
+              {formatToUSD(initialBalance)}
             </span>
           </div>
         </div>
@@ -70,30 +70,30 @@ export function HeaderActions({ isLoggedIn, initialBalance, username }: HeaderAc
       <div className="flex items-center gap-2">
         {/* ✅ AFFICHAGE DU PSEUDO */}
         <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full border border-white/5">
-            <div className="w-6 h-6 bg-accent-purple rounded-full flex items-center justify-center text-[10px] font-bold text-white uppercase">
-                {/* On prend la 1ère lettre du pseudo ou 'U' par défaut */}
-                {username ? username[0] : "U"}
-            </div>
-            <span className="text-xs font-bold text-white max-w-[100px] truncate">
-                {username || "Joueur"}
-            </span>
+          <div className="w-6 h-6 bg-accent-purple rounded-full flex items-center justify-center text-[10px] font-bold text-white uppercase">
+            {/* On prend la 1ère lettre du pseudo ou 'U' par défaut */}
+            {username ? username[0] : "U"}
+          </div>
+          <span className="text-xs font-bold text-white max-w-[100px] truncate">
+            {username || "Joueur"}
+          </span>
         </div>
-        
+
         {/* Notifications */}
         <button className="p-2 rounded-full hover:bg-white/5 text-text-secondary hover:text-white transition-colors relative">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-background" />
+          <Bell className="w-5 h-5" />
+          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-background" />
         </button>
 
         {/* Bouton Logout */}
-        <button 
-            onClick={handleLogout}
-            disabled={isLoading}
-            className="flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-red-500/10 text-text-secondary hover:text-red-500 text-xs font-bold rounded-lg border border-white/10 hover:border-red-500/20 transition-all ml-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Déconnexion"
+        <button
+          onClick={handleLogout}
+          disabled={isLoading}
+          className="flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-red-500/10 text-text-secondary hover:text-red-500 text-xs font-bold rounded-lg border border-white/10 hover:border-red-500/20 transition-all ml-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Déconnexion"
         >
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
-            <span className="hidden md:inline">LogOut</span>
+          {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+          <span className="hidden md:inline">LogOut</span>
         </button>
       </div>
     </div>

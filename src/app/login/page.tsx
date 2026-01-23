@@ -10,11 +10,11 @@ export default function LoginPage() {
     const router = useRouter();
     // page active
     const [activeTab, setActiveTab] = useState<"login" | "register">("login");
-    
+
     const [isLoading, setIsLoading] = useState(false);
     const [isCheckingAuth, setIsCheckingAuth] = useState(true); // Pour éviter le flash du formulaire si déjà connecté
     const [error, setError] = useState("");
-    
+
     const [formData, setFormData] = useState({
         username: "",
         password: "",
@@ -31,7 +31,7 @@ export default function LoginPage() {
                 } else {
                     setIsCheckingAuth(false);
                 }
-            } catch (e) {
+            } catch {
                 setIsCheckingAuth(false);
             }
         };
@@ -52,9 +52,9 @@ export default function LoginPage() {
             const res = await fetch("/api/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ 
-                    username: formData.username, 
-                    password: formData.password 
+                body: JSON.stringify({
+                    username: formData.username,
+                    password: formData.password
                 }),
             });
 
@@ -66,7 +66,7 @@ export default function LoginPage() {
             } else {
                 setError(data.error || "Identifiants incorrects");
             }
-        } catch (err) {
+        } catch {
             setError("Erreur de connexion au serveur");
         } finally {
             setIsLoading(false);
@@ -87,9 +87,9 @@ export default function LoginPage() {
             const res = await fetch("/api/auth/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ 
-                    username: formData.username, 
-                    password: formData.password 
+                body: JSON.stringify({
+                    username: formData.username,
+                    password: formData.password
                 }),
             });
 
@@ -100,7 +100,7 @@ export default function LoginPage() {
             } else {
                 setError(data.error || "Erreur lors de l'inscription");
             }
-        } catch (err) {
+        } catch {
             setError("Erreur serveur");
         } finally {
             setIsLoading(false);

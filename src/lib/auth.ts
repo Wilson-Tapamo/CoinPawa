@@ -34,7 +34,7 @@ export async function verifySession() {
       algorithms: ['HS256'],
     })
     return payload.userId as string
-  } catch (error) {
+  } catch {
     // Si le token est falsifié ou expiré
     return null
   }

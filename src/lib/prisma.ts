@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client'
 
 // --- PATCH IMPORTANT ---
 // Permet de gérer les "BigInt" (Satoshis) sans faire planter l'API
-// @ts-ignore
+// @ts-expect-error
 BigInt.prototype.toJSON = function () { return this.toString() }
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient }

@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     // On ne peut retirer que si on a assez joué (Wager >= Depot)
     if (wallet.totalWageredSats < wallet.totalDepositedSats) {
       const manque = wallet.totalDepositedSats - wallet.totalWageredSats
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: "Condition de mise non atteinte",
         message: `Vous devez miser encore ${manque} sats avant de retirer.`
       }, { status: 403 })
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, message: "Retrait validé" })
 
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 })
   }
 }

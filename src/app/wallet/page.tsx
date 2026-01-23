@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import {
     ArrowUpRight,
     ArrowDownLeft,
-    History,
     Copy,
     Check,
     QrCode,
@@ -38,12 +37,12 @@ const CRYPTO_OPTIONS = [
 export default function WalletPage() {
     const [activeTab, setActiveTab] = useState<"deposit" | "withdraw">("deposit");
     const [selectedCoin, setSelectedCoin] = useState(CRYPTO_OPTIONS[0]); // BTC par défaut
-    
+
     // États UI
     const [copied, setCopied] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-    
+
     // États Données
     const [balance, setBalance] = useState(0); // Solde local en USD
     const [cryptoAmount, setCryptoAmount] = useState(""); // Montant saisi pour le dépôt (en Crypto)
@@ -56,7 +55,7 @@ export default function WalletPage() {
             const res = await fetch("/api/wallet/balance");
             if (res.ok) {
                 const data = await res.json();
-                setBalance(parseInt(data.balance)); 
+                setBalance(parseInt(data.balance));
             }
         } catch (error) {
             console.error("Erreur chargement solde", error);
@@ -70,8 +69,8 @@ export default function WalletPage() {
 
     // --- 3. CALCUL DE CONVERSION (Dépôt) ---
     // Convertit la saisie crypto (ex: 0.1 BTC) en USD (ex: 6500)
-    const estimatedUSDValue = cryptoAmount 
-        ? (parseFloat(cryptoAmount) * RATES[selectedCoin.id]) 
+    const estimatedUSDValue = cryptoAmount
+        ? (parseFloat(cryptoAmount) * RATES[selectedCoin.id])
         : 0;
 
     // --- 4. GESTION DU DÉPÔT ---
@@ -91,7 +90,7 @@ export default function WalletPage() {
 
             const res = await fetch('/api/wallet/deposit', {
                 method: 'POST',
-                body: JSON.stringify({ amount: amountToSend }), 
+                body: JSON.stringify({ amount: amountToSend }),
                 headers: { 'Content-Type': 'application/json' }
             });
 
@@ -103,7 +102,7 @@ export default function WalletPage() {
                 const data = await res.json();
                 setMessage({ type: 'error', text: data.error || "Erreur dépôt" });
             }
-        } catch (error) {
+        } catch {
             setMessage({ type: 'error', text: "Erreur de connexion serveur" });
         } finally {
             setIsLoading(false);
@@ -114,7 +113,7 @@ export default function WalletPage() {
     const handleWithdraw = async () => {
         setIsLoading(true);
         setMessage(null);
-        
+
         // Validation basique
         if (!withdrawAmount || parseInt(withdrawAmount) <= 0) {
             setMessage({ type: 'error', text: "Montant invalide" }); setIsLoading(false); return;
@@ -129,7 +128,7 @@ export default function WalletPage() {
         try {
             const res = await fetch('/api/wallet/withdraw', {
                 method: 'POST',
-                body: JSON.stringify({ amount: withdrawAmount, address: withdrawAddress }), 
+                body: JSON.stringify({ amount: withdrawAmount, address: withdrawAddress }),
                 headers: { 'Content-Type': 'application/json' }
             });
 
@@ -137,14 +136,14 @@ export default function WalletPage() {
 
             if (res.ok) {
                 setMessage({ type: 'success', text: "Retrait effectué avec succès !" });
-                setWithdrawAmount(""); 
-                setWithdrawAddress(""); 
+                setWithdrawAmount("");
+                setWithdrawAddress("");
                 fetchBalance();
             } else {
                 // Affiche l'erreur (ex: Wager requirement)
                 setMessage({ type: 'error', text: data.message || data.error });
             }
-        } catch (error) {
+        } catch {
             setMessage({ type: 'error', text: "Erreur serveur" });
         } finally {
             setIsLoading(false);
@@ -164,14 +163,14 @@ export default function WalletPage() {
 
     return (
         <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 p-4 md:p-8">
-            
+
             {/* HEADER */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-display font-bold text-white">Portefeuille</h1>
                     <p className="text-text-secondary text-sm">Gérez vos cryptos et convertissez en solde de jeu</p>
                 </div>
-                <button 
+                <button
                     onClick={fetchBalance}
                     className="flex items-center gap-2 text-sm text-primary hover:text-primary-hover font-bold bg-primary/10 px-4 py-2 rounded-lg transition-colors border border-primary/20"
                 >
@@ -180,7 +179,7 @@ export default function WalletPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
+
                 {/* --- COLONNE GAUCHE : BALANCE & PORTFOLIO --- */}
                 <div className="lg:col-span-2 space-y-6">
                     {/* Carte Solde Principal */}
@@ -198,23 +197,23 @@ export default function WalletPage() {
                             </div>
 
                             <div className="flex gap-4">
-                                <button 
+                                <button
                                     onClick={() => setActiveTab("deposit")}
                                     className={cn(
                                         "flex-1 py-3 font-bold rounded-xl transition-all flex items-center justify-center gap-2",
-                                        activeTab === "deposit" 
-                                            ? "bg-primary text-background shadow-glow-gold" 
+                                        activeTab === "deposit"
+                                            ? "bg-primary text-background shadow-glow-gold"
                                             : "bg-white/5 hover:bg-white/10 text-white border border-white/10"
                                     )}
                                 >
                                     <ArrowDownLeft className="w-5 h-5" /> Dépôt
                                 </button>
-                                <button 
+                                <button
                                     onClick={() => setActiveTab("withdraw")}
                                     className={cn(
                                         "flex-1 py-3 font-bold rounded-xl transition-all flex items-center justify-center gap-2",
-                                        activeTab === "withdraw" 
-                                            ? "bg-primary text-background shadow-glow-gold" 
+                                        activeTab === "withdraw"
+                                            ? "bg-primary text-background shadow-glow-gold"
                                             : "bg-white/5 hover:bg-white/10 text-white border border-white/10"
                                     )}
                                 >
@@ -243,7 +242,7 @@ export default function WalletPage() {
                                             <p className="text-xs text-text-tertiary">Taux: 1 {asset.id} ≈ {formatToUSD(RATES[asset.id])}</p>
                                         </div>
                                     </div>
-                                    <button 
+                                    <button
                                         onClick={() => { setActiveTab("deposit"); setSelectedCoin(asset); }}
                                         className="text-xs font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity"
                                     >
@@ -258,7 +257,7 @@ export default function WalletPage() {
                 {/* --- COLONNE DROITE : PANNEAU D'ACTION --- */}
                 <div className="lg:col-span-1">
                     <div className="bg-[#1A1D26] p-6 rounded-2xl border border-white/5 h-full flex flex-col min-h-[500px]">
-                        
+
                         {/* MESSAGE DE FEEDBACK (Succès/Erreur) */}
                         {message && (
                             <div className={cn(
@@ -273,7 +272,7 @@ export default function WalletPage() {
                         {/* ================= ONGLET DÉPÔT ================= */}
                         {activeTab === "deposit" ? (
                             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                                
+
                                 <div className="mb-2">
                                     <h3 className="font-bold text-white text-lg">Dépôt {selectedCoin.name}</h3>
                                     <p className="text-xs text-text-tertiary">Envoyez des {selectedCoin.id} pour créditer votre solde USD.</p>
@@ -311,7 +310,7 @@ export default function WalletPage() {
                                             <code className="text-xs text-text-secondary truncate flex-1 font-mono">
                                                 {selectedCoin.address.substring(0, 10)}...{selectedCoin.address.substring(selectedCoin.address.length - 10)}
                                             </code>
-                                            <button 
+                                            <button
                                                 onClick={handleCopy}
                                                 className="p-1.5 hover:bg-white/10 rounded-md transition-colors text-text-secondary hover:text-white"
                                             >
@@ -326,11 +325,11 @@ export default function WalletPage() {
                                     <label className="text-xs text-accent-purple mb-2 font-bold flex items-center gap-2">
                                         <Loader2 className="w-3 h-3 animate-spin" /> SIMULATEUR DE DÉPÔT
                                     </label>
-                                    
+
                                     <div className="space-y-3">
                                         <div className="relative">
-                                            <input 
-                                                type="number" 
+                                            <input
+                                                type="number"
                                                 placeholder="0.00"
                                                 value={cryptoAmount}
                                                 onChange={(e) => setCryptoAmount(e.target.value)}
@@ -348,7 +347,7 @@ export default function WalletPage() {
                                             </span>
                                         </div>
 
-                                        <button 
+                                        <button
                                             onClick={handleDeposit}
                                             disabled={isLoading || !cryptoAmount || parseFloat(cryptoAmount) <= 0}
                                             className="w-full py-3 bg-accent-purple hover:bg-accent-purple/80 text-white text-sm font-bold rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
@@ -361,7 +360,7 @@ export default function WalletPage() {
                         ) : (
                             /* ================= ONGLET RETRAIT ================= */
                             <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
-                                
+
                                 <div className="mb-2">
                                     <h3 className="font-bold text-white text-lg">Retrait des Fonds</h3>
                                     <p className="text-xs text-text-tertiary">Retirez vos gains vers votre portefeuille externe.</p>
@@ -396,7 +395,7 @@ export default function WalletPage() {
                                             className="w-full bg-background-secondary rounded-xl border border-white/10 py-3 pl-4 pr-16 text-white focus:outline-none focus:border-primary/50 transition-colors placeholder:text-text-tertiary/50 font-mono"
                                             placeholder="0.00"
                                         />
-                                        <button 
+                                        <button
                                             onClick={handleMax}
                                             className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-primary hover:bg-primary/10 px-2 py-1 rounded transition-colors"
                                         >
@@ -409,7 +408,7 @@ export default function WalletPage() {
                                 <div>
                                     <label className="text-xs font-bold text-text-tertiary uppercase mb-1.5 flex justify-between">
                                         Adresse de destination
-                                        <button 
+                                        <button
                                             onClick={() => setWithdrawAddress("bc1q_TEST_ADDRESS_SIMULATION_xyz")}
                                             className="text-[10px] text-accent-purple hover:underline cursor-pointer"
                                         >
@@ -438,7 +437,7 @@ export default function WalletPage() {
                                     </div>
                                 </div>
 
-                                <button 
+                                <button
                                     onClick={handleWithdraw}
                                     disabled={isLoading}
                                     className="w-full py-3.5 bg-primary hover:bg-primary-hover text-background font-bold rounded-xl shadow-glow-gold transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-50"

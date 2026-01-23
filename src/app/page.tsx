@@ -27,7 +27,7 @@ const NEW_GAMES = [
 
 export default function Home() {
   const router = useRouter();
-  
+
   // --- ÉTATS  ---
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [balance, setBalance] = useState("0");
@@ -41,12 +41,12 @@ export default function Home() {
         const res = await fetch("/api/wallet/balance");
         if (res.ok) {
           const data = await res.json();
-          setBalance(data.balance); 
+          setBalance(data.balance);
           setIsLoggedIn(true);
         } else {
           setIsLoggedIn(false);
         }
-      } catch (error) {
+      } catch {
         setIsLoggedIn(false);
       } finally {
         setIsLoading(false);
@@ -62,7 +62,7 @@ export default function Home() {
       await fetch("/api/auth/logout", { method: "POST" });
       setIsLoggedIn(false);
       setBalance("0");
-      router.refresh(); 
+      router.refresh();
     } catch (error) {
       console.error("Erreur logout", error);
     }
@@ -70,10 +70,10 @@ export default function Home() {
 
   return (
     <div className="space-y-8">
-      
+
       {/* 1. HERO SECTION (Dynamique) */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* --- CARTE PRINCIPALE (Balance OU Login) --- */}
         <div className="lg:col-span-2 relative h-64 md:h-80 rounded-2xl overflow-hidden shadow-glow-purple/20 group transition-all">
           <div className="absolute inset-0 bg-gradient-to-r from-accent-violet to-indigo-900" />
@@ -93,9 +93,9 @@ export default function Home() {
                 <h2 className="text-text-secondary text-sm md:text-base font-medium mb-1 flex items-center gap-2">
                   <span className="w-2 h-2 bg-success rounded-full" /> Live Wallet
                 </h2>
-                
+
                 {/* Bouton Logout */}
-                <button 
+                <button
                   onClick={handleLogout}
                   className="text-xs font-bold text-white/50 hover:text-white flex items-center gap-1 bg-black/20 hover:bg-black/40 px-3 py-1.5 rounded-full transition-colors"
                 >

@@ -45,7 +45,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, newBalance: result.balanceSats.toString() })
 
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 })
   }
 }
