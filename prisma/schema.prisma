@@ -7,19 +7,24 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // Pour les migrations avec Neon
 }
 
 // --- 1. ENUMS (Les types fixes) ---
 
 enum TxType {
   DEPOSIT
+  DEPOSIT_BONUS  // ← Ajouter cette ligne
   WITHDRAW
+  BET
+  WIN
 }
 
 enum TxStatus {
   PENDING
   COMPLETED
   FAILED
+  EXPIRED   // 🆕 Pour les paiements crypto expirés
 }
 
 enum GameType {
@@ -73,6 +78,12 @@ model Wallet {
   
   lastFaucetClaim DateTime?
 
+  // 🆕 CRYPTO PAYMENT FIELDS
+  // Adresse de retrait préférée de l'utilisateur (USDT)
+  withdrawalAddress String?
+  // Réseau préféré pour les retraits (TRC20, ERC20, BEP20, etc.)
+  withdrawalNetwork String? @default("TRC20")
+
   transactions    Transaction[]
   gameRounds      GameRound[]
 
@@ -87,13 +98,45 @@ model Transaction {
   wallet      Wallet   @relation(fields: [walletId], references: [id])
   
   type        TxType
-  amountSats  BigInt
+  amountSats  BigInt   // Montant final crédité/débité en sats
   
-  paymentRef  String   @unique // Hash de la facture Lightning ou TxID
+  paymentRef  String   @unique // Référence unique (order_id pour NOWPayments)
   status      TxStatus @default(PENDING)
+  
+  // 🆕 MULTI-CRYPTO FIELDS (pour les dépôts)
+  cryptoCurrency   String?  // BTC, ETH, USDC, SOL, BNB, etc.
+  cryptoAmount     String?  // Montant que l'user a envoyé dans sa crypto
+  usdtAmount       String?  // Montant après conversion en USDT
+  exchangeRate     String?  // Taux de conversion appliqué (cryptoAmount / usdtAmount)
+  
+  // 🆕 BLOCKCHAIN DATA
+  txHash           String?  @unique // Hash de la transaction blockchain (si applicable)
+  fromAddress      String?  // Adresse source (pour DEPOSIT)
+  toAddress        String?  // Adresse destination (pour WITHDRAW)
+  blockNumber      Int?     // Numéro de bloc (confirmation)
+  confirmations    Int?     @default(0) // Nombre de confirmations
+  
+  // 🆕 NOWPAYMENTS INTEGRATION
+  nowPaymentId     String?  @unique  // ID du paiement NOWPayments
+  paymentUrl       String?  // URL/adresse de paiement générée
+  paymentExpiry    DateTime? // Date d'expiration du paiement
+  
+  // 🆕 WITHDRAWAL FIELDS
+  withdrawalFee    BigInt?  // Frais de retrait en sats
+  netAmount        BigInt?  // Montant net reçu (amountSats - withdrawalFee)
+  
+  // Métadonnées additionnelles
+  metadata         Json?    // Pour stocker des infos supplémentaires (IP, user agent, etc.)
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  
+  // 🆕 INDEX pour optimiser les requêtes
+  @@index([walletId])
+  @@index([status])
+  @@index([type])
+  @@index([nowPaymentId])
+  @@index([createdAt])
 }
 
 model Game {
@@ -149,4 +192,39 @@ model GameRound {
   // Index pour la performance des historiques
   @@index([walletId])
   @@index([gameId])
+}
+
+// 🆕 NOUVEAU MODÈLE : Configuration des cryptos acceptées
+model SupportedCrypto {
+  id              String   @id @default(uuid())
+  
+  symbol          String   @unique // BTC, ETH, USDC, SOL, BNB, etc.
+  name            String   // Bitcoin, Ethereum, USD Coin, etc.
+  network         String?  // ethereum, solana, binance-smart-chain, etc.
+  isActive        Boolean  @default(true)
+  
+  // Configuration
+  minDepositUsd   Float    @default(5.0)   // Montant minimum de dépôt en USD
+  icon            String?  // URL de l'icône ou emoji
+  orderIndex      Int      @default(0)     // Pour trier l'affichage
+  
+  // Stats (optionnel)
+  totalDeposits   Int      @default(0)
+  totalVolume     Float    @default(0)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([isActive, orderIndex])
+}
+
+// 🆕 NOUVEAU MODÈLE : Paramètres système pour le paiement
+model PaymentSettings {
+  id              String   @id @default(uuid())
+  
+  key             String   @unique // ex: "min_deposit_usd", "withdrawal_fee_percent"
+  value           String   // Valeur en JSON ou string
+  description     String?
+  
+  updatedAt       DateTime @updatedAt
 }

@@ -32,7 +32,7 @@ export async function Header() {
         <header className="sticky top-0 z-30 w-full h-20 flex items-center px-4 md:px-8 border-b border-white/5 bg-background/80 backdrop-blur-md transition-all">
              {/* Logo Mobile */}
              <div className="md:hidden flex items-center mr-4">
-                <span className="text-xl font-display font-bold text-white tracking-tight">CoinPawa</span>
+                <span className="text-xl font-display font-bold text-white tracking-tight">CoinPower</span>
             </div>
 
             {/* Barre de recherche */}
