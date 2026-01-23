@@ -37,7 +37,7 @@ export async function POST(request: Request) {
         const payout = isWin ? Math.floor(amount * multiplier) : 0
 
         // 4. Transaction DB (Atomique)
-        const result = await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(async (tx: any) => {
             // A. Assurer que le jeu "Dice" existe
             const game = await tx.game.upsert({
                 where: { slug: 'dice' },
