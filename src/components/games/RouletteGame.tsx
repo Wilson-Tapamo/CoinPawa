@@ -54,7 +54,7 @@ export default function RouletteGame() {
                 setIsSpinning(false);
             }
 
-        } catch (_) {
+        } catch {
             setError("Erreur de connexion");
             setIsSpinning(false);
         }
