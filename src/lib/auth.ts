@@ -1,23 +1,41 @@
-import { SignJWT } from 'jose'
+// Fichier: lib/auth.ts
+import { SignJWT, jwtVerify } from 'jose' // On ajoute jwtVerify ici
 import { cookies } from 'next/headers'
 
-// Récupère ta clé secrète dans le fichier .env
 const secret = new TextEncoder().encode(process.env.JWT_SECRET)
 
+// 1. Fonction pour Créer la Session (Utilisée lors du Login/Register)
 export async function createSession(userId: string) {
-  // 1. Création du Token JWT
   const jwt = await new SignJWT({ userId })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('7d') // La session dure 7 jours
+    .setExpirationTime('7d')
     .sign(secret)
 
-  // 2. Stockage dans un Cookie sécurisé
   cookies().set('session_token', jwt, {
-    httpOnly: true, // Invisible pour le JavaScript (Anti-Hack)
-    secure: process.env.NODE_ENV === 'production', // HTTPS en ligne
-    sameSite: 'lax', // Protection CSRF
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
     maxAge: 60 * 60 * 24 * 7, // 7 jours
     path: '/',
   })
+}
+
+// 2. Fonction pour Vérifier la Session (Utilisée dans les APIs protégées)
+export async function verifySession() {
+  const cookieStore = cookies()
+  const token = cookieStore.get('session_token')?.value
+
+  if (!token) return null
+
+  try {
+    // On vérifie que le token est valide et généré par nous
+    const { payload } = await jwtVerify(token, secret, {
+      algorithms: ['HS256'],
+    })
+    return payload.userId as string
+  } catch (error) {
+    // Si le token est falsifié ou expiré
+    return null
+  }
 }

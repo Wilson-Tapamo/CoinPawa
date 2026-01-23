@@ -1,61 +1,149 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { User, Lock, Mail, ArrowRight, Shield, Ghost, Wallet } from "lucide-react";
+import { User, Lock, Mail, ArrowRight, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
-    const [activeTab, setActiveTab] = useState<"login" | "register" | "anonymous">("login");
     const router = useRouter();
+    // page active
+    const [activeTab, setActiveTab] = useState<"login" | "register">("login");
+    
+    const [isLoading, setIsLoading] = useState(false);
+    const [isCheckingAuth, setIsCheckingAuth] = useState(true); // Pour éviter le flash du formulaire si déjà connecté
+    const [error, setError] = useState("");
+    
+    const [formData, setFormData] = useState({
+        username: "",
+        password: "",
+        email: ""
+    });
 
-    const handleAnonymousLogin = () => {
-        // In a real app, this might create a temporary session
-        localStorage.setItem("user_type", "guest");
-        router.push("/wallet");
+    // --- 0. VÉRIFICATION AUTOMATIQUE DE SESSION ---
+    useEffect(() => {
+        const checkSession = async () => {
+            try {
+                const res = await fetch("/api/wallet/balance");
+                if (res.ok) {
+                    router.push("/wallet");
+                } else {
+                    setIsCheckingAuth(false);
+                }
+            } catch (e) {
+                setIsCheckingAuth(false);
+            }
+        };
+
+        checkSession();
+    }, [router]);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleLogin = () => {
-        // Mock Login
-        localStorage.setItem("user_type", "user");
-        router.push("/wallet");
+    // ---  LOGIN ---
+    const handleLogin = async () => {
+        setIsLoading(true);
+        setError("");
+
+        try {
+            const res = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    username: formData.username, 
+                    password: formData.password 
+                }),
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                router.push("/wallet");
+                router.refresh();
+            } else {
+                setError(data.error || "Identifiants incorrects");
+            }
+        } catch (err) {
+            setError("Erreur de connexion au serveur");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const handleRegister = () => {
-        // Mock Register
-        localStorage.setItem("user_type", "user");
-        router.push("/wallet");
+    // ---  REGISTER ---
+    const handleRegister = async () => {
+        setIsLoading(true);
+        setError("");
+
+        if (!formData.username || !formData.password) {
+            setError("Veuillez remplir tous les champs");
+            return;
+        }
+
+        try {
+            const res = await fetch("/api/auth/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    username: formData.username, 
+                    password: formData.password 
+                }),
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                await handleLogin(); // Connexion auto après inscription
+            } else {
+                setError(data.error || "Erreur lors de l'inscription");
+            }
+        } catch (err) {
+            setError("Erreur serveur");
+        } finally {
+            setIsLoading(false);
+        }
     };
+
+    // loader pour verification en cours 
+    if (isCheckingAuth) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[#0F1218]">
+                <Loader2 className="w-10 h-10 text-purple-600 animate-spin" />
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
             {/* Background Effects */}
-            <div className="absolute inset-0 bg-dark z-0" />
-            <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0 pointer-events-none" />
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[128px] pointer-events-none" />
-            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent-purple/20 rounded-full blur-[128px] pointer-events-none" />
+            <div className="absolute inset-0 bg-[#0F1218] z-0" />
+            <div className="absolute top-0 left-0 w-full h-full opacity-20 z-0 pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-[128px] pointer-events-none" />
+            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-[128px] pointer-events-none" />
 
             <div className="relative z-10 w-full max-w-md animate-in fade-in zoom-in duration-500">
                 {/* Logo / Header */}
                 <div className="text-center mb-8">
-                    <h1 className="text-4xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary-glow mb-2">
+                    <h1 className="text-4xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 mb-2">
                         CoinPawa
                     </h1>
-                    <p className="text-text-secondary">Next Gen Crypto Casino</p>
+                    <p className="text-gray-500">Next Gen Crypto Casino</p>
                 </div>
 
-                {/* Tabs */}
-                <div className="flex bg-surface/50 p-1 rounded-xl mb-6 backdrop-blur-sm border border-white/5">
-                    {(["login", "register", "anonymous"] as const).map((tab) => (
+                {/* Tabs (Juste Login et Register) */}
+                <div className="flex bg-white/5 p-1 rounded-xl mb-6 backdrop-blur-sm border border-white/5">
+                    {(["login", "register"] as const).map((tab) => (
                         <button
                             key={tab}
-                            onClick={() => setActiveTab(tab)}
+                            onClick={() => { setActiveTab(tab); setError(""); }}
                             className={cn(
                                 "flex-1 py-2 text-sm font-bold rounded-lg transition-all capitalize",
                                 activeTab === tab
-                                    ? "bg-surface text-white shadow-lg border border-white/10"
-                                    : "text-text-tertiary hover:text-white"
+                                    ? "bg-[#1A1D26] text-white shadow-lg border border-white/10"
+                                    : "text-gray-500 hover:text-white"
                             )}
                         >
                             {tab}
@@ -64,43 +152,13 @@ export default function LoginPage() {
                 </div>
 
                 {/* Main Card */}
-                <div className="bg-surface/30 backdrop-blur-md border border-white/10 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
+                <div className="bg-[#1A1D26]/80 backdrop-blur-md border border-white/10 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
 
-                    {/* ANONYMOUS / GUEST MODE */}
-                    {activeTab === "anonymous" && (
-                        <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
-                            <div className="text-center space-y-4">
-                                <div className="w-16 h-16 bg-accent-cyan/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-accent-cyan/20 shadow-glow-cyan">
-                                    <Ghost className="w-8 h-8 text-accent-cyan" />
-                                </div>
-                                <h2 className="text-2xl font-bold text-white">Play Anonymously</h2>
-                                <p className="text-sm text-text-secondary leading-relaxed">
-                                    No account needed. Deposit crypto and start playing instantly.
-                                    Your session is secured by your browser.
-                                </p>
-                            </div>
-
-                            <div className="space-y-3">
-                                <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/5">
-                                    <Shield className="w-5 h-5 text-success" />
-                                    <p className="text-xs text-text-secondary">No Personal Data Required</p>
-                                </div>
-                                <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/5">
-                                    <Wallet className="w-5 h-5 text-primary" />
-                                    <p className="text-xs text-text-secondary">Instant Deposits & Withdrawals</p>
-                                </div>
-                            </div>
-
-                            <button
-                                onClick={handleAnonymousLogin}
-                                className="w-full py-4 bg-gradient-to-r from-accent-cyan to-blue-600 hover:from-accent-cyan hover:to-blue-500 text-white font-bold rounded-xl shadow-lg transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2"
-                            >
-                                <Ghost className="w-5 h-5" /> Start Playing Anonymously
-                            </button>
-
-                            <p className="text-center text-[10px] text-text-tertiary">
-                                By continuing, you agree to our Terms of Service.
-                            </p>
+                    {/* ERROR MESSAGE DISPLAY */}
+                    {error && (
+                        <div className="mb-6 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3 animate-in slide-in-from-top-2">
+                            <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+                            <p className="text-xs font-bold text-red-400">{error}</p>
                         </div>
                     )}
 
@@ -109,52 +167,42 @@ export default function LoginPage() {
                         <div className="space-y-6 animate-in slide-in-from-left-4 fade-in duration-300">
                             <div className="space-y-4">
                                 <div>
-                                    <label className="text-xs font-bold text-text-tertiary uppercase mb-1.5 block">Email / Username</label>
+                                    <label className="text-xs font-bold text-gray-500 uppercase mb-1.5 block">Username</label>
                                     <div className="relative">
-                                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                                         <input
                                             type="text"
-                                            className="w-full bg-background-secondary/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-primary/50 transition-colors placeholder:text-text-tertiary/50"
-                                            placeholder="Enter your email"
+                                            name="username"
+                                            value={formData.username}
+                                            onChange={handleChange}
+                                            className="w-full bg-[#0F1218]/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-purple-500/50 transition-colors placeholder:text-gray-600"
+                                            placeholder="Enter your username"
                                         />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="text-xs font-bold text-text-tertiary uppercase mb-1.5 block">Password</label>
+                                    <label className="text-xs font-bold text-gray-500 uppercase mb-1.5 block">Password</label>
                                     <div className="relative">
-                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                                         <input
                                             type="password"
-                                            className="w-full bg-background-secondary/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-primary/50 transition-colors placeholder:text-text-tertiary/50"
+                                            name="password"
+                                            value={formData.password}
+                                            onChange={handleChange}
+                                            className="w-full bg-[#0F1218]/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-purple-500/50 transition-colors placeholder:text-gray-600"
                                             placeholder="••••••••"
                                         />
-                                    </div>
-                                    <div className="flex justify-end mt-2">
-                                        <a href="#" className="text-xs text-primary hover:text-primary-hover transition-colors">Forgot Password?</a>
                                     </div>
                                 </div>
                             </div>
 
                             <button
                                 onClick={handleLogin}
-                                className="w-full py-3.5 bg-primary hover:bg-primary-hover text-background font-bold rounded-xl shadow-glow-gold transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2"
+                                disabled={isLoading}
+                                className="w-full py-3.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-lg transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2 disabled:opacity-50"
                             >
-                                Log In <ArrowRight className="w-5 h-5" />
+                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><span className="mr-1">Log In</span> <ArrowRight className="w-5 h-5" /></>}
                             </button>
-
-                            <div className="relative py-2">
-                                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
-                                <div className="relative flex justify-center text-xs uppercase"><span className="bg-surface px-2 text-text-tertiary">Or continue with</span></div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3">
-                                <button className="py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white text-xs font-bold transition-all flex items-center justify-center gap-2">
-                                    <Wallet className="w-4 h-4" /> Wallet
-                                </button>
-                                <button className="py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white text-xs font-bold transition-all flex items-center justify-center gap-2">
-                                    Google
-                                </button>
-                            </div>
                         </div>
                     )}
 
@@ -163,34 +211,43 @@ export default function LoginPage() {
                         <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
                             <div className="space-y-4">
                                 <div>
-                                    <label className="text-xs font-bold text-text-tertiary uppercase mb-1.5 block">Username</label>
+                                    <label className="text-xs font-bold text-gray-500 uppercase mb-1.5 block">Username</label>
                                     <div className="relative">
-                                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                                         <input
                                             type="text"
-                                            className="w-full bg-background-secondary/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-primary/50 transition-colors placeholder:text-text-tertiary/50"
+                                            name="username"
+                                            value={formData.username}
+                                            onChange={handleChange}
+                                            className="w-full bg-[#0F1218]/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-purple-500/50 transition-colors placeholder:text-gray-600"
                                             placeholder="Choose a username"
                                         />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="text-xs font-bold text-text-tertiary uppercase mb-1.5 block">Password</label>
+                                    <label className="text-xs font-bold text-gray-500 uppercase mb-1.5 block">Password</label>
                                     <div className="relative">
-                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                                         <input
                                             type="password"
-                                            className="w-full bg-background-secondary/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-primary/50 transition-colors placeholder:text-text-tertiary/50"
+                                            name="password"
+                                            value={formData.password}
+                                            onChange={handleChange}
+                                            className="w-full bg-[#0F1218]/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-purple-500/50 transition-colors placeholder:text-gray-600"
                                             placeholder="Create a password"
                                         />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="text-xs font-bold text-text-tertiary uppercase mb-1.5 block">Email Address <span className="text-text-tertiary/50 font-normal normal-case">(Optional for recovery)</span></label>
+                                    <label className="text-xs font-bold text-gray-500 uppercase mb-1.5 block">Email Address <span className="text-gray-600 font-normal normal-case">(Optional)</span></label>
                                     <div className="relative">
-                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                                         <input
                                             type="email"
-                                            className="w-full bg-background-secondary/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-primary/50 transition-colors placeholder:text-text-tertiary/50"
+                                            name="email"
+                                            value={formData.email}
+                                            onChange={handleChange}
+                                            className="w-full bg-[#0F1218]/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-purple-500/50 transition-colors placeholder:text-gray-600"
                                             placeholder="Enter your email"
                                         />
                                     </div>
@@ -199,20 +256,21 @@ export default function LoginPage() {
 
                             <button
                                 onClick={handleRegister}
-                                className="w-full py-3.5 bg-accent-purple hover:bg-accent-purple/90 text-white font-bold rounded-xl shadow-glow-purple transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2"
+                                disabled={isLoading}
+                                className="w-full py-3.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-lg transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2 disabled:opacity-50"
                             >
-                                Create Account
+                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Create Account"}
                             </button>
 
-                            <p className="text-center text-xs text-text-tertiary">
-                                Already have an account? <button onClick={() => setActiveTab("login")} className="text-primary hover:underline">Log in</button>
+                            <p className="text-center text-xs text-gray-500">
+                                Already have an account? <button onClick={() => setActiveTab("login")} className="text-purple-500 hover:underline">Log in</button>
                             </p>
                         </div>
                     )}
                 </div>
 
                 <div className="mt-8 text-center">
-                    <Link href="/" className="text-sm text-text-tertiary hover:text-white transition-colors flex items-center justify-center gap-2">
+                    <Link href="/" className="text-sm text-gray-500 hover:text-white transition-colors flex items-center justify-center gap-2">
                         ← Back to Home
                     </Link>
                 </div>
