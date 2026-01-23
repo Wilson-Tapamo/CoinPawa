@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifySession } from '@/lib/auth'
+import { Prisma } from '@prisma/client'
 
 export async function POST(request: Request) {
     try {
@@ -55,7 +56,7 @@ export async function POST(request: Request) {
         const payout = isWin ? Math.floor(amount * multiplier) : 0
 
         // 4. Transaction
-        const result = await prisma.$transaction(async (tx: any) => {
+        const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             // Upsert Game
             const game = await tx.game.upsert({
                 where: { slug: 'roulette' },

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifySession } from '@/lib/auth'
+import { Prisma } from '@prisma/client'
 
 export async function POST(request: Request) {
     try {
@@ -65,7 +66,7 @@ export async function POST(request: Request) {
         const isWin = payout > amount; // On considère Win si on récupère plus que la mise, sinon c'est partiel ou perte? 
         // Ici multiplier 1.5x > 1x donc Win. 0x = Loss.
 
-        const result = await prisma.$transaction(async (tx: any) => {
+        const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             const game = await tx.game.upsert({
                 where: { slug: 'wheel' },
                 update: {},
