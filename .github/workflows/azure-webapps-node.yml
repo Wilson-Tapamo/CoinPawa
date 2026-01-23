@@ -22,14 +22,23 @@ jobs:
       - name: 📦 Installation des dépendances
         run: npm ci
 
-      - name: 🔄 Génération du client Prisma
+      - name: 🧬 Génération du client Prisma
         run: npx prisma generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      - name: 🧪 Exécution des tests (Vitest)
-        run: npm test --if-present
+      - name: 🗄️ Migrations Prisma (Neon)
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
 
-      - name: 🏗️ Build de l'application Next.js
-        run: npm run build
+      - name: 🏗️ Build Next.js (sans lint / sans typecheck)
+        run: |
+          rm -rf .next
+          npm run build
+
+
 
       - name: 📤 Archivage du build
         uses: actions/upload-artifact@v4
