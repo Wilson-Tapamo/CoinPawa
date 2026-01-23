@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     }
 
     // 4. Calculer les montants
-    const baseAmount = amountUsd || parseFloat(transaction.metadata?.price_amount || '10')
+    const baseAmount = amountUsd || parseFloat((transaction.metadata as any)?.price_amount || '10')
     const receivedAmount = withSurplus ? baseAmount * 1.5 : baseAmount // +50% si surplus
     const surplus = receivedAmount - baseAmount
 
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
           usdtAmount: receivedAmount.toString(),
           confirmations: 1,
           metadata: {
-            ...transaction.metadata,
+            ...(transaction.metadata as any),
             simulated: true,
             received_amount: receivedAmount,
             expected_amount: baseAmount,
@@ -137,7 +137,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: withSurplus 
+      message: withSurplus
         ? `Paiement simulé avec succès ! Crédité: ${baseAmount} USD + bonus ${(surplus * 0.95).toFixed(2)} USD`
         : `Paiement simulé avec succès ! Crédité: ${baseAmount} USD`,
       transaction: {
