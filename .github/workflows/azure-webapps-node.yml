@@ -8,6 +8,7 @@ on:
 jobs:
   test_and_build:
     runs-on: ubuntu-latest
+
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -21,6 +22,9 @@ jobs:
       - name: 📦 Installation des dépendances
         run: npm ci
 
+      - name: 🧬 Génération du client Prisma
+        run: npx prisma generate
+
       - name: 🧪 Exécution des tests (Vitest)
         run: npm test --if-present
 
@@ -31,13 +35,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: next-app-payload
-          # On garde tout le projet sauf les gros dossiers inutiles (gérés par .ftpignore ensuite)
           path: .
 
   deploy:
     runs-on: ubuntu-latest
     needs: test_and_build
     if: github.ref == 'refs/heads/main'
+
     steps:
       - name: 📥 Récupération du build
         uses: actions/download-artifact@v4
@@ -51,4 +55,3 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           port: 21
-          # server-dir: /public_html/ # À modifier si votre app n'est pas à la racine
