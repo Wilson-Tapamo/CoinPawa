@@ -22,6 +22,7 @@ const GAME_DATA = {
 
 import DiceGame from "@/components/games/DiceGame";
 import RouletteGame from "@/components/games/RouletteGame";
+import WheelGame from "@/components/games/WheelGame";
 
 export default function GameDetailsPage({ params }: { params: { id: string } }) {
     const [isPlaying, setIsPlaying] = useState(false);
@@ -30,6 +31,7 @@ export default function GameDetailsPage({ params }: { params: { id: string } }) 
     // --- GAME MAPPING ---
     if (params.id === 'dice') return <DiceGame />;
     if (params.id === 'roulette') return <RouletteGame />;
+    if (params.id === 'wheel') return <WheelGame />;
 
     return (
         <div className="max-w-6xl mx-auto space-y-6">
