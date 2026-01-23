@@ -55,7 +55,7 @@ export async function POST(request: Request) {
         const payout = isWin ? Math.floor(amount * multiplier) : 0
 
         // 4. Transaction
-        const result = await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(async (tx: any) => {
             // Upsert Game
             const game = await tx.game.upsert({
                 where: { slug: 'roulette' },
