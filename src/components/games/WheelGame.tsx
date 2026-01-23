@@ -68,7 +68,7 @@ export default function WheelGame() {
                 setIsSpinning(false);
             }
 
-        } catch (e) {
+        } catch (_) {
             setError("Erreur de connexion");
             setIsSpinning(false);
         }

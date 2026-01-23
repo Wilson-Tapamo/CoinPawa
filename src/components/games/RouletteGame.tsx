@@ -5,7 +5,7 @@ import { Loader2, Trophy, XCircle, RotateCw } from "lucide-react";
 import { cn, formatToUSD } from "@/lib/utils";
 
 // Roue simplifiée pour l'animation (ordre standard européen approx ou juste visuel)
-const WHEEL_NUMBERS = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+// const WHEEL_NUMBERS = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
 
 export default function RouletteGame() {
     const [betColor, setBetColor] = useState<'red' | 'black' | 'green' | null>(null);
@@ -54,7 +54,7 @@ export default function RouletteGame() {
                 setIsSpinning(false);
             }
 
-        } catch (e) {
+        } catch (_) {
             setError("Erreur de connexion");
             setIsSpinning(false);
         }
