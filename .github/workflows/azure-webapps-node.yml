@@ -24,6 +24,14 @@ jobs:
 
       - name: 🧬 Génération du client Prisma
         run: npx prisma generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: 🗄️ Migration Prisma (deploy)
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
 
       - name: 🧪 Exécution des tests (Vitest)
         run: npm test --if-present
