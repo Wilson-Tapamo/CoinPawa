@@ -19,7 +19,7 @@ export function Sidebar() {
             {/* Logo Area */}
             <div className="h-20 flex items-center px-6">
                 <h1 className="text-3xl font-bold font-display text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary-light">
-                    CoinPawa
+                    CoinPower
                 </h1>
             </div>
 
