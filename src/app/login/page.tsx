@@ -128,9 +128,9 @@ export default function LoginPage() {
                 {/* Logo / Header */}
                 <div className="text-center mb-8">
                     <h1 className="text-4xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 mb-2">
-                        CoinPawa
+                        CoinPower
                     </h1>
-                    <p className="text-gray-500">Next Gen Crypto Casino</p>
+                    <p className="text-gray-500">Casino Crypto Nouvelle Génération</p>
                 </div>
 
                 {/* Tabs (Juste Login et Register) */}

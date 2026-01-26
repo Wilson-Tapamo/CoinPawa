@@ -1,23 +1,35 @@
 "use client";
 
+import Image from "next/image";
 import { Play } from "lucide-react";
 
 interface GameCardProps {
     title: string;
     provider: string;
-    image: string;
+    image: string; // Can be gradient class OR image path
+    imageSrc?: string; // Actual image path
     isHot?: boolean;
     isNew?: boolean;
     RTP?: string;
 }
 
-export function GameCard({ title, provider, image, isHot, isNew, RTP }: GameCardProps) {
+export function GameCard({ title, provider, image, imageSrc, isHot, isNew, RTP }: GameCardProps) {
+    const hasImage = imageSrc && imageSrc.startsWith("/");
+
     return (
         <div className="group relative rounded-xl overflow-hidden cursor-pointer">
-            {/* Background Image Placeholder */}
+            {/* Background Image or Gradient */}
             <div className="aspect-[3/4] w-full bg-surface relative overflow-hidden">
-                {/* In a real app, use next/image here. For now using a colored gradient placeholder if no image */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${image} opacity-80 group-hover:scale-110 transition-transform duration-700 ease-out`} />
+                {hasImage ? (
+                    <Image
+                        src={imageSrc}
+                        alt={title}
+                        fill
+                        className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                    />
+                ) : (
+                    <div className={`absolute inset-0 bg-gradient-to-br ${image} opacity-80 group-hover:scale-110 transition-transform duration-700 ease-out`} />
+                )}
 
                 {/* Overlay gradient */}
                 <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent opacity-80" />
@@ -28,7 +40,7 @@ export function GameCard({ title, provider, image, isHot, isNew, RTP }: GameCard
                         <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-accent-rose text-white rounded-sm shadow-glow-purple">Hot</span>
                     )}
                     {isNew && (
-                        <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-accent-cyan text-background rounded-sm shadow-glow-cyan">New</span>
+                        <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-accent-cyan text-background rounded-sm shadow-glow-cyan">Nouveau</span>
                     )}
                 </div>
 

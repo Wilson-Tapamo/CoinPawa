@@ -11,7 +11,7 @@ export async function Header() {
 
     if (userId) {
         isLoggedIn = true;
-        
+
         try {
             // ✅ CORRECTION : On demande le wallet ET les infos User
             const wallet = await prisma.wallet.findUnique({
@@ -30,8 +30,8 @@ export async function Header() {
 
     return (
         <header className="sticky top-0 z-30 w-full h-20 flex items-center px-4 md:px-8 border-b border-white/5 bg-background/80 backdrop-blur-md transition-all">
-             {/* Logo Mobile */}
-             <div className="md:hidden flex items-center mr-4">
+            {/* Logo Mobile */}
+            <div className="md:hidden flex items-center mr-4">
                 <span className="text-xl font-display font-bold text-white tracking-tight">CoinPower</span>
             </div>
 
@@ -40,17 +40,17 @@ export async function Header() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary group-focus-within:text-primary transition-colors" />
                 <input
                     type="text"
-                    placeholder="Search games..."
+                    placeholder="Rechercher un jeu..."
                     className="w-full bg-surface/50 border border-white/5 rounded-full py-2.5 pl-10 pr-4 text-sm text-white placeholder-text-tertiary focus:outline-none focus:border-primary/50 focus:bg-surface transition-all"
                 />
             </div>
 
             <div className="ml-auto">
                 {/* ✅ IMPORTANT : On passe bien 'username' ici */}
-                <HeaderActions 
-                    isLoggedIn={isLoggedIn} 
-                    initialBalance={balance} 
-                    username={username} 
+                <HeaderActions
+                    isLoggedIn={isLoggedIn}
+                    initialBalance={balance}
+                    username={username}
                 />
             </div>
         </header>
