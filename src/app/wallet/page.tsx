@@ -47,7 +47,7 @@ interface PaymentData {
 export default function WalletPage() {
 
     const [activeTab, setActiveTab] = useState<"deposit" | "withdraw" | "history">("deposit");
-    
+
     // États UI
     const [copied, setCopied] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -57,12 +57,12 @@ export default function WalletPage() {
     const [balance, setBalance] = useState(0); // Solde en sats
     const [cryptos, setCryptos] = useState<SupportedCrypto[]>([]);
     const [selectedCoin, setSelectedCoin] = useState<SupportedCrypto | null>(null);
-    
+
     // États Dépôt
     const [depositAmountUsd, setDepositAmountUsd] = useState(""); // Montant en USD
     const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
     const [isCheckingPayment, setIsCheckingPayment] = useState(false);
-    
+
     // États Retrait
     const [withdrawAmount, setWithdrawAmount] = useState("");
     const [withdrawAddress, setWithdrawAddress] = useState("");
@@ -135,8 +135,8 @@ export default function WalletPage() {
         try {
             const res = await fetch('/api/wallet/create-deposit', {
                 method: 'POST',
-                body: JSON.stringify({ 
-                    currency: selectedCoin.symbol.toLowerCase(), 
+                body: JSON.stringify({
+                    currency: selectedCoin.symbol.toLowerCase(),
                     amountUsd: parseFloat(depositAmountUsd)
                 }),
                 headers: { 'Content-Type': 'application/json' }
@@ -146,11 +146,11 @@ export default function WalletPage() {
 
             if (res.ok && data.success) {
                 setPaymentData(data.payment);
-                setMessage({ 
-                    type: 'success', 
-                    text: `Paiement créé ! Envoyez ${data.payment.payAmount} ${selectedCoin.symbol}` 
+                setMessage({
+                    type: 'success',
+                    text: `Paiement créé ! Envoyez ${data.payment.payAmount} ${selectedCoin.symbol}`
                 });
-                
+
                 // Commencer à vérifier le paiement toutes les 10 secondes
                 startPaymentCheck(data.payment.id);
             } else {
@@ -166,7 +166,7 @@ export default function WalletPage() {
     // --- VÉRIFIER LE STATUT DU PAIEMENT ---
     const startPaymentCheck = (paymentId: string) => {
         setIsCheckingPayment(true);
-        
+
         const checkInterval = setInterval(async () => {
             try {
                 const res = await fetch('/api/wallet/check-payment', {
@@ -182,9 +182,9 @@ export default function WalletPage() {
                     if (data.payment.localStatus === 'COMPLETED') {
                         clearInterval(checkInterval);
                         setIsCheckingPayment(false);
-                        setMessage({ 
-                            type: 'success', 
-                            text: '🎉 Paiement reçu ! Votre solde a été crédité.' 
+                        setMessage({
+                            type: 'success',
+                            text: '🎉 Paiement reçu ! Votre solde a été crédité.'
                         });
                         fetchBalance(); // Rafraîchir le solde
                         setPaymentData(null);
@@ -228,9 +228,9 @@ export default function WalletPage() {
         try {
             const res = await fetch('/api/wallet/withdraws', {
                 method: 'POST',
-                body: JSON.stringify({ 
-                    amount: withdrawAmount, 
-                    address: withdrawAddress 
+                body: JSON.stringify({
+                    amount: withdrawAmount,
+                    address: withdrawAddress
                 }),
                 headers: { 'Content-Type': 'application/json' }
             });
@@ -315,16 +315,16 @@ export default function WalletPage() {
                             </div>
 
                             <div className="grid grid-cols-3 gap-2 mb-6">
-  
+
                                 {/* Dépôt */}
                                 <button
                                     onClick={() => setActiveTab("deposit")}
                                     className={cn(
-                                    "py-3 px-4 rounded-xl font-bold text-sm transition-all",
-                                    "flex items-center justify-center gap-2 min-h-[48px]",
-                                    activeTab === "deposit"
-                                        ? "bg-accent-purple text-white"
-                                        : "bg-background-secondary text-text-secondary hover:bg-white/5"
+                                        "py-3 px-4 rounded-xl font-bold text-sm transition-all",
+                                        "flex items-center justify-center gap-2 min-h-[48px]",
+                                        activeTab === "deposit"
+                                            ? "bg-accent-purple text-white"
+                                            : "bg-background-secondary text-text-secondary hover:bg-white/5"
                                     )}
                                 >
                                     <ArrowDownLeft className="w-4 h-4" />
@@ -334,11 +334,11 @@ export default function WalletPage() {
                                 <button
                                     onClick={() => setActiveTab("withdraw")}
                                     className={cn(
-                                    "py-3 px-4 rounded-xl font-bold text-sm transition-all",
-                                    "flex items-center justify-center gap-2 min-h-[48px]",
-                                    activeTab === "withdraw"
-                                        ? "bg-primary text-background"
-                                        : "bg-background-secondary text-text-secondary hover:bg-white/5"
+                                        "py-3 px-4 rounded-xl font-bold text-sm transition-all",
+                                        "flex items-center justify-center gap-2 min-h-[48px]",
+                                        activeTab === "withdraw"
+                                            ? "bg-primary text-background"
+                                            : "bg-background-secondary text-text-secondary hover:bg-white/5"
                                     )}
                                 >
                                     <ArrowUpRight className="w-4 h-4" />
@@ -349,18 +349,18 @@ export default function WalletPage() {
                                 <button
                                     onClick={() => setActiveTab("history")}
                                     className={cn(
-                                    "py-3 px-4 rounded-xl font-bold text-sm transition-all",
-                                    "flex items-center justify-center gap-2 min-h-[48px]",
-                                    activeTab === "history"
-                                        ? "bg-blue-500 text-white"
-                                        : "bg-background-secondary text-text-secondary hover:bg-white/5"
+                                        "py-3 px-4 rounded-xl font-bold text-sm transition-all",
+                                        "flex items-center justify-center gap-2 min-h-[48px]",
+                                        activeTab === "history"
+                                            ? "bg-blue-500 text-white"
+                                            : "bg-background-secondary text-text-secondary hover:bg-white/5"
                                     )}
                                 >
                                     <History className="w-4 h-4" />
                                     <span>Historique</span>
                                 </button>
-                                
-                                </div>
+
+                            </div>
 
                         </div>
                     </div>
@@ -388,7 +388,7 @@ export default function WalletPage() {
                                                 </p>
                                             </div>
                                         </div>
-                                        <button 
+                                        <button
                                             onClick={() => { setActiveTab("deposit"); setSelectedCoin(crypto); }}
                                             className="text-xs font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity"
                                         >
@@ -461,7 +461,7 @@ export default function WalletPage() {
                                                     <code className="text-xs text-text-secondary truncate flex-1 font-mono">
                                                         {paymentData.payAddress.substring(0, 10)}...{paymentData.payAddress.substring(paymentData.payAddress.length - 10)}
                                                     </code>
-                                                    <button 
+                                                    <button
                                                         onClick={handleCopy}
                                                         className="p-1.5 hover:bg-white/10 rounded-md transition-colors text-text-secondary hover:text-white"
                                                     >
@@ -489,7 +489,7 @@ export default function WalletPage() {
                                             </div>
                                         )}
 
-                                        <button 
+                                        <button
                                             onClick={() => {
                                                 setPaymentData(null);
                                                 setDepositAmountUsd("");
@@ -506,11 +506,11 @@ export default function WalletPage() {
                                         <label className="text-xs text-text-tertiary mb-2 font-bold block">
                                             Montant du dépôt (USD)
                                         </label>
-                                        
+
                                         <div className="space-y-3">
                                             <div className="relative">
-                                                <input 
-                                                    type="number" 
+                                                <input
+                                                    type="number"
                                                     placeholder="10.00"
                                                     value={depositAmountUsd}
                                                     onChange={(e) => setDepositAmountUsd(e.target.value)}
@@ -523,14 +523,14 @@ export default function WalletPage() {
 
                                             {selectedCoin && depositAmountUsd && (
                                                 <div className="flex justify-between items-center text-xs px-1">
-                                                    <span className="text-text-tertiary">Min. dépôt :</span>
+                                                    <span className="text-text-tertiary">Dépôt Min. :</span>
                                                     <span className="text-white font-bold text-sm">
                                                         {formatToUSD(selectedCoin.minDeposit || 5)}
                                                     </span>
                                                 </div>
                                             )}
 
-                                            <button 
+                                            <button
                                                 onClick={handleDeposit}
                                                 disabled={isLoading || !depositAmountUsd || parseFloat(depositAmountUsd) <= 0}
                                                 className="w-full py-3 bg-accent-purple hover:bg-accent-purple/80 text-white text-sm font-bold rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
@@ -540,93 +540,93 @@ export default function WalletPage() {
                                         </div>
                                     </div>
                                 )}
-                                    {/* simulation paiement  */}
+                                {/* simulation paiement  */}
                                 <div className="mt-4 p-4 bg-purple-500/10 rounded-xl border border-purple-500/20 space-y-3">
                                     <p className="text-xs font-bold text-purple-400 flex items-center gap-2">
-                                    🧪 MODE TEST (DEV uniquement)
+                                        🧪 MODE TEST (DEV uniquement)
                                     </p>
-                                    
+
                                     <div className="flex gap-2">
-                                    <button
-                                        onClick={async () => {
-                                        setIsLoading(true)
-                                        try {
-                                            const res = await fetch('/api/wallet/simulate-payment', {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({
-                                                paymentId: paymentData?.id,
-                                                amountUsd: paymentData?.priceAmount,
-                                                withSurplus: false,
-                                            }),
-                                            })
-                                            
-                                            const data = await res.json()
-                                            
-                                            if (res.ok) {
-                                            setMessage({ type: 'success', text: data.message })
-                                            fetchBalance()
-                                            setPaymentData(null)
-                                            setDepositAmountUsd("")
-                                            } else {
-                                            setMessage({ type: 'error', text: data.error })
-                                            }
-                                        } catch (error) {
-                                            setMessage({ type: 'error', text: 'Erreur simulation' })
-                                        } finally {
-                                            setIsLoading(false)
-                                        }
-                                        }}
-                                        className="flex-1 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-400 text-xs font-bold rounded-lg transition-colors border border-green-500/30"
-                                    >
-                                        ✅ Simuler paiement exact
-                                    </button>
-                                    
-                                    <button
-                                        onClick={async () => {
-                                        setIsLoading(true)
-                                        try {
-                                            const res = await fetch('/api/wallet/simulate-payment', {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({
-                                                paymentId: paymentData?.id,
-                                                amountUsd: paymentData?.priceAmount,
-                                                withSurplus: true,
-                                            }),
-                                            })
-                                            
-                                            const data = await res.json()
-                                            
-                                            if (res.ok) {
-                                            setMessage({ type: 'success', text: data.message })
-                                            fetchBalance()
-                                            setPaymentData(null)
-                                            setDepositAmountUsd("")
-                                            } else {
-                                            setMessage({ type: 'error', text: data.error })
-                                            }
-                                        } catch (error) {
-                                            setMessage({ type: 'error', text: 'Erreur simulation' })
-                                        } finally {
-                                            setIsLoading(false)
-                                        }
-                                        }}
-                                        className="flex-1 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 text-xs font-bold rounded-lg transition-colors border border-purple-500/30"
-                                    >
-                                        🎁 Simuler avec surplus +50%
-                                    </button>
+                                        <button
+                                            onClick={async () => {
+                                                setIsLoading(true)
+                                                try {
+                                                    const res = await fetch('/api/wallet/simulate-payment', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({
+                                                            paymentId: paymentData?.id,
+                                                            amountUsd: paymentData?.priceAmount,
+                                                            withSurplus: false,
+                                                        }),
+                                                    })
+
+                                                    const data = await res.json()
+
+                                                    if (res.ok) {
+                                                        setMessage({ type: 'success', text: data.message })
+                                                        fetchBalance()
+                                                        setPaymentData(null)
+                                                        setDepositAmountUsd("")
+                                                    } else {
+                                                        setMessage({ type: 'error', text: data.error })
+                                                    }
+                                                } catch (error) {
+                                                    setMessage({ type: 'error', text: 'Erreur simulation' })
+                                                } finally {
+                                                    setIsLoading(false)
+                                                }
+                                            }}
+                                            className="flex-1 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-400 text-xs font-bold rounded-lg transition-colors border border-green-500/30"
+                                        >
+                                            ✅ Simuler paiement exact
+                                        </button>
+
+                                        <button
+                                            onClick={async () => {
+                                                setIsLoading(true)
+                                                try {
+                                                    const res = await fetch('/api/wallet/simulate-payment', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({
+                                                            paymentId: paymentData?.id,
+                                                            amountUsd: paymentData?.priceAmount,
+                                                            withSurplus: true,
+                                                        }),
+                                                    })
+
+                                                    const data = await res.json()
+
+                                                    if (res.ok) {
+                                                        setMessage({ type: 'success', text: data.message })
+                                                        fetchBalance()
+                                                        setPaymentData(null)
+                                                        setDepositAmountUsd("")
+                                                    } else {
+                                                        setMessage({ type: 'error', text: data.error })
+                                                    }
+                                                } catch (error) {
+                                                    setMessage({ type: 'error', text: 'Erreur simulation' })
+                                                } finally {
+                                                    setIsLoading(false)
+                                                }
+                                            }}
+                                            className="flex-1 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 text-xs font-bold rounded-lg transition-colors border border-purple-500/30"
+                                        >
+                                            🎁 Simuler avec surplus +50%
+                                        </button>
                                     </div>
-                                    
+
                                     <p className="text-[10px] text-text-tertiary">
-                                    Ces boutons simulent la réception d'un webhook NOWPayments et créditent votre wallet instantanément.
+                                        Ces boutons simulent la réception d'un webhook NOWPayments et créditent votre portefeuille instantanément.
                                     </p>
                                 </div>
                             </div>
-                            
+
                         )}
 
-                         {/* ================= ONGLET RETRAIT =================  */}
+                        {/* ================= ONGLET RETRAIT =================  */}
                         {activeTab === "withdraw" && (
                             <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
 
@@ -745,9 +745,9 @@ export default function WalletPage() {
                                     </h3>
                                     <PendingWithdrawals />
                                 </div>
-                                
 
-                                <button 
+
+                                <button
                                     onClick={handleWithdraw}
                                     disabled={isLoading || !withdrawCrypto}
                                     className="w-full py-3.5 bg-primary hover:bg-primary-hover text-background font-bold rounded-xl shadow-glow-gold transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
@@ -757,10 +757,10 @@ export default function WalletPage() {
                             </div>
                         )}
                         {activeTab === "history" && (
-                        <div>
-                            <h3 className="font-bold text-white text-lg mb-4">Historique des Transactions</h3>
-                            <TransactionHistory />
-                        </div>
+                            <div>
+                                <h3 className="font-bold text-white text-lg mb-4">Historique des Transactions</h3>
+                                <TransactionHistory />
+                            </div>
                         )}
                     </div>
                 </div>

@@ -68,7 +68,7 @@ export default function ProfilePage() {
                                 {USER.vipTier} VIP
                             </span>
                             {USER.kycStatus === "Verified" && (
-                                <CheckCircle2 className="w-5 h-5 text-success fill-success/10" title="Vérifié" />
+                                <CheckCircle2 className="w-5 h-5 text-success fill-success/10" />
                             )}
                         </div>
                         <p className="text-text-tertiary text-sm">ID Utilisateur: <span className="text-text-secondary font-mono">{USER.userId}</span></p>

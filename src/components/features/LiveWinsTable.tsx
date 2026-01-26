@@ -17,9 +17,9 @@ export function LiveWinsTable() {
             <div className="flex items-center justify-between p-4 border-b border-white/5 bg-white/5">
                 <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-success rounded-full animate-pulse" />
-                    <h3 className="font-display font-bold text-white text-lg">Live Wins</h3>
+                    <h3 className="font-display font-bold text-white text-lg">Gains en Direct</h3>
                 </div>
-                <span className="text-xs text-text-tertiary">Real-time Feed</span>
+                <span className="text-xs text-text-tertiary">Flux Temps Réel</span>
             </div>
 
             <div className="divide-y divide-white/5">
