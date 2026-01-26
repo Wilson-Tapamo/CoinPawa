@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Dices, Loader2, Trophy, XCircle, Plus, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -146,6 +147,7 @@ interface BetResult {
 }
 
 export default function DiceGame() {
+    const router = useRouter();
     // États des paris
     const [bets, setBets] = useState({
         under7: 0,
@@ -214,6 +216,7 @@ export default function DiceGame() {
                     setLastResults(data.result.betResults);
                     setTotalPayout(data.result.totalPayout);
                     setIsRolling(false);
+                    router.refresh();
                 }, 1500);
             } else {
                 setError(data.error || "Une erreur est survenue");

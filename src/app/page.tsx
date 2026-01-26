@@ -3,46 +3,37 @@
 import { useState, useEffect, useMemo } from "react";
 import { Bitcoin, Plus, ArrowUpRight, TrendingUp, Sparkles, Filter, LogIn, UserPlus, LogOut, Loader2, Search } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { GameCard } from "@/components/features/GameCard";
 import { LiveWinsTable } from "@/components/features/LiveWinsTable";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 // --- DONNÉES DES JEUX ---
 const ALL_GAMES = [
-  { title: "Dice", provider: "CoinPower Originals", image: "from-blue-600 to-indigo-600", imageSrc: "/games/dice.png", isHot: true, RTP: "99.0", link: "/games/dice", category: "originals" },
+  { title: "Dés", provider: "CoinPower Originals", image: "from-blue-600 to-indigo-600", imageSrc: "/games/dice.png", isHot: true, RTP: "99.0", link: "/games/dice", category: "originals" },
   { title: "Roulette", provider: "CoinPower Originals", image: "from-red-600 to-rose-600", imageSrc: "/games/roulette.png", isHot: true, RTP: "97.3", link: "/games/roulette", category: "originals" },
-  { title: "Spin Wheel", provider: "CoinPower Originals", image: "from-purple-600 to-violet-500", imageSrc: "/games/wheel.png", isNew: true, RTP: "95.0", link: "/games/wheel", category: "originals" },
+  { title: "Roue de la Fortune", provider: "CoinPower Originals", image: "from-purple-600 to-violet-500", imageSrc: "/games/wheel.png", isNew: true, RTP: "95.0", link: "/games/wheel", category: "originals" },
   { title: "Crash", provider: "CoinPower Originals", image: "from-orange-600 to-amber-500", imageSrc: "/games/crash.png", isHot: false, RTP: "99.0", link: "/games/crash", category: "originals" },
-  { title: "Chaos Crew 2", provider: "Hacksaw", image: "from-stone-900 to-stone-700", isNew: true, category: "slots" },
-  { title: "Zeus vs Hades", provider: "Pragmatic Play", image: "from-blue-900 to-cyan-700", isHot: true, category: "slots" },
-  { title: "Rip City", provider: "Hacksaw", image: "from-slate-800 to-slate-600", RTP: "96.4", category: "slots" },
-  { title: "Money Train 4", provider: "Relax Gaming", image: "from-amber-900 to-yellow-700", isHot: true, category: "slots" },
-  { title: "Blackjack VIP", provider: "Evolution", image: "from-emerald-800 to-green-600", category: "table" },
-  { title: "Baccarat", provider: "Evolution", image: "from-red-800 to-rose-600", category: "table" },
-  { title: "Mega Roulette", provider: "Pragmatic Live", image: "from-purple-800 to-fuchsia-600", isHot: true, category: "live" },
-  { title: "Crazy Time", provider: "Evolution", image: "from-yellow-600 to-orange-500", isHot: true, category: "live" },
 ];
 
 // Catégories avec mapping
 const CATEGORIES = [
   { id: "lobby", label: "Lobby" },
-  { id: "slots", label: "Machines à Sous" },
-  { id: "live", label: "Casino Live" },
-  { id: "table", label: "Jeux de Table" },
   { id: "originals", label: "Originaux" },
   { id: "new", label: "Nouveautés" },
 ];
 
 export default function Home() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlQuery = searchParams.get("query") || "";
 
   // --- ÉTATS ---
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [balance, setBalance] = useState("0");
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("lobby");
-  const [searchQuery, setSearchQuery] = useState("");
 
   // --- VÉRIFICATION DE LA CONNEXION ---
   useEffect(() => {
@@ -79,9 +70,9 @@ export default function Home() {
       }
     }
 
-    // Filtre par recherche
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
+    // Filtre par recherche (URL query from Header)
+    if (urlQuery.trim()) {
+      const query = urlQuery.toLowerCase();
       games = games.filter(
         (g) =>
           g.title.toLowerCase().includes(query) ||
@@ -90,16 +81,11 @@ export default function Home() {
     }
 
     return games;
-  }, [selectedCategory, searchQuery]);
+  }, [selectedCategory, urlQuery]);
 
   // Jeux vedettes (pour la section principale)
   const featuredGames = useMemo(() => {
-    return filteredGames.filter((g) => g.category === "originals" || g.isHot).slice(0, 6);
-  }, [filteredGames]);
-
-  // Nouveautés
-  const newGames = useMemo(() => {
-    return filteredGames.filter((g) => g.isNew || g.category === "slots").slice(0, 4);
+    return filteredGames; // On affiche tout ce qui est filtré dans la zone principale
   }, [filteredGames]);
 
   // --- DÉCONNEXION ---
@@ -121,10 +107,20 @@ export default function Home() {
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {/* --- CARTE PRINCIPALE (Balance OU Login) --- */}
-        <div className="lg:col-span-2 relative h-64 md:h-80 rounded-2xl overflow-hidden shadow-glow-purple/20 group transition-all">
-          <div className="absolute inset-0 bg-gradient-to-r from-accent-violet to-indigo-900" />
-          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
-          <div className="absolute -right-10 -top-10 w-64 h-64 bg-accent-cyan/30 blur-[100px] rounded-full mix-blend-screen animate-pulse-slow" />
+        <div className="lg:col-span-2 relative h-64 md:h-80 rounded-2xl overflow-hidden shadow-glow-purple/20 group transition-all group">
+          {/* Background Image */}
+          <div className="absolute inset-0 z-0">
+            <Image
+              src="/welcome_bg.png"
+              alt="Welcome Background"
+              fill
+              className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-1000"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-accent-violet/80 to-indigo-900/60" />
+          </div>
+
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-1" />
+          <div className="absolute -right-10 -top-10 w-64 h-64 bg-accent-cyan/30 blur-[100px] rounded-full mix-blend-screen animate-pulse-slow z-1" />
 
           {isLoading ? (
             <div className="relative z-10 w-full h-full flex items-center justify-center">
@@ -189,9 +185,15 @@ export default function Home() {
         </div>
 
         {/* Promotions / Mini Banner */}
-        <div className="hidden lg:block h-80 rounded-2xl bg-gradient-to-br from-surface to-background-secondary border border-white/5 relative overflow-hidden group">
+        <div className="hidden lg:block h-80 rounded-2xl border border-white/5 relative overflow-hidden group">
+          <Image
+            src="/bonus_bg.png"
+            alt="Bonus Background"
+            fill
+            className="object-cover opacity-80 group-hover:scale-110 transition-transform duration-700"
+          />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 z-10" />
-          <div className="absolute inset-0 bg-gradient-to-tr from-accent-rose/20 to-orange-500/20" />
+          <div className="absolute inset-0 bg-gradient-to-tr from-accent-rose/20 to-orange-500/20 z-0" />
 
           <div className="relative z-20 h-full p-6 flex flex-col justify-end">
             <div className="px-3 py-1 bg-accent-rose text-white text-xs font-bold uppercase tracking-wide rounded-full w-fit mb-3">
@@ -208,21 +210,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 2. BARRE DE RECHERCHE + CATÉGORIES */}
+      {/* 2. CATÉGORIES */}
       <section className="space-y-4">
-        {/* Barre de recherche mobile */}
-        <div className="md:hidden relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
-          <input
-            type="text"
-            placeholder="Rechercher un jeu..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-surface/50 border border-white/5 rounded-full py-2.5 pl-10 pr-4 text-sm text-white placeholder-text-tertiary focus:outline-none focus:border-primary/50 focus:bg-surface transition-all"
-          />
-        </div>
-
-        {/* Catégories */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
           {CATEGORIES.map((cat) => (
             <button
@@ -238,24 +227,23 @@ export default function Home() {
               {cat.label}
             </button>
           ))}
-          <button className="ml-auto px-3 py-2 rounded-lg bg-surface border border-white/5 text-text-secondary hover:text-white">
-            <Filter className="w-4 h-4" />
-          </button>
         </div>
       </section>
 
-      {/* 3. JEUX VEDETTES */}
+      {/* 3. JEUX */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
-            <h2 className="text-xl font-bold text-white font-display">Nos Jeux Vedettes</h2>
+            <h2 className="text-xl font-bold text-white font-display">
+              {urlQuery ? `Résultats pour "${urlQuery}"` : "Nos Jeux Vedettes"}
+            </h2>
           </div>
-          <a href="#" className="text-xs font-bold text-text-tertiary hover:text-text-primary uppercase tracking-wider">Voir Tout</a>
+          {!urlQuery && <a href="#" className="text-xs font-bold text-text-tertiary hover:text-text-primary uppercase tracking-wider">Voir Tout</a>}
         </div>
 
         {featuredGames.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {featuredGames.map((game, i) => (
               <Link key={i} href={game.link || '#'}>
                 <GameCard {...game} />
@@ -264,35 +252,15 @@ export default function Home() {
           </div>
         ) : (
           <div className="text-center py-12 text-text-secondary">
-            Aucun jeu trouvé pour cette catégorie.
+            Aucun jeu trouvé.
           </div>
         )}
       </section>
 
-      {/* 4. GAINS EN DIRECT & NOUVEAUTÉS */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1">
+      {/* 4. GAINS EN DIRECT */}
+      <section className="grid grid-cols-1 gap-8">
+        <div className="w-full">
           <LiveWinsTable />
-        </div>
-
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center gap-2 mb-4">
-            <TrendingUp className="w-5 h-5 text-accent-cyan" />
-            <h2 className="text-xl font-bold text-white font-display">Nouveautés</h2>
-          </div>
-          {newGames.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {newGames.map((game, i) => (
-                <Link key={i} href={game.link || '#'}>
-                  <GameCard {...game} />
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-text-secondary">
-              Aucune nouveauté disponible.
-            </div>
-          )}
         </div>
       </section>
     </div>

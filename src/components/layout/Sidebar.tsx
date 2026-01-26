@@ -7,14 +7,11 @@ import { Home, Gamepad2, Wallet, User, Zap, Trophy, Settings } from "lucide-reac
 
 export const NAV_ITEMS = [
     { label: "Accueil", href: "/", icon: Home },
-    { label: "Jeux", href: "/games", icon: Gamepad2 },
     { label: "Portefeuille", href: "/wallet", icon: Wallet },
     { label: "Profil", href: "/profile", icon: User },
 ];
 
 export const SECONDARY_NAV_ITEMS = [
-    { label: "Promotions", href: "/promotions", icon: Zap },
-    { label: "Tournois", href: "/tournaments", icon: Trophy },
     { label: "Paramètres", href: "/settings", icon: Settings },
 ];
 
@@ -83,18 +80,6 @@ export function Sidebar() {
                     );
                 })}
             </nav>
-
-            {/* Footer / CTA Area */}
-            <div className="p-4">
-                <div className="p-4 rounded-xl bg-gradient-to-br from-accent-violet to-accent-violet-glow/20 border border-white/10 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 -mt-2 -mr-2 w-16 h-16 bg-white/20 blur-2xl rounded-full group-hover:bg-white/30 transition-all" />
-                    <h4 className="relative font-bold text-white mb-1">Club VIP</h4>
-                    <p className="relative text-xs text-white/80 mb-3">Rejoignez pour des récompenses exclusives</p>
-                    <button className="relative w-full py-2 bg-white text-accent-violet font-bold text-xs rounded-lg hover:bg-white/90 transition-colors">
-                        Passer au VIP
-                    </button>
-                </div>
-            </div>
         </aside>
     );
 }
