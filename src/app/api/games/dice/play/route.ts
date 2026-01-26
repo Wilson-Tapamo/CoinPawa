@@ -152,7 +152,7 @@ export async function POST(request: Request) {
                         results: betResults,
                         hasAnyWin,
                         multipliers: MULTIPLIERS
-                    },
+                    } as any,
                     clientSeed: "TODO",
                     serverSeedHash: "TODO",
                     nonce: 1
