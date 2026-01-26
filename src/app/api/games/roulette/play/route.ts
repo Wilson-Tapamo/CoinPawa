@@ -5,59 +5,88 @@ import { Prisma } from '@prisma/client'
 
 export async function POST(request: Request) {
     try {
-        // 1. Auth & Validation
         const userId = await verifySession()
         if (!userId) return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
 
         const body = await request.json()
-        const { amount, color } = body // amount in Sats/USD, color: 'red' | 'black' | 'green'
+        const { bets } = body as { bets: { [key: string]: number } } // e.g., { "7": 100, "red": 500, "1st12": 200 }
 
-        if (!amount || amount <= 0) {
-            return NextResponse.json({ error: "Montant invalide" }, { status: 400 })
+        if (!bets || Object.keys(bets).length === 0) {
+            return NextResponse.json({ error: "Aucun pari placé" }, { status: 400 })
         }
-        if (!['red', 'black', 'green'].includes(color)) {
-            return NextResponse.json({ error: "Couleur invalide (red/black/green)" }, { status: 400 })
-        }
+
+        const totalBetAmount = Object.values(bets).reduce((acc, val) => acc + val, 0);
 
         // 2. Wallet Check
         const wallet = await prisma.wallet.findUnique({ where: { userId } })
-        if (!wallet) return NextResponse.json({ error: "Wallet introuvable" }, { status: 404 })
+        if (!wallet) return NextResponse.json({ error: "Portefeuille introuvable" }, { status: 404 })
 
-        if (wallet.balanceSats < BigInt(amount)) {
+        if (wallet.balanceSats < BigInt(totalBetAmount)) {
             return NextResponse.json({ error: "Fonds insuffisants" }, { status: 400 })
         }
 
-        // 3. Game Logic (European Roulette: 0-36)
-        // 0 = Green
-        // 1-10, 19-28: Odd=Red, Even=Black
-        // 11-18, 29-36: Odd=Black, Even=Red
-        // Simplification pour l'instant : Array mapping
+        // 3. Logic de la Roulette Européenne (0-36)
+        const winningNumber = Math.floor(Math.random() * 37);
+
         const RED_NUMBERS = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
         const BLACK_NUMBERS = [2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35];
 
-        const winningNumber = Math.floor(Math.random() * 37); // 0 to 36
-
-        let winningColor = 'green';
+        let winningColor: 'red' | 'black' | 'green' = 'green';
         if (RED_NUMBERS.includes(winningNumber)) winningColor = 'red';
         else if (BLACK_NUMBERS.includes(winningNumber)) winningColor = 'black';
 
-        const isWin = color === winningColor;
+        // Calcul des gains
+        let totalPayout = 0;
+        const betResults: any[] = [];
 
-        // Multipliers: Red/Black = x2, Green (0) = x36 (Standard Roulette usually x36 for straight up, but x14 for color bet on green is not standard, usually you bet on number. 
-        // Assuming simple color betting here: Red/Black x2, Green x14 (Home brew rule or standard is usually 35:1 for single number)
-        // Let's stick to simple Color Game: Red/Black x2. Green x14 (Probability 1/37 ~ 2.7%, 14x is safe for house)
+        for (const [betType, amount] of Object.entries(bets)) {
+            let isWin = false;
+            let multiplier = 0;
 
-        let multiplier = 0;
-        if (isWin) {
-            if (color === 'green') multiplier = 14; // High risk high reward for green
-            else multiplier = 2; // Standard double for Red/Black
+            // Simple Numbers (0-36)
+            if (!isNaN(Number(betType))) {
+                if (Number(betType) === winningNumber) {
+                    isWin = true;
+                    multiplier = 36;
+                }
+            }
+            // Colors
+            else if (betType === 'red' && winningColor === 'red') { isWin = true; multiplier = 2; }
+            else if (betType === 'black' && winningColor === 'black') { isWin = true; multiplier = 2; }
+            else if (betType === 'green' && winningColor === 'green') { isWin = true; multiplier = 36; }
+
+            // Halves
+            else if (betType === '1-18' && winningNumber >= 1 && winningNumber <= 18) { isWin = true; multiplier = 2; }
+            else if (betType === '19-36' && winningNumber >= 19 && winningNumber <= 36) { isWin = true; multiplier = 2; }
+
+            // Even/Odd
+            else if (betType === 'even' && winningNumber !== 0 && winningNumber % 2 === 0) { isWin = true; multiplier = 2; }
+            else if (betType === 'odd' && winningNumber !== 0 && winningNumber % 2 !== 0) { isWin = true; multiplier = 2; }
+
+            // Dozens
+            else if (betType === '1st12' && winningNumber >= 1 && winningNumber <= 12) { isWin = true; multiplier = 3; }
+            else if (betType === '2nd12' && winningNumber >= 13 && winningNumber <= 24) { isWin = true; multiplier = 3; }
+            else if (betType === '3rd12' && winningNumber >= 25 && winningNumber <= 36) { isWin = true; multiplier = 3; }
+
+            // Columns
+            else if (betType === 'col1' && winningNumber !== 0 && winningNumber % 3 === 1) { isWin = true; multiplier = 3; }
+            else if (betType === 'col2' && winningNumber !== 0 && winningNumber % 3 === 2) { isWin = true; multiplier = 3; }
+            else if (betType === 'col3' && winningNumber !== 0 && winningNumber % 3 === 0) { isWin = true; multiplier = 3; }
+
+            const payout = isWin ? Math.floor(amount * multiplier) : 0;
+            totalPayout += payout;
+
+            betResults.push({
+                type: betType,
+                amount,
+                isWin,
+                payout,
+                multiplier
+            });
         }
-
-        const payout = isWin ? Math.floor(amount * multiplier) : 0
 
         // 4. Transaction
         const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-            // Upsert Game
             const game = await tx.game.upsert({
                 where: { slug: 'roulette' },
                 update: {},
@@ -66,18 +95,18 @@ export async function POST(request: Request) {
                     name: 'Roulette',
                     type: 'INSTANT',
                     isActive: true,
-                    rules: "Pariez sur Rouge (x2), Noir (x2) ou Vert (x14).",
+                    rules: "Roulette européenne complète avec tous les types de paris.",
                     config: { houseEdge: 0.027 }
                 }
             })
 
-            const netChange = BigInt(payout) - BigInt(amount)
+            const netChange = BigInt(totalPayout) - BigInt(totalBetAmount)
 
             const updatedWallet = await tx.wallet.update({
                 where: { id: wallet.id },
                 data: {
                     balanceSats: { increment: netChange },
-                    totalWageredSats: { increment: amount }
+                    totalWageredSats: { increment: totalBetAmount }
                 }
             })
 
@@ -85,23 +114,23 @@ export async function POST(request: Request) {
                 data: {
                     walletId: wallet.id,
                     gameId: game.id,
-                    betAmountSats: amount,
-                    payoutAmountSats: payout,
+                    betAmountSats: totalBetAmount,
+                    payoutAmountSats: totalPayout,
                     status: 'COMPLETED',
                     gameData: {
                         winningNumber,
                         winningColor,
-                        betColor: color,
-                        isWin,
-                        multiplier
-                    },
-                    clientSeed: "TODO",
-                    serverSeedHash: "TODO",
+                        bets,
+                        betResults,
+                        totalPayout
+                    } as any,
+                    clientSeed: "roulette",
+                    serverSeedHash: "roulette",
                     nonce: 1
                 }
             })
 
-            return { updatedWallet, round, winningNumber, winningColor, isWin, payout }
+            return { updatedWallet, round, winningNumber, winningColor, totalPayout }
         })
 
         return NextResponse.json({
@@ -109,8 +138,7 @@ export async function POST(request: Request) {
             result: {
                 number: result.winningNumber,
                 color: result.winningColor,
-                isWin: result.isWin,
-                payout: result.payout,
+                payout: result.totalPayout,
                 newBalance: result.updatedWallet.balanceSats.toString()
             }
         })
