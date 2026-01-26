@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2, Trophy, XCircle, RotateCw } from "lucide-react";
 import { cn, formatToUSD } from "@/lib/utils";
 
@@ -8,6 +9,7 @@ import { cn, formatToUSD } from "@/lib/utils";
 // const WHEEL_NUMBERS = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
 
 export default function RouletteGame() {
+    const router = useRouter();
     const [betColor, setBetColor] = useState<'red' | 'black' | 'green' | null>(null);
     const [betAmount, setBetAmount] = useState<string>("10");
     const [isSpinning, setIsSpinning] = useState(false);
@@ -48,6 +50,7 @@ export default function RouletteGame() {
                         payout: data.result.payout
                     });
                     setIsSpinning(false);
+                    router.refresh();
                 }, 2000); // 2s spin
             } else {
                 setError(data.error || "Une erreur est survenue");
@@ -81,12 +84,12 @@ export default function RouletteGame() {
                             <h2 className="text-3xl font-display font-bold text-white mb-2 flex items-center gap-3">
                                 <RotateCw className="w-8 h-8 text-primary" /> Roulette
                             </h2>
-                            <p className="text-text-secondary">Bet on Red (x2), Black (x2) or Green (x14).</p>
+                            <p className="text-text-secondary">Misez sur le Rouge (x2), le Noir (x2) ou le Vert (x14).</p>
                         </div>
 
                         {/* Bet Amount */}
                         <div className="bg-background-secondary p-4 rounded-2xl border border-white/5">
-                            <label className="text-xs font-bold text-text-tertiary uppercase mb-2 block">Bet Amount</label>
+                            <label className="text-xs font-bold text-text-tertiary uppercase mb-2 block">Montant de la mise</label>
                             <div className="flex gap-2">
                                 <input
                                     type="number"
@@ -110,7 +113,7 @@ export default function RouletteGame() {
                                 )}
                             >
                                 <span className="w-8 h-8 rounded-full bg-red-500 shadow-lg mb-1" />
-                                <span className="uppercase text-xs font-bold">Red (x2)</span>
+                                <span className="uppercase text-xs font-bold">Rouge (x2)</span>
                             </button>
 
                             <button
@@ -123,7 +126,7 @@ export default function RouletteGame() {
                                 )}
                             >
                                 <span className="w-8 h-8 rounded-full bg-green-500 shadow-lg mb-1" />
-                                <span className="uppercase text-xs font-bold">Green (x14)</span>
+                                <span className="uppercase text-xs font-bold">Vert (x14)</span>
                             </button>
 
                             <button
@@ -136,7 +139,7 @@ export default function RouletteGame() {
                                 )}
                             >
                                 <span className="w-8 h-8 rounded-full bg-zinc-800 border border-white/10 shadow-lg mb-1" />
-                                <span className="uppercase text-xs font-bold">Black (x2)</span>
+                                <span className="uppercase text-xs font-bold">Noir (x2)</span>
                             </button>
                         </div>
 
@@ -145,7 +148,7 @@ export default function RouletteGame() {
                             disabled={isSpinning || !betAmount || parseInt(betAmount) <= 0 || !betColor}
                             className="w-full py-5 bg-primary hover:bg-primary-hover text-background text-lg font-bold rounded-2xl shadow-glow-gold transition-all disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-95"
                         >
-                            {isSpinning ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : "Spin Roulette"}
+                            {isSpinning ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : "Lancer la Roulette"}
                         </button>
 
                         {error && (
@@ -166,7 +169,7 @@ export default function RouletteGame() {
                             <div className="absolute inset-0 rounded-full border-4 border-dashed border-white/10" />
                             {/* Central Hub */}
                             <div className="w-16 h-16 bg-gradient-to-br from-yellow-500 to-amber-700 rounded-full shadow-lg z-20 flex items-center justify-center border-4 border-[#2A2E3B]">
-                                <span className="text-background font-bold text-xs uppercase">Spin</span>
+                                <span className="text-background font-bold text-xs uppercase">Tourner</span>
                             </div>
 
                             {/* Mock Sectors (Just visual decoration) */}

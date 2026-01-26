@@ -38,12 +38,12 @@ export function HeaderActions({ isLoggedIn, initialBalance, username }: HeaderAc
       <div className="flex items-center gap-2">
         <Link href="/login">
           <button className="hidden md:block px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-xs font-bold rounded-lg border border-white/10 transition-colors">
-            Log In
+            Connexion
           </button>
         </Link>
         <Link href="/login?tab=register">
           <button className="px-4 py-2 bg-primary hover:bg-primary-hover text-background text-xs font-bold rounded-lg shadow-glow-gold transition-transform hover:scale-105">
-            Sign Up
+            S'inscrire
           </button>
         </Link>
       </div>
@@ -93,7 +93,7 @@ export function HeaderActions({ isLoggedIn, initialBalance, username }: HeaderAc
           title="Déconnexion"
         >
           {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
-          <span className="hidden md:inline">LogOut</span>
+          <span className="hidden md:inline">Déconnexion</span>
         </button>
       </div>
     </div>

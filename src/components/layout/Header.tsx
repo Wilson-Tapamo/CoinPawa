@@ -1,7 +1,7 @@
-import { Search } from "lucide-react";
 import { verifySession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { HeaderActions } from "./HeaderAction";
+import { HeaderSearch } from "./HeaderSearch";
 
 export async function Header() {
     const userId = await verifySession();
@@ -35,15 +35,8 @@ export async function Header() {
                 <span className="text-xl font-display font-bold text-white tracking-tight">CoinPower</span>
             </div>
 
-            {/* Barre de recherche */}
-            <div className="hidden md:flex flex-1 max-w-md relative group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary group-focus-within:text-primary transition-colors" />
-                <input
-                    type="text"
-                    placeholder="Rechercher un jeu..."
-                    className="w-full bg-surface/50 border border-white/5 rounded-full py-2.5 pl-10 pr-4 text-sm text-white placeholder-text-tertiary focus:outline-none focus:border-primary/50 focus:bg-surface transition-all"
-                />
-            </div>
+            {/* Barre de recherche (Client Side for interaction) */}
+            <HeaderSearch />
 
             <div className="ml-auto">
                 {/* ✅ IMPORTANT : On passe bien 'username' ici */}
