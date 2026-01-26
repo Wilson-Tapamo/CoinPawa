@@ -83,7 +83,7 @@ export default function ProfilePage() {
                         <div className="h-2 w-full bg-background-secondary rounded-full overflow-hidden">
                             <div className="h-full bg-gradient-to-r from-primary to-accent-rose w-[75%] shadow-glow-gold/50" />
                         </div>
-                        <p className="text-[10px] text-text-tertiary mt-1 text-right">{540} XP pour atteindre le Niveau {USER.level + 1}</p>
+                        <p className="text-[10px] text-text-tertiary mt-1 text-right">540 XP pour atteindre le Niveau {USER.level + 1}</p>
                     </div>
                 </div>
             </div>
