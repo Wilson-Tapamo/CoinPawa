@@ -253,11 +253,29 @@ export default function WalletPage() {
     };
 
     // --- UTILITAIRES ---
-    const handleCopy = () => {
-        if (paymentData) {
-            navigator.clipboard.writeText(paymentData.payAddress);
+   const handleCopy = async () => {
+    if (paymentData) {
+        try {
+            await navigator.clipboard.writeText(paymentData.payAddress);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
+        } catch (error) {
+            // Fallback pour les navigateurs qui bloquent clipboard
+            const textArea = document.createElement('textarea');
+            textArea.value = paymentData.payAddress;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+            } catch (err) {
+                console.error('Erreur copie:', err);
+            }
+            document.body.removeChild(textArea);
+            }
         }
     };
 
@@ -455,20 +473,36 @@ export default function WalletPage() {
                                             <div className="p-2 bg-white rounded-lg mb-4 shadow-lg">
                                                 <QrCode className="w-32 h-32 text-black" />
                                             </div>
-                                            <div className="w-full">
-                                                <label className="text-[10px] font-bold text-text-tertiary uppercase mb-1 block">Adresse {selectedCoin?.network}</label>
-                                                <div className="flex items-center gap-2 p-3 bg-black/20 rounded-lg border border-white/10 group hover:border-white/20 transition-colors">
-                                                    <code className="text-xs text-text-secondary truncate flex-1 font-mono">
-                                                        {paymentData.payAddress.substring(0, 10)}...{paymentData.payAddress.substring(paymentData.payAddress.length - 10)}
-                                                    </code>
-                                                    <button
-                                                        onClick={handleCopy}
-                                                        className="p-1.5 hover:bg-white/10 rounded-md transition-colors text-text-secondary hover:text-white"
-                                                    >
-                                                        {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                                                    </button>
-                                                </div>
+                                            <div className="space-y-3">
+                                                <label className="text-xs font-bold text-primary uppercase">
+                                                    📍 Adresse de paiement USDT TRC20
+                                                </label>
+                                                
+                                                <input 
+                                                    type="text"
+                                                    readOnly
+                                                    value={paymentData.payAddress}
+                                                    onClick={(e) => {
+                                                        e.currentTarget.select();
+                                                        navigator.clipboard.writeText(paymentData.payAddress);
+                                                        setCopied(true);
+                                                        setTimeout(() => setCopied(false), 2000);
+                                                    }}
+                                                    className="w-full bg-background-secondary text-white font-mono text-sm p-3 rounded-lg border-2 border-primary/30 cursor-pointer hover:border-primary transition-colors"
+                                                    placeholder="Cliquez pour sélectionner et copier"
+                                                />
+                                                
+                                                {copied && (
+                                                    <p className="text-xs text-green-500 font-bold flex items-center gap-1">
+                                                        <Check className="w-3 h-3" /> Adresse copiée dans le presse-papier !
+                                                    </p>
+                                                )}
+                                                
+                                                <p className="text-[10px] text-text-tertiary">
+                                                    💡 Cliquez sur l'adresse pour la sélectionner automatiquement
+                                                </p>
                                             </div>
+
                                         </div>
 
                                         <div className="p-4 bg-accent-purple/10 rounded-xl border border-accent-purple/20">

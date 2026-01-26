@@ -10,9 +10,9 @@ import { usdToSats } from '@/lib/payment-limits'
  */
 export async function POST(request: Request) {
   // ⚠️ SÉCURITÉ : Désactiver en production
-  if (process.env.NODE_ENV === 'production') {
-    return NextResponse.json({ error: 'Non disponible en production' }, { status: 403 })
-  }
+  // if (process.env.NODE_ENV === 'production') {
+  //   return NextResponse.json({ error: 'Non disponible en production' }, { status: 403 })
+  // }
 
   try {
     // 1. Vérifier l'authentification

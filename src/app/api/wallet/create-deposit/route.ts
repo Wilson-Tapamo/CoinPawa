@@ -52,12 +52,15 @@ export async function POST(request: Request) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
     const ipnCallbackUrl = `${appUrl}/api/webhooks/nowpayments`
 
-    logPayment('CREATE_PAYMENT_REQUEST', {
-      orderId,
-      amount,
-      currency,
-      userId,
-    })
+    // 🆕 LOG FORCÉ
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    console.log('🔷 CREATE_PAYMENT_REQUEST')
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    console.log('orderId:', orderId)
+    console.log('amount:', amount)
+    console.log('currency:', currency)
+    console.log('ipnCallbackUrl:', ipnCallbackUrl)  // 🔥 LA LIGNE IMPORTANTE !
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n')
 
     const payment = await createPayment({
       priceAmount: amount,
@@ -67,7 +70,13 @@ export async function POST(request: Request) {
       ipnCallbackUrl,
     })
 
-    logPayment('CREATE_PAYMENT_RESPONSE', payment)
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    console.log('🔷 CREATE_PAYMENT_RESPONSE')
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    console.log('payment_id:', payment.payment_id)
+    console.log('pay_address:', payment.pay_address)
+    console.log('pay_amount:', payment.pay_amount)
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n')
 
     // 7. Créer la transaction en BDD (status: PENDING)
     const transaction = await prisma.transaction.create({
