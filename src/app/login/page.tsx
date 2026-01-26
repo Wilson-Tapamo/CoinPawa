@@ -133,7 +133,7 @@ export default function LoginPage() {
                     <p className="text-gray-500">Casino Crypto Nouvelle Génération</p>
                 </div>
 
-                {/* Tabs (Juste Login et Register) */}
+                {/* Tabs */}
                 <div className="flex bg-white/5 p-1 rounded-xl mb-6 backdrop-blur-sm border border-white/5">
                     {(["login", "register"] as const).map((tab) => (
                         <button
@@ -146,7 +146,7 @@ export default function LoginPage() {
                                     : "text-gray-500 hover:text-white"
                             )}
                         >
-                            {tab}
+                            {tab === "login" ? "Connexion" : "Inscription"}
                         </button>
                     ))}
                 </div>
@@ -167,7 +167,7 @@ export default function LoginPage() {
                         <div className="space-y-6 animate-in slide-in-from-left-4 fade-in duration-300">
                             <div className="space-y-4">
                                 <div>
-                                    <label className="text-xs font-bold text-gray-500 uppercase mb-1.5 block">Username</label>
+                                    <label className="text-xs font-bold text-gray-500 uppercase mb-1.5 block">Pseudo</label>
                                     <div className="relative">
                                         <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                                         <input
@@ -176,12 +176,12 @@ export default function LoginPage() {
                                             value={formData.username}
                                             onChange={handleChange}
                                             className="w-full bg-[#0F1218]/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-purple-500/50 transition-colors placeholder:text-gray-600"
-                                            placeholder="Enter your username"
+                                            placeholder="Entrez votre pseudo"
                                         />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="text-xs font-bold text-gray-500 uppercase mb-1.5 block">Password</label>
+                                    <label className="text-xs font-bold text-gray-500 uppercase mb-1.5 block">Mot de passe</label>
                                     <div className="relative">
                                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                                         <input
@@ -201,7 +201,7 @@ export default function LoginPage() {
                                 disabled={isLoading}
                                 className="w-full py-3.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-lg transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2 disabled:opacity-50"
                             >
-                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><span className="mr-1">Log In</span> <ArrowRight className="w-5 h-5" /></>}
+                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><span className="mr-1">Se connecter</span> <ArrowRight className="w-5 h-5" /></>}
                             </button>
                         </div>
                     )}
@@ -211,7 +211,7 @@ export default function LoginPage() {
                         <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
                             <div className="space-y-4">
                                 <div>
-                                    <label className="text-xs font-bold text-gray-500 uppercase mb-1.5 block">Username</label>
+                                    <label className="text-xs font-bold text-gray-500 uppercase mb-1.5 block">Pseudo</label>
                                     <div className="relative">
                                         <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                                         <input
@@ -220,12 +220,12 @@ export default function LoginPage() {
                                             value={formData.username}
                                             onChange={handleChange}
                                             className="w-full bg-[#0F1218]/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-purple-500/50 transition-colors placeholder:text-gray-600"
-                                            placeholder="Choose a username"
+                                            placeholder="Choisissez un pseudo"
                                         />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="text-xs font-bold text-gray-500 uppercase mb-1.5 block">Password</label>
+                                    <label className="text-xs font-bold text-gray-500 uppercase mb-1.5 block">Mot de passe</label>
                                     <div className="relative">
                                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                                         <input
@@ -234,12 +234,12 @@ export default function LoginPage() {
                                             value={formData.password}
                                             onChange={handleChange}
                                             className="w-full bg-[#0F1218]/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-purple-500/50 transition-colors placeholder:text-gray-600"
-                                            placeholder="Create a password"
+                                            placeholder="Creez un mot de passe"
                                         />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="text-xs font-bold text-gray-500 uppercase mb-1.5 block">Email Address <span className="text-gray-600 font-normal normal-case">(Optional)</span></label>
+                                    <label className="text-xs font-bold text-gray-500 uppercase mb-1.5 block">Adresse Email <span className="text-gray-600 font-normal normal-case">(Optionnel)</span></label>
                                     <div className="relative">
                                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                                         <input
@@ -248,7 +248,7 @@ export default function LoginPage() {
                                             value={formData.email}
                                             onChange={handleChange}
                                             className="w-full bg-[#0F1218]/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-purple-500/50 transition-colors placeholder:text-gray-600"
-                                            placeholder="Enter your email"
+                                            placeholder="Entrez votre email"
                                         />
                                     </div>
                                 </div>
@@ -259,11 +259,11 @@ export default function LoginPage() {
                                 disabled={isLoading}
                                 className="w-full py-3.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-lg transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2 disabled:opacity-50"
                             >
-                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Create Account"}
+                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Créer un compte"}
                             </button>
 
                             <p className="text-center text-xs text-gray-500">
-                                Already have an account? <button onClick={() => setActiveTab("login")} className="text-purple-500 hover:underline">Log in</button>
+                                Vous avez déjà un compte ? <button onClick={() => setActiveTab("login")} className="text-purple-500 hover:underline">Se connecter</button>
                             </p>
                         </div>
                     )}
@@ -271,7 +271,7 @@ export default function LoginPage() {
 
                 <div className="mt-8 text-center">
                     <Link href="/" className="text-sm text-gray-500 hover:text-white transition-colors flex items-center justify-center gap-2">
-                        ← Back to Home
+                        ← Retour à l'accueil
                     </Link>
                 </div>
             </div>
