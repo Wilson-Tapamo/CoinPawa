@@ -1,24 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Trophy, XCircle, RotateCw } from "lucide-react";
+import { Loader2, Trophy, XCircle, RotateCw, Coins, History, Trash2 } from "lucide-react";
 import { cn, formatToUSD } from "@/lib/utils";
+import { RouletteTable } from "./RouletteTable";
 
-// Roue simplifiée pour l'animation (ordre standard européen approx ou juste visuel)
-// const WHEEL_NUMBERS = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+// Configuration de la roue (ordre européen des numéros)
+const WHEEL_NUMBERS = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
 
 export default function RouletteGame() {
     const router = useRouter();
-    const [betColor, setBetColor] = useState<'red' | 'black' | 'green' | null>(null);
-    const [betAmount, setBetAmount] = useState<string>("10");
+
+    // États des paris
+    const [bets, setBets] = useState<{ [key: string]: number }>({});
+    const [activeChip, setActiveChip] = useState<number>(100);
+    const CHIPS = [10, 50, 100, 500, 1000, 5000];
+
+    // États du jeu
     const [isSpinning, setIsSpinning] = useState(false);
-    const [lastResult, setLastResult] = useState<{ number: number, color: string, isWin: boolean, payout: number } | null>(null);
+    const [lastResult, setLastResult] = useState<{ number: number, color: string, payout: number } | null>(null);
     const [error, setError] = useState("");
     const [rotation, setRotation] = useState(0);
 
+    const totalBet = Object.values(bets).reduce((a, b) => a + b, 0);
+
+    const handlePlaceBet = (type: string) => {
+        if (isSpinning) return;
+        setBets(prev => ({
+            ...prev,
+            [type]: (prev[type] || 0) + activeChip
+        }));
+    };
+
+    const handleClearBets = () => {
+        if (isSpinning) return;
+        setBets({});
+        setError("");
+        setLastResult(null);
+    };
+
     const handlePlay = async () => {
-        if (!betColor) return;
+        if (totalBet <= 0 || isSpinning) return;
+
         setIsSpinning(true);
         setLastResult(null);
         setError("");
@@ -27,36 +51,37 @@ export default function RouletteGame() {
             const res = await fetch("/api/games/roulette/play", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    amount: parseInt(betAmount),
-                    color: betColor
-                })
+                body: JSON.stringify({ bets })
             });
 
             const data = await res.json();
 
             if (res.ok) {
-                // Animation Logic
-                // On fait tourner la roue de +1440deg (4 tours) + l'angle du nombre gagnant
-                // Simplification : On tourne aléatoirement fort pour l'effet visuel
-                const newRotation = rotation + 1440 + Math.random() * 360;
-                setRotation(newRotation);
+                // Trouver l'index du numéro gagnant pour l'angle exact
+                const winIndex = WHEEL_NUMBERS.indexOf(data.result.number);
+                const sectorAngle = 360 / 37;
+
+                // On calcule la rotation pour que le winIndex soit en haut (0 deg)
+                // Position actuelle en deg = winIndex * sectorAngle
+                // Pour mettre ça en haut, on doit appliquer une rotation de -(winIndex * sectorAngle)
+                // On ajoute 5 tours complets (1800 deg)
+                const targetRotation = rotation + 1800 + (360 - (winIndex * sectorAngle));
+
+                setRotation(targetRotation);
 
                 setTimeout(() => {
                     setLastResult({
                         number: data.result.number,
                         color: data.result.color,
-                        isWin: data.result.isWin,
                         payout: data.result.payout
                     });
                     setIsSpinning(false);
-                    router.refresh();
-                }, 2000); // 2s spin
+                    router.refresh(); // Sync balance
+                }, 3000); // 3s spin (correspond à la durée de transition CSS)
             } else {
                 setError(data.error || "Une erreur est survenue");
                 setIsSpinning(false);
             }
-
         } catch {
             setError("Erreur de connexion");
             setIsSpinning(false);
@@ -70,148 +95,158 @@ export default function RouletteGame() {
     }
 
     return (
-        <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in zoom-in duration-500">
+        <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
 
-            <div className="bg-[#1A1D26] border border-white/5 rounded-3xl p-8 md:p-12 relative overflow-hidden shadow-2xl">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-red-600/5 rounded-full blur-[100px] pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-96 h-96 bg-green-600/5 rounded-full blur-[100px] pointer-events-none" />
+            {/* 1. HEADER & HISTORIQUE (Simulé) */}
+            <div className="flex justify-between items-center bg-[#1A1D26] border border-white/5 rounded-2xl p-4">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                        <RotateCw className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                        <h2 className="text-lg font-display font-bold text-white">Roulette 1xbet</h2>
+                        <p className="text-[10px] text-text-tertiary uppercase font-bold tracking-widest">Européenne • Multi-Paris</p>
+                    </div>
+                </div>
 
-                <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-text-tertiary font-bold uppercase mr-2">Derniers :</span>
+                    {[32, 15, 0, 19, 4].map((n, i) => (
+                        <div key={i} className={cn("w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white", n === 0 ? "bg-green-600" : [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36].includes(n) ? "bg-red-600" : "bg-zinc-800")}>
+                            {n}
+                        </div>
+                    ))}
+                </div>
+            </div>
 
-                    {/* LEFT: CONTROLS */}
-                    <div className="space-y-8">
-                        <div>
-                            <h2 className="text-3xl font-display font-bold text-white mb-2 flex items-center gap-3">
-                                <RotateCw className="w-8 h-8 text-primary" /> Roulette
-                            </h2>
-                            <p className="text-text-secondary">Misez sur le Rouge (x2), le Noir (x2) ou le Vert (x14).</p>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                {/* 2. LEFT: WHEEL VISUALIZATION */}
+                <div className="lg:col-span-1 bg-[#1A1D26] border border-white/5 rounded-3xl p-6 flex flex-col items-center justify-center relative shadow-2xl overflow-hidden min-h-[400px]">
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
+
+                    {/* Wheel Pointer */}
+                    <div className="absolute top-1/2 -translate-y-1/2 -right-2 w-0 h-0 border-t-[10px] border-t-transparent border-r-[20px] border-r-white border-b-[10px] border-b-transparent z-20 drop-shadow-glow-white" />
+
+                    {/* The Wheel */}
+                    <div
+                        className="w-64 h-64 md:w-80 md:h-80 rounded-full border-[12px] border-[#2A2E3B] relative transition-transform duration-[3000ms] cubic-bezier(0.1, 0, 0.1, 1) shadow-2xl bg-zinc-900"
+                        style={{ transform: `rotate(${rotation}deg)` }}
+                    >
+                        {/* Segments drawing (simplified CSS) */}
+                        <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,#10b981_0deg_9.72deg,#ef4444_9.72deg_19.44deg,#18181b_19.44deg_29.16deg,#ef4444_29.16deg_38.88deg,#18181b_38.88deg_48.6deg,#ef4444_48.6deg_58.32deg,#18181b_58.32deg_68.04deg,#ef4444_68.04deg_77.76deg,#18181b_77.76deg_87.48deg,#ef4444_87.48deg_97.2deg,#18181b_97.2deg_106.92deg,#ef4444_106.92deg_116.64deg,#18181b_116.64deg_126.36deg,#ef4444_126.36deg_136.08deg,#18181b_136.08deg_145.8deg,#ef4444_145.8deg_155.52deg,#18181b_155.52deg_165.24deg,#ef4444_165.24deg_174.96deg,#18181b_174.96deg_184.68deg,#18181b_184.68deg_194.4deg,#ef4444_194.4deg_204.12deg,#18181b_204.12deg_213.84deg,#ef4444_213.84deg_223.56deg,#18181b_223.56deg_233.28deg,#ef4444_233.28deg_243deg,#18181b_243deg_252.72deg,#ef4444_252.72deg_262.44deg,#18181b_262.44deg_272.16deg,#ef4444_272.16deg_281.88deg,#18181b_281.88deg_291.6deg,#ef4444_291.6deg_301.32deg,#18181b_301.32deg_311.04deg,#ef4444_311.04deg_320.76deg,#18181b_320.76deg_330.48deg,#ef4444_330.48deg_340.2deg,#18181b_340.2deg_349.92deg,#ef4444_349.92deg_360deg)]" />
+
+                        {/* Numbers on wheel */}
+                        <div className="absolute inset-0 z-10">
+                            {WHEEL_NUMBERS.map((n, i) => (
+                                <div
+                                    key={i}
+                                    className="absolute top-1 w-4 text-[8px] font-bold text-white text-center"
+                                    style={{
+                                        left: '50%',
+                                        marginLeft: '-8px',
+                                        transformOrigin: '50% 150px', // md size
+                                        transform: `rotate(${i * (360 / 37)}deg)`
+                                    }}
+                                >
+                                    {n}
+                                </div>
+                            ))}
                         </div>
 
-                        {/* Bet Amount */}
-                        <div className="bg-background-secondary p-4 rounded-2xl border border-white/5">
-                            <label className="text-xs font-bold text-text-tertiary uppercase mb-2 block">Montant de la mise</label>
-                            <div className="flex gap-2">
-                                <input
-                                    type="number"
-                                    value={betAmount}
-                                    onChange={(e) => setBetAmount(e.target.value)}
-                                    className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white font-mono font-bold focus:outline-none focus:border-primary/50 transition-colors"
-                                />
-                                <button onClick={() => setBetAmount((prev) => (parseInt(prev || "0") * 2).toString())} className="px-4 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-xs text-text-secondary transition-colors">2x</button>
+                        {/* Central Hub */}
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-[#2A2E3B] rounded-full shadow-2xl border-4 border-zinc-700 flex items-center justify-center z-20">
+                            <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary-light rounded-full shadow-inner flex items-center justify-center">
+                                <Coins className="w-6 h-6 text-background" />
                             </div>
                         </div>
+                    </div>
 
-                        {/* Color Selection */}
-                        <div className="flex gap-4">
-                            <button
-                                onClick={() => setBetColor('red')}
-                                className={cn(
-                                    "flex-1 p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-1",
-                                    betColor === 'red'
-                                        ? "bg-red-600/20 border-red-500 text-white shadow-glow-red"
-                                        : "bg-background-secondary border-transparent text-text-tertiary hover:bg-white/5"
-                                )}
-                            >
-                                <span className="w-8 h-8 rounded-full bg-red-500 shadow-lg mb-1" />
-                                <span className="uppercase text-xs font-bold">Rouge (x2)</span>
-                            </button>
+                    {/* Result Overlay */}
+                    {lastResult && !isSpinning && (
+                        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md animate-in zoom-in duration-300">
+                            <div className={cn(
+                                "w-24 h-24 rounded-full flex items-center justify-center text-5xl font-black text-white border-8 shadow-glow-white mb-4 transition-all scale-110",
+                                getColorClass(lastResult.color)
+                            )}>
+                                {lastResult.number}
+                            </div>
+                            <div className="text-center">
+                                <p className="text-sm font-bold text-text-tertiary uppercase tracking-widest mb-1">Gain Total</p>
+                                <p className={cn("text-4xl font-display font-black", lastResult.payout > 0 ? "text-primary shadow-glow-gold" : "text-white/40")}>
+                                    {lastResult.payout > 0 ? "+" : ""}{formatToUSD(lastResult.payout)}
+                                </p>
+                            </div>
+                        </div>
+                    )}
+                </div>
 
-                            <button
-                                onClick={() => setBetColor('green')}
-                                className={cn(
-                                    "flex-1 p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-1",
-                                    betColor === 'green'
-                                        ? "bg-green-600/20 border-green-500 text-white shadow-glow-green"
-                                        : "bg-background-secondary border-transparent text-text-tertiary hover:bg-white/5"
-                                )}
-                            >
-                                <span className="w-8 h-8 rounded-full bg-green-500 shadow-lg mb-1" />
-                                <span className="uppercase text-xs font-bold">Vert (x14)</span>
-                            </button>
+                {/* 3. RIGHT: TABLE & BETTING CONTROLS */}
+                <div className="lg:col-span-2 space-y-6">
+                    {/* Chip Selection */}
+                    <div className="bg-[#1A1D26] border border-white/5 rounded-2xl p-4 flex items-center justify-between">
+                        <div className="flex gap-2">
+                            {CHIPS.map(val => (
+                                <button
+                                    key={val}
+                                    onClick={() => setActiveChip(val)}
+                                    className={cn(
+                                        "w-10 h-10 md:w-12 md:h-12 rounded-full border-4 flex items-center justify-center text-[10px] font-black transition-all transform hover:scale-110 active:scale-90 shadow-lg",
+                                        activeChip === val
+                                            ? "bg-primary border-white text-background ring-4 ring-primary/20 scale-110"
+                                            : "bg-surface border-white/10 text-text-tertiary hover:border-white/30"
+                                    )}
+                                >
+                                    {val >= 1000 ? (val / 1000) + 'k' : val}
+                                </button>
+                            ))}
+                        </div>
+                        <button
+                            onClick={handleClearBets}
+                            className="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl transition-colors"
+                            title="Effacer les paris"
+                        >
+                            <Trash2 className="w-5 h-5" />
+                        </button>
+                    </div>
 
-                            <button
-                                onClick={() => setBetColor('black')}
-                                className={cn(
-                                    "flex-1 p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-1",
-                                    betColor === 'black'
-                                        ? "bg-zinc-800/50 border-zinc-600 text-white shadow-lg"
-                                        : "bg-background-secondary border-transparent text-text-tertiary hover:bg-white/5"
-                                )}
-                            >
-                                <span className="w-8 h-8 rounded-full bg-zinc-800 border border-white/10 shadow-lg mb-1" />
-                                <span className="uppercase text-xs font-bold">Noir (x2)</span>
-                            </button>
+                    {/* Betting Table */}
+                    <div className="bg-[#1A1D26] border border-white/5 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+                        <RouletteTable
+                            bets={bets}
+                            onPlaceBet={handlePlaceBet}
+                            onClearBets={handleClearBets}
+                        />
+                    </div>
+
+                    {/* Action Panel */}
+                    <div className="bg-[#1A1D26] border border-white/5 rounded-2xl p-6 flex items-center justify-between gap-6 shadow-xl">
+                        <div className="flex-1">
+                            <p className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest mb-1">Mise Totale</p>
+                            <div className="text-2xl font-display font-black text-white">{totalBet.toLocaleString()} SATS</div>
                         </div>
 
                         <button
                             onClick={handlePlay}
-                            disabled={isSpinning || !betAmount || parseInt(betAmount) <= 0 || !betColor}
-                            className="w-full py-5 bg-primary hover:bg-primary-hover text-background text-lg font-bold rounded-2xl shadow-glow-gold transition-all disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-95"
+                            disabled={isSpinning || totalBet <= 0}
+                            className={cn(
+                                "flex-[2] py-5 rounded-2xl text-xl font-black transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-2xl",
+                                isSpinning
+                                    ? "bg-white/5 text-text-tertiary"
+                                    : "bg-primary hover:bg-primary-hover text-background shadow-glow-gold"
+                            )}
                         >
-                            {isSpinning ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : "Lancer la Roulette"}
+                            {isSpinning ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : "LANCER LA BILLES"}
                         </button>
-
-                        {error && (
-                            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm font-bold text-center">
-                                {error}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* RIGHT: VISUALIZATION */}
-                    <div className="flex flex-col items-center justify-center min-h-[300px] relative">
-
-                        {/* THE WHEEL (CSS Representation) */}
-                        <div
-                            className="w-64 h-64 rounded-full border-8 border-[#2A2E3B] shadow-2xl relative transition-transform duration-[2000ms] ease-out flex items-center justify-center bg-zinc-900"
-                            style={{ transform: `rotate(${rotation}deg)` }}
-                        >
-                            <div className="absolute inset-0 rounded-full border-4 border-dashed border-white/10" />
-                            {/* Central Hub */}
-                            <div className="w-16 h-16 bg-gradient-to-br from-yellow-500 to-amber-700 rounded-full shadow-lg z-20 flex items-center justify-center border-4 border-[#2A2E3B]">
-                                <span className="text-background font-bold text-xs uppercase">Tourner</span>
-                            </div>
-
-                            {/* Mock Sectors (Just visual decoration) */}
-                            <div className="absolute top-0 left-12 w-2 h-10 bg-red-600 rounded-full" />
-                            <div className="absolute bottom-0 right-12 w-2 h-10 bg-red-600 rounded-full" />
-                            <div className="absolute top-12 right-0 w-10 h-2 bg-zinc-800 rounded-full" />
-                            <div className="absolute bottom-12 left-0 w-10 h-2 bg-zinc-800 rounded-full" />
-                        </div>
-
-                        {/* RESULT OVERLAY */}
-                        {lastResult && !isSpinning && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-3xl animate-in fade-in z-30">
-                                <div className="text-center">
-                                    <div className={cn(
-                                        "w-20 h-20 mx-auto rounded-full flex items-center justify-center text-3xl font-bold border-4 text-white mb-4 shadow-2xl",
-                                        getColorClass(lastResult.color)
-                                    )}>
-                                        {lastResult.number}
-                                    </div>
-
-                                    <div className="space-y-1">
-                                        {lastResult.isWin ? (
-                                            <>
-                                                <div className="text-xl font-bold text-green-400 flex items-center justify-center gap-2">
-                                                    <Trophy className="w-5 h-5" /> WIN
-                                                </div>
-                                                <div className="text-3xl font-display font-bold text-white shadow-glow-green">
-                                                    +{formatToUSD(lastResult.payout)}
-                                                </div>
-                                            </>
-                                        ) : (
-                                            <div className="text-xl font-bold text-red-400 flex items-center justify-center gap-2">
-                                                <XCircle className="w-5 h-5" /> REKT
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>
+
+            {error && (
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm font-bold text-center animate-in shake duration-300">
+                    {error}
+                </div>
+            )}
         </div>
     );
 }
