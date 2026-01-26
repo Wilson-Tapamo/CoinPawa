@@ -28,10 +28,10 @@ const USER = {
 };
 
 const TABS = [
-    { id: "general", label: "General", icon: User },
-    { id: "security", label: "Security", icon: Shield },
-    { id: "verification", label: "Verification", icon: BadgeCheck },
-    { id: "preferences", label: "Preferences", icon: Settings },
+    { id: "general", label: "Général", icon: User },
+    { id: "security", label: "Sécurité", icon: Shield },
+    { id: "verification", label: "Vérification", icon: BadgeCheck },
+    { id: "preferences", label: "Préférences", icon: Settings },
 ];
 
 export default function ProfilePage() {
@@ -45,7 +45,7 @@ export default function ProfilePage() {
                 <div className="h-32 bg-gradient-to-r from-accent-violet/20 to-accent-cyan/20 relative">
                     <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
                     <button className="absolute bottom-4 right-4 px-3 py-1.5 bg-black/50 backdrop-blur text-xs font-bold text-white rounded-lg hover:bg-black/70 transition-colors flex items-center gap-2">
-                        <Camera className="w-3 h-3" /> Edit Cover
+                        <Camera className="w-3 h-3" /> Modifier ma bannière
                     </button>
                 </div>
 
@@ -53,7 +53,7 @@ export default function ProfilePage() {
                     {/* Avatar */}
                     <div className="relative group">
                         <div className="w-24 h-24 rounded-full border-4 border-surface bg-gradient-to-br from-accent-violet to-indigo-600 flex items-center justify-center text-3xl font-bold text-white shadow-glow-purple">
-                            K
+                            {USER.username[0].toUpperCase()}
                         </div>
                         <button className="absolute bottom-0 right-0 p-1.5 bg-surface border border-white/10 rounded-full text-text-secondary hover:text-white transition-colors">
                             <Camera className="w-4 h-4" />
@@ -68,22 +68,22 @@ export default function ProfilePage() {
                                 {USER.vipTier} VIP
                             </span>
                             {USER.kycStatus === "Verified" && (
-                                <CheckCircle2 className="w-5 h-5 text-success fill-success/10" />
+                                <CheckCircle2 className="w-5 h-5 text-success fill-success/10" title="Vérifié" />
                             )}
                         </div>
-                        <p className="text-text-tertiary text-sm">User ID: <span className="text-text-secondary font-mono">{USER.userId}</span></p>
+                        <p className="text-text-tertiary text-sm">ID Utilisateur: <span className="text-text-secondary font-mono">{USER.userId}</span></p>
                     </div>
 
                     {/* Level Progress */}
                     <div className="w-full md:w-64">
                         <div className="flex justify-between text-xs font-bold text-text-secondary mb-2">
-                            <span>Level {USER.level}</span>
+                            <span>Niveau {USER.level}</span>
                             <span>{USER.xp}%</span>
                         </div>
                         <div className="h-2 w-full bg-background-secondary rounded-full overflow-hidden">
                             <div className="h-full bg-gradient-to-r from-primary to-accent-rose w-[75%] shadow-glow-gold/50" />
                         </div>
-                        <p className="text-[10px] text-text-tertiary mt-1 text-right">540 XP to Level {USER.level + 1}</p>
+                        <p className="text-[10px] text-text-tertiary mt-1 text-right">{540} XP pour atteindre le Niveau {USER.level + 1}</p>
                     </div>
                 </div>
             </div>
@@ -114,9 +114,9 @@ export default function ProfilePage() {
                     </nav>
 
                     <div className="pt-4 border-t border-white/5 mt-4">
-                        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-500/10 transition-colors text-left">
+                        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-500/10 transition-colors text-left uppercase font-bold tracking-tight">
                             <LogOut className="w-4 h-4" />
-                            Log Out
+                            Déconnexion
                         </button>
                     </div>
                 </div>
@@ -128,45 +128,45 @@ export default function ProfilePage() {
                     {activeTab === "general" && (
                         <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
                             <div>
-                                <h2 className="text-xl font-bold text-white mb-4">Personal Information</h2>
+                                <h2 className="text-xl font-bold text-white mb-4">Informations Personnelles</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-text-tertiary uppercase">Username</label>
+                                        <label className="text-xs font-bold text-text-tertiary uppercase">Pseudo</label>
                                         <div className="flex items-center px-4 py-3 bg-background-secondary border border-white/10 rounded-xl text-white">
                                             {USER.username}
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-text-tertiary uppercase">Email Address</label>
+                                        <label className="text-xs font-bold text-text-tertiary uppercase">Adresse Email</label>
                                         <div className="flex items-center justify-between px-4 py-3 bg-background-secondary border border-white/10 rounded-xl">
                                             <div className="flex items-center gap-2 text-white">
                                                 <Mail className="w-4 h-4 text-text-tertiary" />
                                                 {USER.email}
                                             </div>
-                                            <span className="text-xs text-success font-bold bg-success/10 px-2 py-1 rounded">Verified</span>
+                                            <span className="text-xs text-success font-bold bg-success/10 px-2 py-1 rounded">Vérifié</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="border-t border-white/5 pt-6">
-                                <h2 className="text-xl font-bold text-white mb-4">Statistics</h2>
+                                <h2 className="text-xl font-bold text-white mb-4">Statistiques de Jeu</h2>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     <div className="p-4 bg-background-secondary rounded-xl text-center border border-white/5">
                                         <div className="text-2xl font-bold text-primary font-display">$42.5k</div>
-                                        <div className="text-xs text-text-tertiary uppercase">Wagered</div>
+                                        <div className="text-xs text-text-tertiary uppercase">Misé Total</div>
                                     </div>
                                     <div className="p-4 bg-background-secondary rounded-xl text-center border border-white/5">
                                         <div className="text-2xl font-bold text-success font-display">1,240</div>
-                                        <div className="text-xs text-text-tertiary uppercase">Total Bets</div>
+                                        <div className="text-xs text-text-tertiary uppercase">Total Paris</div>
                                     </div>
                                     <div className="p-4 bg-background-secondary rounded-xl text-center border border-white/5">
                                         <div className="text-2xl font-bold text-accent-cyan font-display">254</div>
-                                        <div className="text-xs text-text-tertiary uppercase">Wins</div>
+                                        <div className="text-xs text-text-tertiary uppercase">Victoires</div>
                                     </div>
                                     <div className="p-4 bg-background-secondary rounded-xl text-center border border-white/5">
                                         <div className="text-2xl font-bold text-accent-rose font-display">x500</div>
-                                        <div className="text-xs text-text-tertiary uppercase">Max Win</div>
+                                        <div className="text-xs text-text-tertiary uppercase">Plus Gros Gain</div>
                                     </div>
                                 </div>
                             </div>
@@ -177,9 +177,9 @@ export default function ProfilePage() {
                     {activeTab === "verification" && (
                         <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
                             <div className="flex items-center justify-between">
-                                <h2 className="text-xl font-bold text-white">Identity Verification</h2>
+                                <h2 className="text-xl font-bold text-white">Vérification d'Identité</h2>
                                 <span className="px-3 py-1 bg-success text-background font-bold text-sm rounded-full shadow-glow-cyan flex items-center gap-2">
-                                    <ShieldCheck className="w-4 h-4" /> Verified
+                                    <ShieldCheck className="w-4 h-4" /> Vérifié
                                 </span>
                             </div>
 
@@ -190,8 +190,8 @@ export default function ProfilePage() {
                                         <CheckCircle2 className="w-5 h-5 text-white" />
                                     </div>
                                     <div>
-                                        <h4 className="font-bold text-white">Level 1: Basic Info</h4>
-                                        <p className="text-sm text-text-secondary">Full name, date of birth, and address.</p>
+                                        <h4 className="font-bold text-white">Niveau 1: Infos de Base</h4>
+                                        <p className="text-sm text-text-secondary">Nom complet, date de naissance et adresse.</p>
                                     </div>
                                 </div>
 
@@ -201,9 +201,9 @@ export default function ProfilePage() {
                                         <CheckCircle2 className="w-5 h-5 text-white" />
                                     </div>
                                     <div>
-                                        <h4 className="font-bold text-white">Level 2: ID Verification</h4>
-                                        <p className="text-sm text-text-secondary">Government issued ID and selfie.</p>
-                                        <p className="text-xs text-success font-bold mt-2">Completed on Oct 12, 2023</p>
+                                        <h4 className="font-bold text-white">Niveau 2: Pièce d'Identité</h4>
+                                        <p className="text-sm text-text-secondary">Carte d'identité gouvernementale et selfie.</p>
+                                        <p className="text-xs text-success font-bold mt-2">Vérifié le 12 Octobre 2023</p>
                                     </div>
                                 </div>
 
@@ -213,10 +213,10 @@ export default function ProfilePage() {
                                         3
                                     </div>
                                     <div>
-                                        <h4 className="font-bold text-white text-opacity-50">Level 3: Proof of Address</h4>
-                                        <p className="text-sm text-text-tertiary">Utility bill or bank statement (Optional for higher limits).</p>
-                                        <button className="mt-3 px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-xs font-bold rounded-lg border border-white/10 transition-colors">
-                                            Start Verification
+                                        <h4 className="font-bold text-white text-opacity-50">Niveau 3: Justificatif de Domicile</h4>
+                                        <p className="text-sm text-text-tertiary">Facture de services publics ou relevé bancaire (Optionnel pour des limites plus élevées).</p>
+                                        <button className="mt-3 px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-xs font-bold rounded-lg border border-white/10 transition-colors uppercase">
+                                            Lancer la vérification
                                         </button>
                                     </div>
                                 </div>
@@ -228,7 +228,7 @@ export default function ProfilePage() {
                     {activeTab === "security" && (
                         <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
                             <div>
-                                <h2 className="text-xl font-bold text-white mb-4">Security Settings</h2>
+                                <h2 className="text-xl font-bold text-white mb-4">Paramètres de Sécurité</h2>
 
                                 {/* 2FA Card */}
                                 <div className="p-6 rounded-xl bg-background-secondary border border-white/5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -237,30 +237,30 @@ export default function ProfilePage() {
                                             <Smartphone className="w-6 h-6" />
                                         </div>
                                         <div>
-                                            <h4 className="font-bold text-white">Two-Factor Authentication (2FA)</h4>
+                                            <h4 className="font-bold text-white">Authentification à Deux Facteurs (2FA)</h4>
                                             <p className="text-sm text-text-secondary max-w-md">
-                                                Secure your account with Google Authenticator. Recommended for all users.
+                                                Sécurisez votre compte avec Google Authenticator. Recommandé pour tous.
                                             </p>
                                         </div>
                                     </div>
-                                    <button className="px-5 py-2 bg-primary hover:bg-primary-hover text-background font-bold rounded-lg shadow-glow-gold transition-colors">
-                                        Enable 2FA
+                                    <button className="px-5 py-2 bg-primary hover:bg-primary-hover text-background font-bold rounded-lg shadow-glow-gold transition-colors uppercase text-sm">
+                                        Activer la 2FA
                                     </button>
                                 </div>
                             </div>
 
                             <div className="border-t border-white/5 pt-6">
-                                <h3 className="font-bold text-white mb-4">Active Sessions</h3>
+                                <h3 className="font-bold text-white mb-4">Sessions Actives</h3>
                                 <div className="space-y-3">
                                     <div className="flex items-center justify-between p-3 rounded-lg hover:bg-white/5 transition-colors">
                                         <div className="flex items-center gap-3">
                                             <div className="w-2 h-2 rounded-full bg-success shadow-[0_0_5px_#10B981]" />
                                             <div>
                                                 <p className="text-sm font-bold text-white">Windows 10 - Chrome</p>
-                                                <p className="text-xs text-text-tertiary">Paris, France • Current Session</p>
+                                                <p className="text-xs text-text-tertiary">Paris, France • Session Actuelle</p>
                                             </div>
                                         </div>
-                                        <span className="text-xs font-bold text-success uppercase">Active</span>
+                                        <span className="text-xs font-bold text-success uppercase">Activé</span>
                                     </div>
 
                                     <div className="flex items-center justify-between p-3 rounded-lg hover:bg-white/5 transition-colors opacity-50">
@@ -268,10 +268,10 @@ export default function ProfilePage() {
                                             <div className="w-2 h-2 rounded-full bg-text-tertiary" />
                                             <div>
                                                 <p className="text-sm font-bold text-white">iPhone 14 - Safari</p>
-                                                <p className="text-xs text-text-tertiary">Lyon, France • 2 days ago</p>
+                                                <p className="text-xs text-text-tertiary">Lyon, France • il y a 2 jours</p>
                                             </div>
                                         </div>
-                                        <button className="p-2 hover:bg-red-500/10 hover:text-red-500 rounded transition-colors text-text-tertiary">
+                                        <button className="p-2 hover:bg-red-500/10 hover:text-red-500 rounded transition-colors text-text-tertiary" title="Fermer la session">
                                             <LogOut className="w-4 h-4" />
                                         </button>
                                     </div>
@@ -284,9 +284,9 @@ export default function ProfilePage() {
                     {activeTab === "preferences" && (
                         <div className="flex flex-col items-center justify-center h-full text-center py-10 animate-in fade-in slide-in-from-right-4 duration-300">
                             <Settings className="w-16 h-16 text-text-tertiary opacity-20 mb-4" />
-                            <h3 className="text-lg font-bold text-white">Preferences</h3>
+                            <h3 className="text-lg font-bold text-white">Préférences</h3>
                             <p className="text-text-secondary max-w-sm">
-                                Language, currency, and notification settings coming soon.
+                                Langue, devise et paramètres de notification bientôt disponibles.
                             </p>
                         </div>
                     )}
