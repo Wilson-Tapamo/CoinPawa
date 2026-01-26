@@ -3,6 +3,26 @@ import { prisma } from '@/lib/prisma'
 import { verifySession } from '@/lib/auth'
 import { Prisma } from '@prisma/client'
 
+// Multiplicateurs
+const MULTIPLIERS = {
+    under7: 2.0,
+    exact7: 6.0,
+    over7: 2.0,
+};
+
+interface BetInput {
+    under7?: number;
+    exact7?: number;
+    over7?: number;
+}
+
+interface BetResult {
+    type: "under7" | "exact7" | "over7";
+    amount: number;
+    isWin: boolean;
+    payout: number;
+}
+
 export async function POST(request: Request) {
     try {
         // 1. Auth & Validation
@@ -10,32 +30,77 @@ export async function POST(request: Request) {
         if (!userId) return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
 
         const body = await request.json()
-        const { amount, prediction } = body // amount in Sats/USD (integers), prediction: 'even' | 'odd'
+        const { bets } = body as { bets: BetInput }
 
-        if (!amount || amount <= 0) {
-            return NextResponse.json({ error: "Montant invalide" }, { status: 400 })
+        // Valider qu'au moins un pari est placé
+        const under7Bet = bets?.under7 || 0;
+        const exact7Bet = bets?.exact7 || 0;
+        const over7Bet = bets?.over7 || 0;
+        const totalBet = under7Bet + exact7Bet + over7Bet;
+
+        if (totalBet <= 0) {
+            return NextResponse.json({ error: "Aucun pari placé" }, { status: 400 })
         }
-        if (!['even', 'odd'].includes(prediction)) {
-            return NextResponse.json({ error: "Prédiction invalide (even/odd requis)" }, { status: 400 })
+
+        // Valider que les montants sont positifs
+        if (under7Bet < 0 || exact7Bet < 0 || over7Bet < 0) {
+            return NextResponse.json({ error: "Montant invalide" }, { status: 400 })
         }
 
         // 2. Récupération du Wallet
         const wallet = await prisma.wallet.findUnique({ where: { userId } })
         if (!wallet) return NextResponse.json({ error: "Wallet introuvable" }, { status: 404 })
 
-        if (wallet.balanceSats < BigInt(amount)) {
+        if (wallet.balanceSats < BigInt(totalBet)) {
             return NextResponse.json({ error: "Fonds insuffisants" }, { status: 400 })
         }
 
-        // 3. Logique du Jeu (RNG)
-        // Simulation d'un dé à 6 faces
-        const roll = Math.floor(Math.random() * 6) + 1 // 1 à 6
-        const isEven = roll % 2 === 0
-        const isWin = (prediction === 'even' && isEven) || (prediction === 'odd' && !isEven)
+        // 3. Logique du Jeu - Lancer 2 dés
+        const dice1 = Math.floor(Math.random() * 6) + 1; // 1-6
+        const dice2 = Math.floor(Math.random() * 6) + 1; // 1-6
+        const total = dice1 + dice2; // 2-12
 
-        // Multiplicateur : x1.96 (Exemple classique avec marche de 4%)
-        const multiplier = 1.96
-        const payout = isWin ? Math.floor(amount * multiplier) : 0
+        // Déterminer les résultats pour chaque pari
+        const betResults: BetResult[] = [];
+        let totalPayout = 0;
+
+        if (under7Bet > 0) {
+            const isWin = total < 7;
+            const payout = isWin ? Math.floor(under7Bet * MULTIPLIERS.under7) : 0;
+            totalPayout += payout;
+            betResults.push({
+                type: "under7",
+                amount: under7Bet,
+                isWin,
+                payout,
+            });
+        }
+
+        if (exact7Bet > 0) {
+            const isWin = total === 7;
+            const payout = isWin ? Math.floor(exact7Bet * MULTIPLIERS.exact7) : 0;
+            totalPayout += payout;
+            betResults.push({
+                type: "exact7",
+                amount: exact7Bet,
+                isWin,
+                payout,
+            });
+        }
+
+        if (over7Bet > 0) {
+            const isWin = total > 7;
+            const payout = isWin ? Math.floor(over7Bet * MULTIPLIERS.over7) : 0;
+            totalPayout += payout;
+            betResults.push({
+                type: "over7",
+                amount: over7Bet,
+                isWin,
+                payout,
+            });
+        }
+
+        const hasAnyWin = betResults.some(r => r.isWin);
 
         // 4. Transaction DB (Atomique)
         const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -48,56 +113,64 @@ export async function POST(request: Request) {
                     name: 'Dice',
                     type: 'INSTANT',
                     isActive: true,
-                    rules: "Devinez si le dé tombera sur un nombre Pair ou Impair.",
-                    config: { houseEdge: 0.04 }
+                    rules: "Lancez 2 dés et pariez sur le total : Moins de 7, Exactement 7, ou Plus de 7.",
+                    config: {
+                        houseEdge: 0.04,
+                        multipliers: MULTIPLIERS
+                    }
                 }
             })
 
-            // B. Debit (Mise)
-            // On déduit la mise quoi qu'il arrive
-            // Si victoire, on recrédite (Mise + Gain) ou juste le Gain ? 
-            // Standard : On débite la mise, et on crédite le Payout total (Mise * Multiplier)
-
-            // 1. Update Wallet (Debit mise + Credit win)
-            const netChange = BigInt(payout) - BigInt(amount)
+            // B. Calculer le changement net (payout - mise totale)
+            const netChange = BigInt(totalPayout) - BigInt(totalBet);
 
             const updatedWallet = await tx.wallet.update({
                 where: { id: wallet.id },
                 data: {
                     balanceSats: { increment: netChange },
-                    totalWageredSats: { increment: amount }
+                    totalWageredSats: { increment: totalBet }
                 }
             })
 
-            // 2. Create GameRound
+            // C. Créer le GameRound
             const round = await tx.gameRound.create({
                 data: {
                     walletId: wallet.id,
                     gameId: game.id,
-                    betAmountSats: amount,
-                    payoutAmountSats: payout,
+                    betAmountSats: totalBet,
+                    payoutAmountSats: totalPayout,
                     status: 'COMPLETED',
                     gameData: {
-                        roll,
-                        prediction,
-                        isWin,
-                        multiplier
-                    },
-                    clientSeed: "TODO", // Pour phase Provably Fair plus tard
+                        dice1,
+                        dice2,
+                        total,
+                        bets: {
+                            under7: under7Bet,
+                            exact7: exact7Bet,
+                            over7: over7Bet,
+                        },
+                        results: betResults,
+                        hasAnyWin,
+                        multipliers: MULTIPLIERS
+                    } as any,
+                    clientSeed: "TODO",
                     serverSeedHash: "TODO",
-                    nonce: 1 // TODO: Incrementer nonce
+                    nonce: 1
                 }
             })
 
-            return { updatedWallet, round, roll, isWin, payout }
+            return { updatedWallet, round, dice1, dice2, total, betResults, totalPayout, hasAnyWin }
         })
 
         return NextResponse.json({
             success: true,
             result: {
-                roll: result.roll,
-                isWin: result.isWin,
-                payout: result.payout,
+                dice1: result.dice1,
+                dice2: result.dice2,
+                total: result.total,
+                betResults: result.betResults,
+                totalPayout: result.totalPayout,
+                hasAnyWin: result.hasAnyWin,
                 newBalance: result.updatedWallet.balanceSats.toString()
             }
         })

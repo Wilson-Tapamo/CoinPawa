@@ -14,8 +14,8 @@ const rajdhani = Rajdhani({
 });
 
 export const metadata: Metadata = {
-  title: "CoinPawa - Crypto Casino",
-  description: "Premium Crypto Casino and Betting Platform",
+  title: "CoinPower - Casino Crypto",
+  description: "Casino Crypto Premium et Plateforme de Paris",
 };
 
 export default function RootLayout({
