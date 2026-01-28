@@ -59,7 +59,7 @@ export async function POST(request: Request) {
             });
 
             // Créer le round "ACTIVE"
-            return await tx.gameRound.create({
+            const gameRound = await tx.gameRound.create({
                 data: {
                     walletId: wallet.id,
                     gameId: game.id,
@@ -71,6 +71,20 @@ export async function POST(request: Request) {
                     nonce: 1
                 }
             });
+
+            // Log de la mise
+            await tx.transaction.create({
+                data: {
+                    walletId: wallet.id,
+                    type: 'BET',
+                    amountSats: BigInt(-amount),
+                    paymentRef: `BET_CRASH_${gameRound.id}`,
+                    status: 'COMPLETED',
+                    metadata: { roundId: gameRound.id, gameSlug: 'crash' }
+                }
+            })
+
+            return gameRound;
         });
 
         return NextResponse.json({ success: true, roundId: round.id });
