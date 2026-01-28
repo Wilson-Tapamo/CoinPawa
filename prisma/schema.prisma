@@ -14,7 +14,7 @@ datasource db {
 
 enum TxType {
   DEPOSIT
-  DEPOSIT_BONUS  // ← Ajouter cette ligne
+  DEPOSIT_BONUS
   WITHDRAW
   BET
   WIN
@@ -24,13 +24,14 @@ enum TxStatus {
   PENDING
   COMPLETED
   FAILED
-  EXPIRED   // 🆕 Pour les paiements crypto expirés
+  EXPIRED
+  CANCELLED  // 🆕 Pour les transactions annulées par admin
 }
 
 enum GameType {
-  LOTTERY   // Tirage journalier
-  INSTANT   // Dice, Wheel
-  SESSION   // Blackjack, Mines
+  LOTTERY
+  INSTANT
+  SESSION
 }
 
 enum RoundStatus {
@@ -39,54 +40,114 @@ enum RoundStatus {
   CANCELLED
 }
 
+// 🆕 ENUMS ADMIN
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum AdminActionType {
+  BAN_USER
+  UNBAN_USER
+  APPROVE_WITHDRAWAL
+  REJECT_WITHDRAWAL
+  ADJUST_BALANCE
+  EDIT_USER
+  DELETE_TRANSACTION
+  CHANGE_GAME_STATUS
+  UPDATE_SETTINGS
+  VIEW_SENSITIVE_DATA
+}
+
 // --- 2. MODÈLES ---
 
 model User {
   id           String   @id @default(uuid())
   
-  // Auth Hybride : Optionnels pour permettre le mode "Anonyme" au départ
-  username     String  @unique
+  // Auth
+  username     String   @unique
   email        String?  @unique
   passwordHash String 
+  
+  // 🆕 ADMIN & MODÉRATION
+  role         UserRole @default(USER)
+  isBanned     Boolean  @default(false)
+  bannedAt     DateTime?
+  banReason    String?  @db.Text
+  bannedBy     String?  // ID de l'admin qui a banni
+  
+  // 🆕 KYC / VERIFICATION
+  isEmailVerified Boolean @default(false)
+  emailVerifiedAt DateTime?
+  kycLevel        Int     @default(0) // 0 = None, 1 = Basic, 2 = Full
+  kycData         Json?   // Documents, status, etc.
+  
+  // 🆕 SÉCURITÉ
+  lastLoginAt     DateTime?
+  lastLoginIp     String?
+  failedLoginAttempts Int @default(0)
+  lockedUntil     DateTime?
+  twoFactorEnabled Boolean @default(false)
+  twoFactorSecret  String?
   
   // Système de Parrainage
   referrerId   String?
   referrer     User?    @relation("ReferralHistory", fields: [referrerId], references: [id])
   referrals    User[]   @relation("ReferralHistory")
-  
   referralEarningsSats BigInt @default(0)
-
-  // Relation
-  wallet       Wallet?  // Relation 1-1
-
+  
+  // 🆕 STATS UTILISATEUR
+  totalDeposited   BigInt @default(0)
+  totalWithdrawn   BigInt @default(0)
+  totalWagered     BigInt @default(0)
+  totalWon         BigInt @default(0)
+  gamesPlayed      Int    @default(0)
+  
+  // Relations
+  wallet           Wallet?
+  adminActions     AdminAction[] @relation("PerformedActions")
+  targetedActions  AdminAction[] @relation("TargetedUser")
+  notes            AdminNote[]
+  
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  
+  // 🆕 INDEX
+  @@index([role])
+  @@index([isBanned])
+  @@index([email])
+  @@index([createdAt])
 }
 
 model Wallet {
   id              String   @id @default(uuid())
   
   userId          String   @unique
-  user            User     @relation(fields: [userId], references: [id])
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   balanceSats     BigInt   @default(0) 
   
-  // Wager Requirement (Validé par ton Chef de Projet)
-  // Règle : totalWagered doit être >= totalDeposited pour retirer
+  // Wager Requirement
   totalDepositedSats BigInt @default(0)
   totalWageredSats   BigInt @default(0)
   
   lastFaucetClaim DateTime?
-
-  // 🆕 CRYPTO PAYMENT FIELDS
-  // Adresse de retrait préférée de l'utilisateur (USDT)
+  
+  // CRYPTO PAYMENT
   withdrawalAddress String?
-  // Réseau préféré pour les retraits (TRC20, ERC20, BEP20, etc.)
   withdrawalNetwork String? @default("TRC20")
-
+  
+  // 🆕 LIMITES & RESTRICTIONS
+  dailyWithdrawLimit  BigInt?  // Limite quotidienne de retrait
+  monthlyWithdrawLimit BigInt? // Limite mensuelle
+  isWithdrawLocked    Boolean @default(false)
+  withdrawLockReason  String?
+  
   transactions    Transaction[]
   gameRounds      GameRound[]
-
+  
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
@@ -95,120 +156,152 @@ model Transaction {
   id          String   @id @default(uuid())
   
   walletId    String
-  wallet      Wallet   @relation(fields: [walletId], references: [id])
+  wallet      Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
   
   type        TxType
-  amountSats  BigInt   // Montant final crédité/débité en sats
+  amountSats  BigInt
   
-  paymentRef  String   @unique // Référence unique (order_id pour NOWPayments)
+  paymentRef  String   @unique
   status      TxStatus @default(PENDING)
   
-  // 🆕 MULTI-CRYPTO FIELDS (pour les dépôts)
-  cryptoCurrency   String?  // BTC, ETH, USDC, SOL, BNB, etc.
-  cryptoAmount     String?  // Montant que l'user a envoyé dans sa crypto
-  usdtAmount       String?  // Montant après conversion en USDT
-  exchangeRate     String?  // Taux de conversion appliqué (cryptoAmount / usdtAmount)
+  // MULTI-CRYPTO
+  cryptoCurrency   String?
+  cryptoAmount     String?
+  usdtAmount       String?
+  exchangeRate     String?
   
-  // 🆕 BLOCKCHAIN DATA
-  txHash           String?  @unique // Hash de la transaction blockchain (si applicable)
-  fromAddress      String?  // Adresse source (pour DEPOSIT)
-  toAddress        String?  // Adresse destination (pour WITHDRAW)
-  blockNumber      Int?     // Numéro de bloc (confirmation)
-  confirmations    Int?     @default(0) // Nombre de confirmations
+  // BLOCKCHAIN DATA
+  txHash           String?  @unique
+  fromAddress      String?
+  toAddress        String?
+  blockNumber      Int?
+  confirmations    Int?     @default(0)
   
-  // 🆕 NOWPAYMENTS INTEGRATION
-  nowPaymentId     String?  @unique  // ID du paiement NOWPayments
-  paymentUrl       String?  // URL/adresse de paiement générée
-  paymentExpiry    DateTime? // Date d'expiration du paiement
+  // NOWPAYMENTS
+  nowPaymentId     String?  @unique
+  paymentUrl       String?
+  paymentExpiry    DateTime?
   
-  // 🆕 WITHDRAWAL FIELDS
-  withdrawalFee    BigInt?  // Frais de retrait en sats
-  netAmount        BigInt?  // Montant net reçu (amountSats - withdrawalFee)
+  // WITHDRAWAL
+  withdrawalFee    BigInt?
+  netAmount        BigInt?
   
-  // Métadonnées additionnelles
-  metadata         Json?    // Pour stocker des infos supplémentaires (IP, user agent, etc.)
+  // 🆕 ADMIN & VALIDATION
+  approvedBy       String?  // ID de l'admin qui a approuvé
+  approvedAt       DateTime?
+  rejectedBy       String?
+  rejectedAt       DateTime?
+  rejectionReason  String?  @db.Text
+  
+  // 🆕 FRAUD DETECTION
+  riskScore        Float?   @default(0)
+  isFlagged        Boolean  @default(false)
+  flagReason       String?
+  reviewedBy       String?
+  reviewedAt       DateTime?
+  
+  // 🆕 TRACKING
+  userIp           String?
+  userAgent        String?
+  
+  metadata         Json?
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
-  // 🆕 INDEX pour optimiser les requêtes
   @@index([walletId])
   @@index([status])
   @@index([type])
   @@index([nowPaymentId])
   @@index([createdAt])
+  @@index([isFlagged])
+  @@index([approvedBy])
 }
 
 model Game {
   id          String   @id @default(uuid())
   
-  slug        String   @unique // ex: "dice", "mines"
+  slug        String   @unique
   name        String
   type        GameType
   isActive    Boolean  @default(true)
   
-  // UX / Marketing (Description des jeux)
+  // UX
   shortDesc   String?
-  rules       String?  @db.Text // Support du Markdown long
+  rules       String?  @db.Text
   imageUrl    String?
   
-  // Config Technique
-  config      Json?    // ex: { "houseEdge": 1.0 }
-  maxWinSats  BigInt?  // Sécurité Bankroll
-
+  // Config
+  config      Json?
+  maxWinSats  BigInt?
+  
+  // 🆕 ADMIN & STATS
+  createdBy   String?  // ID de l'admin créateur
+  houseEdge   Float    @default(2.0) // House edge en %
+  
+  // 🆕 STATISTICS
+  totalBets   Int      @default(0)
+  totalWagered BigInt  @default(0)
+  totalPayout  BigInt  @default(0)
+  playCount    Int     @default(0)
+  
   rounds      GameRound[]
-
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  
+  @@index([isActive])
+  @@index([type])
 }
 
 model GameRound {
   id          String   @id @default(uuid())
   
   walletId    String
-  wallet      Wallet   @relation(fields: [walletId], references: [id])
+  wallet      Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
   
   gameId      String
   game        Game     @relation(fields: [gameId], references: [id])
   
   status      RoundStatus @default(ACTIVE)
-
-  // Finances de la partie
+  
   betAmountSats    BigInt
   payoutAmountSats BigInt @default(0)
   
-  // État du jeu (JSON flexible selon le jeu)
   gameData    Json 
-
+  
   // Provably Fair
   clientSeed     String
   serverSeedHash String
   serverSeed     String?
   nonce          Int
-
+  
+  // 🆕 FRAUD DETECTION
+  isSuspicious   Boolean @default(false)
+  suspicionReason String?
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
-  // Index pour la performance des historiques
   @@index([walletId])
   @@index([gameId])
+  @@index([createdAt])
+  @@index([isSuspicious])
 }
 
-// 🆕 NOUVEAU MODÈLE : Configuration des cryptos acceptées
 model SupportedCrypto {
   id              String   @id @default(uuid())
   
-  symbol          String   @unique // BTC, ETH, USDC, SOL, BNB, etc.
-  name            String   // Bitcoin, Ethereum, USD Coin, etc.
-  network         String?  // ethereum, solana, binance-smart-chain, etc.
+  symbol          String   @unique
+  name            String
+  network         String?
   isActive        Boolean  @default(true)
   
-  // Configuration
-  minDepositUsd   Float    @default(5.0)   // Montant minimum de dépôt en USD
-  icon            String?  // URL de l'icône ou emoji
-  orderIndex      Int      @default(0)     // Pour trier l'affichage
+  minDepositUsd   Float    @default(5.0)
+  icon            String?
+  orderIndex      Int      @default(0)
   
-  // Stats (optionnel)
+  // Stats
   totalDeposits   Int      @default(0)
   totalVolume     Float    @default(0)
   
@@ -218,13 +311,138 @@ model SupportedCrypto {
   @@index([isActive, orderIndex])
 }
 
-// 🆕 NOUVEAU MODÈLE : Paramètres système pour le paiement
 model PaymentSettings {
   id              String   @id @default(uuid())
   
-  key             String   @unique // ex: "min_deposit_usd", "withdrawal_fee_percent"
-  value           String   // Valeur en JSON ou string
+  key             String   @unique
+  value           String
   description     String?
   
   updatedAt       DateTime @updatedAt
+}
+
+// 🆕 MODÈLES ADMIN
+
+// Log de toutes les actions admin
+model AdminAction {
+  id          String   @id @default(uuid())
+  
+  adminId     String
+  admin       User     @relation("PerformedActions", fields: [adminId], references: [id])
+  
+  action      AdminActionType
+  
+  // Cible de l'action (optionnel)
+  targetUserId    String?
+  targetUser      User?   @relation("TargetedUser", fields: [targetUserId], references: [id])
+  
+  targetEntityType String? // "Transaction", "Game", "Settings", etc.
+  targetEntityId   String? // ID de l'entité
+  
+  // Détails
+  details     Json?    // Données avant/après, raison, etc.
+  ipAddress   String?
+  userAgent   String?
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([adminId])
+  @@index([targetUserId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// Notes admin sur les utilisateurs
+model AdminNote {
+  id          String   @id @default(uuid())
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  authorId    String   // ID de l'admin qui a écrit la note
+  authorName  String   // Nom de l'admin (pour historique)
+  
+  note        String   @db.Text
+  isImportant Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([isImportant])
+}
+
+// Configuration globale du système
+model SystemConfig {
+  id          String   @id @default(uuid())
+  
+  key         String   @unique
+  value       Json
+  category    String   // "payment", "game", "security", etc.
+  description String?  @db.Text
+  isPublic    Boolean  @default(false) // Visible aux non-admins ?
+  
+  lastModifiedBy String? // ID de l'admin
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([category])
+}
+
+// Alertes système pour les admins
+model SystemAlert {
+  id          String   @id @default(uuid())
+  
+  type        String   // "withdrawal_pending", "suspicious_activity", etc.
+  severity    String   // "low", "medium", "high", "critical"
+  title       String
+  message     String   @db.Text
+  
+  data        Json?    // Données contextuelles
+  
+  isRead      Boolean  @default(false)
+  readBy      String?  // ID de l'admin
+  readAt      DateTime?
+  
+  isResolved  Boolean  @default(false)
+  resolvedBy  String?
+  resolvedAt  DateTime?
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([isRead])
+  @@index([isResolved])
+  @@index([severity])
+  @@index([createdAt])
+}
+
+// Stats journalières pour les graphiques
+model DailyStats {
+  id              String   @id @default(uuid())
+  
+  date            DateTime @unique @db.Date
+  
+  // Users
+  newUsers        Int      @default(0)
+  activeUsers     Int      @default(0)
+  
+  // Finances
+  totalDeposits   BigInt   @default(0)
+  totalWithdrawals BigInt  @default(0)
+  totalBets       BigInt   @default(0)
+  totalWins       BigInt   @default(0)
+  revenue         BigInt   @default(0)
+  
+  // Games
+  gamesPlayed     Int      @default(0)
+  uniquePlayers   Int      @default(0)
+  
+  // Calculated
+  houseEdge       Float    @default(0)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([date])
 }
