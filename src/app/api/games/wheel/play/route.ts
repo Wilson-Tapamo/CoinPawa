@@ -80,17 +80,17 @@ export async function POST(request: Request) {
                 }
             })
 
-            const netChange = BigInt(payout) - BigInt(amount)
-
-            await tx.wallet.update({
+            // 1. Débiter la mise
+            const updatedWalletAfterBet = await tx.wallet.update({
                 where: { id: wallet.id },
                 data: {
-                    balanceSats: { increment: netChange },
+                    balanceSats: { decrement: BigInt(amount) },
                     totalWageredSats: { increment: amount }
                 }
             })
 
-            await tx.gameRound.create({
+            // 2. Créer le round
+            const round = await tx.gameRound.create({
                 data: {
                     walletId: wallet.id,
                     gameId: game.id,
@@ -102,13 +102,48 @@ export async function POST(request: Request) {
                         segmentLabel,
                         isWin
                     },
-                    clientSeed: "TODO",
-                    serverSeedHash: "TODO",
+                    clientSeed: "wheel",
+                    serverSeedHash: "wheel",
                     nonce: 1
                 }
             })
 
-            return { payout, newBalanceStr: (wallet.balanceSats + netChange).toString(), multiplier, segmentLabel, isWin }
+            // 3. Log de la mise
+            await tx.transaction.create({
+                data: {
+                    walletId: wallet.id,
+                    type: 'BET',
+                    amountSats: BigInt(-amount),
+                    paymentRef: `BET_WHEEL_${round.id}`,
+                    status: 'COMPLETED',
+                    metadata: { roundId: round.id, gameSlug: 'wheel' }
+                }
+            })
+
+            let finalWallet = updatedWalletAfterBet;
+
+            // 4. Créditer le gain si présent
+            if (payout > 0) {
+                finalWallet = await tx.wallet.update({
+                    where: { id: wallet.id },
+                    data: {
+                        balanceSats: { increment: BigInt(payout) }
+                    }
+                })
+
+                await tx.transaction.create({
+                    data: {
+                        walletId: wallet.id,
+                        type: 'WIN',
+                        amountSats: BigInt(payout),
+                        paymentRef: `WIN_WHEEL_${round.id}`,
+                        status: 'COMPLETED',
+                        metadata: { roundId: round.id, gameSlug: 'wheel' }
+                    }
+                })
+            }
+
+            return { payout, newBalanceStr: finalWallet.balanceSats.toString(), multiplier, segmentLabel, isWin }
         })
 
         return NextResponse.json({ success: true, result })
