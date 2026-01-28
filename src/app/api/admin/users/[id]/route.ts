@@ -30,6 +30,7 @@ export async function GET(
       include: {
         wallet: {
           select: {
+            id: true,
             balanceSats: true,
             totalDepositedSats: true,
             totalWageredSats: true
@@ -49,17 +50,17 @@ export async function GET(
     // Récupérer les transactions récentes
     const transactions = user.wallet
       ? await prisma.transaction.findMany({
-          where: { walletId: user.wallet.id },
-          orderBy: { createdAt: 'desc' },
-          take: 20,
-          select: {
-            id: true,
-            type: true,
-            amountSats: true,
-            status: true,
-            createdAt: true
-          }
-        })
+        where: { walletId: user.wallet.id },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+        select: {
+          id: true,
+          type: true,
+          amountSats: true,
+          status: true,
+          createdAt: true
+        }
+      })
       : []
 
     // Formater les données
