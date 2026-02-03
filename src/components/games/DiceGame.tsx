@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Dices, Loader2, Trophy, XCircle, Plus, Minus, ArrowLeft, Info, X } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { cn, usdToSats, satsToUsd, formatToUSD } from "@/lib/utils";
 
 // ============================================
 // COMPOSANT DÉ 3D
@@ -172,19 +172,19 @@ export default function DiceGame() {
         over7: 2.0,   // ~41.67% chance
     };
 
-    // Ajustement du montant du pari
+    // Ajustement du montant du pari (en USD)
     const adjustBet = (type: keyof typeof bets, delta: number) => {
         setBets((prev) => ({
             ...prev,
-            [type]: Math.max(0, prev[type] + delta),
+            [type]: Math.max(0, +(prev[type] + delta).toFixed(2)),
         }));
     };
 
     const setBetAmount = (type: keyof typeof bets, value: string) => {
-        const num = parseInt(value) || 0;
+        const num = parseFloat(value);
         setBets((prev) => ({
             ...prev,
-            [type]: Math.max(0, num),
+            [type]: isNaN(num) ? 0 : num,
         }));
     };
 
@@ -204,10 +204,17 @@ export default function DiceGame() {
         setTotalPayout(0);
 
         try {
+            // Convertir les mises en SATS avant l'envoi
+            const betsInSats = {
+                under7: usdToSats(bets.under7),
+                exact7: usdToSats(bets.exact7),
+                over7: usdToSats(bets.over7),
+            };
+
             const res = await fetch("/api/games/dice/play", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ bets }),
+                body: JSON.stringify({ bets: betsInSats }),
             });
 
             const data = await res.json();
@@ -217,7 +224,7 @@ export default function DiceGame() {
                 setTimeout(() => {
                     setDiceValues([data.result.dice1, data.result.dice2]);
                     setLastResults(data.result.betResults);
-                    setTotalPayout(data.result.totalPayout);
+                    setTotalPayout(satsToUsd(data.result.totalPayout)); // Convertir le payout SATS -> USD
                     setIsRolling(false);
                     router.refresh();
                 }, 1500);
@@ -327,7 +334,7 @@ export default function DiceGame() {
 
                                     {totalPayout > 0 && (
                                         <div className="md:ml-4 pl-4 md:border-l border-white/20 text-4xl font-display font-black text-green-400 drop-shadow-glow-green">
-                                            +{totalPayout.toLocaleString()} <span className="text-xs uppercase opacity-70">Sats</span>
+                                            +{formatToUSD(totalPayout)}
                                         </div>
                                     )}
                                 </div>
@@ -352,7 +359,7 @@ export default function DiceGame() {
                             </div>
                             <div className="flex items-center justify-center gap-2">
                                 <button
-                                    onClick={() => adjustBet("under7", -10)}
+                                    onClick={() => adjustBet("under7", -1)}
                                     className="w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-colors"
                                 >
                                     <Minus className="w-4 h-4" />
@@ -365,22 +372,21 @@ export default function DiceGame() {
                                     className="w-24 bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-center text-white font-mono font-bold focus:outline-none focus:border-blue-500/50"
                                 />
                                 <button
-                                    onClick={() => adjustBet("under7", 10)}
+                                    onClick={() => adjustBet("under7", 1)}
                                     className="w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-colors"
                                 >
                                     <Plus className="w-4 h-4" />
                                 </button>
                             </div>
 
-                            {/* PRESET AMOUNTS */}
                             <div className="flex flex-wrap justify-center gap-2 mt-4">
-                                {[100, 500, 1000, 5000].map((amt) => (
+                                {[1, 5, 10, 25, 100].map((amt) => (
                                     <button
                                         key={amt}
                                         onClick={() => setBetAmount("under7", amt.toString())}
                                         className="px-2 py-1 text-[10px] font-bold bg-white/5 hover:bg-white/10 text-text-tertiary hover:text-white rounded-md border border-white/5 transition-all"
                                     >
-                                        {amt >= 1000 ? (amt / 1000) + 'k' : amt}
+                                        ${amt}
                                     </button>
                                 ))}
                             </div>
@@ -410,7 +416,7 @@ export default function DiceGame() {
                             </div>
                             <div className="flex items-center justify-center gap-2">
                                 <button
-                                    onClick={() => adjustBet("exact7", -10)}
+                                    onClick={() => adjustBet("exact7", -1)}
                                     className="w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-colors"
                                 >
                                     <Minus className="w-4 h-4" />
@@ -423,22 +429,21 @@ export default function DiceGame() {
                                     className="w-24 bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-center text-white font-mono font-bold focus:outline-none focus:border-yellow-500/50"
                                 />
                                 <button
-                                    onClick={() => adjustBet("exact7", 10)}
+                                    onClick={() => adjustBet("exact7", 1)}
                                     className="w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-colors"
                                 >
                                     <Plus className="w-4 h-4" />
                                 </button>
                             </div>
 
-                            {/* PRESET AMOUNTS */}
                             <div className="flex flex-wrap justify-center gap-2 mt-4">
-                                {[100, 500, 1000, 5000].map((amt) => (
+                                {[1, 5, 10, 25, 100].map((amt) => (
                                     <button
                                         key={amt}
                                         onClick={() => setBetAmount("exact7", amt.toString())}
                                         className="px-2 py-1 text-[10px] font-bold bg-white/5 hover:bg-white/10 text-text-tertiary hover:text-white rounded-md border border-white/5 transition-all"
                                     >
-                                        {amt >= 1000 ? (amt / 1000) + 'k' : amt}
+                                        ${amt}
                                     </button>
                                 ))}
                             </div>
@@ -468,7 +473,7 @@ export default function DiceGame() {
                             </div>
                             <div className="flex items-center justify-center gap-2">
                                 <button
-                                    onClick={() => adjustBet("over7", -10)}
+                                    onClick={() => adjustBet("over7", -1)}
                                     className="w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-colors"
                                 >
                                     <Minus className="w-4 h-4" />
@@ -481,22 +486,21 @@ export default function DiceGame() {
                                     className="w-24 bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-center text-white font-mono font-bold focus:outline-none focus:border-purple-500/50"
                                 />
                                 <button
-                                    onClick={() => adjustBet("over7", 10)}
+                                    onClick={() => adjustBet("over7", 1)}
                                     className="w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-colors"
                                 >
                                     <Plus className="w-4 h-4" />
                                 </button>
                             </div>
 
-                            {/* PRESET AMOUNTS */}
                             <div className="flex flex-wrap justify-center gap-2 mt-4">
-                                {[100, 500, 1000, 5000].map((amt) => (
+                                {[1, 5, 10, 25, 100].map((amt) => (
                                     <button
                                         key={amt}
                                         onClick={() => setBetAmount("over7", amt.toString())}
                                         className="px-2 py-1 text-[10px] font-bold bg-white/5 hover:bg-white/10 text-text-tertiary hover:text-white rounded-md border border-white/5 transition-all"
                                     >
-                                        {amt >= 1000 ? (amt / 1000) + 'k' : amt}
+                                        ${amt}
                                     </button>
                                 ))}
                             </div>
@@ -517,7 +521,7 @@ export default function DiceGame() {
                         <div className="text-center md:text-left">
                             <div className="text-xs text-text-tertiary uppercase mb-1">Total Misé</div>
                             <div className="text-2xl font-display font-bold text-white">
-                                {totalBet.toLocaleString()} <span className="text-text-secondary text-lg">SATS</span>
+                                {formatToUSD(totalBet)}
                             </div>
                         </div>
 
