@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Sparkles, AlertCircle } from "lucide-react";
+import { Loader2, Sparkles, AlertCircle, ArrowLeft, Info, X, Coins, Trophy } from "lucide-react";
+import Link from "next/link";
 import { cn, formatToUSD } from "@/lib/utils";
 
 export default function WheelGame() {
@@ -10,6 +11,7 @@ export default function WheelGame() {
     const [lastResult, setLastResult] = useState<{ multiplier: number, segmentLabel: string, payout: number } | null>(null);
     const [error, setError] = useState("");
     const [rotation, setRotation] = useState(0);
+    const [showRules, setShowRules] = useState(false);
 
     const handlePlay = async () => {
         setIsSpinning(true);
@@ -82,6 +84,25 @@ export default function WheelGame() {
                 <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 pointer-events-none" />
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-indigo-500/5 to-fuchsia-500/5 pointer-events-none" />
 
+                {/* Header Controls */}
+                <div className="relative z-20 flex items-center justify-between mb-8">
+                    <Link
+                        href="/games"
+                        className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors bg-white/5 px-4 py-2 rounded-xl border border-white/5"
+                    >
+                        <ArrowLeft className="w-4 h-4" />
+                        <span className="text-sm font-bold">Retour</span>
+                    </Link>
+
+                    <button
+                        onClick={() => setShowRules(true)}
+                        className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors bg-white/5 px-4 py-2 rounded-xl border border-white/5"
+                    >
+                        <Info className="w-4 h-4" />
+                        <span className="text-sm font-bold">Règles</span>
+                    </button>
+                </div>
+
                 <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
 
                     {/* LEFT: CONTROLS */}
@@ -103,8 +124,20 @@ export default function WheelGame() {
                                     onChange={(e) => setBetAmount(e.target.value)}
                                     className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white font-mono font-bold focus:outline-none focus:border-amber-400/50 transition-colors"
                                 />
-                                <button onClick={() => setBetAmount((prev) => (parseInt(prev || "0") * 2).toString())} className="px-4 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-xs text-text-secondary transition-colors">2x</button>
-                                <button onClick={() => setBetAmount((prev) => Math.max(10, Math.floor(parseInt(prev || "0") / 2)).toString())} className="px-4 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-xs text-text-secondary transition-colors">/2</button>
+                                <button onClick={() => setBetAmount((prev) => (parseInt(prev || "0") * 2).toString())} className="px-4 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-xs text-text-secondary transition-colors border border-white/5">2x</button>
+                                <button onClick={() => setBetAmount((prev) => Math.max(10, Math.floor(parseInt(prev || "0") / 2)).toString())} className="px-4 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-xs text-text-secondary transition-colors border border-white/5">/2</button>
+                            </div>
+                            {/* PRESET AMOUNTS */}
+                            <div className="flex flex-wrap gap-2 mt-4">
+                                {[100, 500, 1000, 5000].map((amt) => (
+                                    <button
+                                        key={amt}
+                                        onClick={() => setBetAmount(amt.toString())}
+                                        className="flex-1 py-2 text-[11px] font-bold bg-white/5 hover:bg-white/10 text-text-secondary hover:text-white rounded-lg border border-white/5 transition-all"
+                                    >
+                                        {amt >= 1000 ? (amt / 1000) + 'k' : amt}
+                                    </button>
+                                ))}
                             </div>
                         </div>
 
@@ -187,6 +220,60 @@ export default function WheelGame() {
                     </div>
                 </div>
             </div>
+
+            {/* Modal des Règles */}
+            {showRules && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-[#1A1D26] border border-white/10 rounded-3xl p-8 max-w-md w-full relative shadow-2xl animate-in zoom-in duration-300">
+                        <button
+                            onClick={() => setShowRules(false)}
+                            className="absolute top-4 right-4 p-2 text-text-tertiary hover:text-white transition-colors"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+
+                        <h3 className="text-2xl font-display font-bold text-white mb-6 flex items-center gap-3">
+                            <Info className="w-6 h-6 text-amber-400" /> Règles de Spin Wheel
+                        </h3>
+
+                        <div className="space-y-4 text-text-secondary leading-relaxed">
+                            <p>
+                                Spin Wheel est un jeu de chance instantané. Misez et faites tourner la roue pour multiplier votre mise !
+                            </p>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="bg-white/5 p-3 rounded-xl border border-white/5 flex justify-between items-center">
+                                    <span className="text-white font-bold">1.5x</span>
+                                    <span className="text-blue-400 text-xs text-right">40% chance</span>
+                                </div>
+                                <div className="bg-white/5 p-3 rounded-xl border border-white/5 flex justify-between items-center">
+                                    <span className="text-white font-bold">3x</span>
+                                    <span className="text-green-400 text-xs text-right">20% chance</span>
+                                </div>
+                                <div className="bg-white/5 p-3 rounded-xl border border-white/5 flex justify-between items-center">
+                                    <span className="text-white font-bold">10x</span>
+                                    <span className="text-purple-400 text-xs text-right">9% chance</span>
+                                </div>
+                                <div className="bg-white/5 p-3 rounded-xl border border-white/5 flex justify-between items-center">
+                                    <span className="text-white font-bold">50x</span>
+                                    <span className="text-amber-400 text-xs text-right">1% chance</span>
+                                </div>
+                            </div>
+                            <p className="text-sm">
+                                • Le segment 0x correspond à une perte totale de la mise (30% de chance).<br />
+                                • Les résultats sont basés sur un générateur de nombres aléatoires sécurisé.<br />
+                                • Cliquez sur le bouton "SPIN NOW" pour lancer la roue.
+                            </p>
+                        </div>
+
+                        <button
+                            onClick={() => setShowRules(false)}
+                            className="w-full mt-8 py-4 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-xl shadow-glow-gold transition-all"
+                        >
+                            EN ROUTE !
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
