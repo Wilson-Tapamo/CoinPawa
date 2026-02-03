@@ -11,6 +11,7 @@ import Image from "next/image";
 
 // --- DONNÉES DES JEUX ---
 const ALL_GAMES = [
+  { title: "Lotto Rapide", provider: "CoinPower Originals", image: "from-amber-400 to-yellow-600", imageSrc: "/games/lottery.png", isNew: true, isHot: true, RTP: "98.0", link: "/games/lottery", category: "originals", highlight: true },
   { title: "Dés", provider: "CoinPower Originals", image: "from-blue-600 to-indigo-600", imageSrc: "/games/dice.png", isHot: true, RTP: "99.0", link: "/games/dice", category: "originals" },
   { title: "Roulette", provider: "CoinPower Originals", image: "from-red-600 to-rose-600", imageSrc: "/games/roulette.png", isHot: true, RTP: "97.3", link: "/games/roulette", category: "originals" },
   { title: "Roue de la Fortune", provider: "CoinPower Originals", image: "from-purple-600 to-violet-500", imageSrc: "/games/wheel.png", isNew: true, RTP: "95.0", link: "/games/wheel", category: "originals" },
