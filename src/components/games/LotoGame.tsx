@@ -133,8 +133,8 @@ export default function LotoGame() {
     return (
         <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-700">
             {/* Header */}
-            <div className="flex items-center justify-between bg-[#1A1D26] p-4 rounded-2xl border border-white/5">
-                <Link href="/" className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors px-4 py-2 bg-white/5 rounded-xl border border-white/5 font-bold text-sm">
+            <div className="flex items-center justify-between glass-card p-4">
+                <Link href="/" className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors px-4 py-2 glass-light font-bold text-sm">
                     <ArrowLeft className="w-4 h-4" /> Retour
                 </Link>
 
@@ -153,11 +153,11 @@ export default function LotoGame() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* Left: Main Interaction */}
                 <div className="lg:col-span-8 space-y-6">
-                    <div className="bg-[#1A1D26] border border-white/5 rounded-[2.5rem] p-8 relative overflow-hidden">
+                    <div className="glass-panel p-8 relative overflow-hidden bg-mesh-gradient">
                         {/* Background Glow */}
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[100px] pointer-events-none" />
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[100px] pointer-events-none animate-pulse-slow" />
+                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-accent-violet/10 blur-[100px] pointer-events-none animate-pulse-slow" />
 
                         <div className="relative z-10 space-y-8">
                             <div className="flex items-center justify-between">
@@ -238,7 +238,7 @@ export default function LotoGame() {
                     </div>
 
                     {/* Pending Tickets */}
-                    <div className="bg-[#1A1D26] border border-white/5 rounded-3xl p-6">
+                    <div className="glass-card p-6">
                         <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                             <Zap className="w-4 h-4 text-primary" /> Mes Tickets pour le prochain tirage ({myTickets.length})
                         </h3>
@@ -263,7 +263,7 @@ export default function LotoGame() {
 
                 {/* Right: History & Live Draw Overlay */}
                 <div className="lg:col-span-4 space-y-6">
-                    <div className="bg-[#1A1D26] border border-white/5 rounded-3xl p-6 h-full">
+                    <div className="glass-card p-6 h-full">
                         <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                             <History className="w-5 h-5 text-accent-cyan" /> Historique des Tirages
                         </h3>
@@ -321,7 +321,7 @@ export default function LotoGame() {
             {/* Modal des Règles */}
             {showRules && (
                 <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
-                    <div className="bg-[#1A1D26] border border-white/10 rounded-3xl p-8 max-w-md w-full relative shadow-2xl">
+                    <div className="glass-panel p-8 max-w-md w-full relative animate-in zoom-in duration-300">
                         <button onClick={() => setShowRules(false)} className="absolute top-4 right-4 p-2 text-text-tertiary hover:text-white transition-colors"><X className="w-6 h-6" /></button>
                         <h3 className="text-2xl font-display font-bold text-white mb-6 flex items-center gap-3"><Trophy className="w-6 h-6 text-primary" /> La Loto : Gain</h3>
                         <div className="space-y-4">

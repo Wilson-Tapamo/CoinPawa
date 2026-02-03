@@ -77,12 +77,13 @@ export default function WheelGame() {
     };
 
     return (
-        <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in zoom-in duration-500">
+        <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
 
-            <div className="bg-[#1A1D26]/80 backdrop-blur-md border border-white/5 rounded-3xl p-8 md:p-12 relative overflow-hidden shadow-2xl">
+            <div className="glass-panel p-8 md:p-12 relative overflow-hidden bg-mesh-gradient">
                 {/* Background FX */}
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 pointer-events-none" />
-                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-indigo-500/5 to-fuchsia-500/5 pointer-events-none" />
+                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-5 pointer-events-none" />
+                <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[120px] pointer-events-none animate-pulse-slow" />
+                <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent-violet/5 rounded-full blur-[120px] pointer-events-none animate-pulse-slow" />
 
                 {/* Header Controls */}
                 <div className="relative z-20 flex items-center justify-between mb-8">

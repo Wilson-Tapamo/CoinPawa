@@ -100,7 +100,7 @@ export default function RouletteGame() {
         <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
 
             {/* 1. HEADER & HISTORIQUE (Simulé) */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#1A1D26] border border-white/5 rounded-2xl p-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-card p-4">
                 <div className="flex items-center justify-between md:justify-start gap-4 flex-1">
                     <Link
                         href="/"

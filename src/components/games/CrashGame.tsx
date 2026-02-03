@@ -364,20 +364,20 @@ export default function CrashGame() {
             <div className="flex items-center justify-between">
                 <Link
                     href="/"
-                    className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors bg-[#1A1D26] px-4 py-2 rounded-xl border border-white/5 shadow-lg"
+                    className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors glass-card px-4 py-2"
                 >
                     <ArrowLeft className="w-4 h-4" />
                     <span className="text-sm font-bold">Retour aux Jeux</span>
                 </Link>
 
                 <div className="flex items-center gap-3">
-                    <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-[#1A1D26] rounded-lg border border-white/5">
+                    <div className="hidden md:flex items-center gap-2 px-3 py-1.5 glass-card">
                         <div className="w-2 h-2 bg-success rounded-full animate-pulse" />
                         <span className="text-[10px] font-black text-white uppercase tracking-widest">Serveur en Ligne</span>
                     </div>
                     <button
                         onClick={() => setShowRules(true)}
-                        className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors bg-[#1A1D26] px-4 py-2 rounded-xl border border-white/5 shadow-lg"
+                        className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors glass-card px-4 py-2"
                     >
                         <Info className="w-4 h-4" />
                         <span className="text-sm font-bold">Règles</span>
@@ -410,7 +410,7 @@ export default function CrashGame() {
 
                 {/* 2. LEFT: BETTING PANEL */}
                 <div className="lg:col-span-1 space-y-4 order-2 lg:order-1">
-                    <div className="bg-[#1A1D26] border border-white/5 rounded-2xl p-5 shadow-xl">
+                    <div className="glass-panel p-5 bg-mesh-gradient">
                         <div className="flex items-center justify-between mb-6">
                             <span className="text-sm font-bold text-white flex items-center gap-2">
                                 <Zap className="w-4 h-4 text-primary" /> Placer un Pari
