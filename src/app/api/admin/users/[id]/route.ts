@@ -30,15 +30,11 @@ export async function GET(
       include: {
         wallet: {
           select: {
-            id: true,
+            id: true,  // ✅ AJOUTER pour récupérer les transactions
             balanceSats: true,
             totalDepositedSats: true,
             totalWageredSats: true
           }
-        },
-        notes: {
-          orderBy: { createdAt: 'desc' },
-          take: 20
         }
       }
     })

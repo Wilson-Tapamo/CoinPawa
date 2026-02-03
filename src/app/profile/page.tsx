@@ -19,6 +19,9 @@ import {
     Loader2
 } from "lucide-react";
 import { cn, formatToUSD } from "@/lib/utils";
+import { AvatarSelector } from "@/components/AvatarSelector";
+import { BannerSelector } from "@/components/BannerSelector";
+import Image from "next/image";
 
 // Données statiques de secours
 const DEFAULT_USER = {
@@ -46,6 +49,8 @@ interface UserInfo {
     email: string | null;
     userId: string;
     joinDate: string;
+    avatarUrl: string | null;
+    bannerUrl: string | null;
 }
 
 interface GameHistoryEntry {
@@ -73,6 +78,12 @@ export default function ProfilePage() {
     const [isLoadingStats, setIsLoadingStats] = useState(true);
     const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 
+    // 🆕 États pour les modals
+    const [showAvatarSelector, setShowAvatarSelector] = useState(false);
+    const [showBannerSelector, setShowBannerSelector] = useState(false);
+    const [currentAvatar, setCurrentAvatar] = useState<string | null>(null);
+    const [currentBanner, setCurrentBanner] = useState<string | null>(null);
+
     // Charger les statistiques et infos user
     useEffect(() => {
         const fetchStats = async () => {
@@ -82,6 +93,9 @@ export default function ProfilePage() {
                     const data = await res.json();
                     setStats(data.stats);
                     setUserInfo(data.user);
+                    // 🆕 Charger avatar et bannière
+                    setCurrentAvatar(data.user.avatarUrl);
+                    setCurrentBanner(data.user.bannerUrl);
                 }
             } catch (error) {
                 console.error('Error loading stats:', error);
@@ -120,9 +134,21 @@ export default function ProfilePage() {
             {/* 1. HEADER PROFILE CARD */}
             <div className="relative rounded-2xl overflow-hidden bg-surface border border-white/5 shadow-2xl">
                 {/* Banner */}
-                <div className="h-32 bg-gradient-to-r from-accent-violet/20 to-accent-cyan/20 relative">
-                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
-                    <button className="absolute bottom-4 right-4 px-3 py-1.5 bg-black/50 backdrop-blur text-xs font-bold text-white rounded-lg hover:bg-black/70 transition-colors flex items-center gap-2">
+                <div className="h-32 bg-gradient-to-r from-accent-violet/20 to-accent-cyan/20 relative group">
+                    {currentBanner ? (
+                        <Image
+                            src={currentBanner}
+                            alt="Bannière"
+                            fill
+                            className="object-cover"
+                        />
+                    ) : (
+                        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
+                    )}
+                    <button
+                        onClick={() => setShowBannerSelector(true)}
+                        className="absolute bottom-4 right-4 px-3 py-1.5 bg-black/50 backdrop-blur text-xs font-bold text-white rounded-lg hover:bg-black/70 transition-colors flex items-center gap-2 opacity-0 group-hover:opacity-100"
+                    >
                         <Camera className="w-3 h-3" /> Modifier ma bannière
                     </button>
                 </div>
@@ -130,38 +156,36 @@ export default function ProfilePage() {
                 <div className="px-8 pb-8 flex flex-col md:flex-row items-end md:items-center gap-6 -mt-10">
                     {/* Avatar */}
                     <div className="relative group">
-                        <div className="w-24 h-24 rounded-full border-4 border-surface bg-gradient-to-br from-accent-violet to-indigo-600 flex items-center justify-center text-3xl font-bold text-white shadow-glow-purple">
-                            {username[0].toUpperCase()}
+                        <div className="w-24 h-24 rounded-full border-4 border-surface bg-gradient-to-br from-accent-violet to-indigo-600 flex items-center justify-center text-3xl font-bold text-white shadow-glow-purple overflow-hidden">
+                            {currentAvatar ? (
+                                <Image
+                                    src={currentAvatar}
+                                    alt={username}
+                                    width={96}
+                                    height={96}
+                                    className="object-cover w-full h-full"
+                                />
+                            ) : (
+                                username[0].toUpperCase()
+                            )}
                         </div>
-                        <button className="absolute bottom-0 right-0 p-1.5 bg-surface border border-white/10 rounded-full text-text-secondary hover:text-white transition-colors">
+                        <button
+                            onClick={() => setShowAvatarSelector(true)}
+                            className="absolute bottom-0 right-0 p-1.5 bg-surface border border-white/10 rounded-full text-text-secondary hover:text-white transition-colors"
+                        >
                             <Camera className="w-4 h-4" />
                         </button>
                     </div>
 
                     {/* User Info */}
-                    <div className="flex-1 mb-2 md:mb-0">
+                    <div className="flex-1 mb-2 mt-10 md:mb-0">
                         <div className="flex items-center gap-3 mb-1">
                             <h1 className="text-2xl font-bold font-display text-white">{username}</h1>
-                            <span className="px-2 py-0.5 bg-primary/20 text-primary text-[10px] font-bold uppercase rounded border border-primary/20">
-                                {DEFAULT_USER.vipTier} VIP
-                            </span>
                             {DEFAULT_USER.kycStatus === "Verified" && (
                                 <CheckCircle2 className="w-5 h-5 text-success fill-success/10" />
                             )}
                         </div>
                         <p className="text-text-tertiary text-sm">ID Utilisateur: <span className="text-text-secondary font-mono">{userId}</span></p>
-                    </div>
-
-                    {/* Level Progress */}
-                    <div className="w-full md:w-64">
-                        <div className="flex justify-between text-xs font-bold text-text-secondary mb-2">
-                            <span>Niveau {DEFAULT_USER.level}</span>
-                            <span>{DEFAULT_USER.xp}%</span>
-                        </div>
-                        <div className="h-2 w-full bg-background-secondary rounded-full overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-primary to-accent-rose w-[75%] shadow-glow-gold/50" />
-                        </div>
-                        <p className="text-[10px] text-text-tertiary mt-1 text-right">XP pour atteindre le Niveau {DEFAULT_USER.level + 1}</p>
                     </div>
                 </div>
             </div>
@@ -379,6 +403,23 @@ export default function ProfilePage() {
 
                 </div>
             </div>
+
+            {/* 🆕 MODALS */}
+            {showAvatarSelector && (
+                <AvatarSelector
+                    currentAvatar={currentAvatar}
+                    onClose={() => setShowAvatarSelector(false)}
+                    onSelect={(avatarUrl) => setCurrentAvatar(avatarUrl)}
+                />
+            )}
+
+            {showBannerSelector && (
+                <BannerSelector
+                    currentBanner={currentBanner}
+                    onClose={() => setShowBannerSelector(false)}
+                    onSelect={(bannerUrl) => setCurrentBanner(bannerUrl)}
+                />
+            )}
         </div>
     );
 }
