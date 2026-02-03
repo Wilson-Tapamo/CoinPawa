@@ -22,6 +22,7 @@ function Dice3D({ value, isRolling, index }: Dice3DProps) {
         if (!isRolling && value) {
             // Rotation finale basée sur la valeur du dé
             const rotations: Record<number, { x: number; y: number }> = {
+                0: { x: 45, y: 45 }, // Rolling/Neutral
                 1: { x: 0, y: 0 },
                 2: { x: 0, y: -90 },
                 3: { x: -90, y: 0 },
@@ -29,7 +30,7 @@ function Dice3D({ value, isRolling, index }: Dice3DProps) {
                 5: { x: 0, y: 90 },
                 6: { x: 180, y: 0 },
             };
-            setRotation(rotations[value] || { x: 0, y: 0 });
+            setRotation(rotations[value] || { x: 45, y: 45 });
         }
     }, [isRolling, value]);
 
@@ -277,58 +278,62 @@ export default function DiceGame() {
                     </div>
 
                     {/* Zone des Dés 3D */}
-                    <div className="flex justify-center items-center gap-6 mb-8 min-h-[140px]">
+                    <div className="flex justify-center items-center gap-6 mb-12 min-h-[180px] perspective-1000">
                         {isRolling || diceValues ? (
                             <>
                                 <Dice3D
-                                    value={diceValues?.[0] || 1}
+                                    value={isRolling ? 0 : (diceValues?.[0] || 1)}
                                     isRolling={isRolling}
                                     index={0}
                                 />
                                 <Dice3D
-                                    value={diceValues?.[1] || 1}
+                                    value={isRolling ? 0 : (diceValues?.[1] || 1)}
                                     isRolling={isRolling}
                                     index={1}
                                 />
                             </>
                         ) : (
-                            <div className="flex items-center gap-4">
-                                <div className="w-20 h-20 md:w-24 md:h-24 bg-white/5 rounded-xl border-2 border-dashed border-white/20 flex items-center justify-center">
-                                    <Dices className="w-10 h-10 text-white/20" />
+                            <div className="flex items-center gap-6">
+                                <div className="w-24 h-24 bg-white/5 rounded-2xl border-2 border-dashed border-white/20 flex items-center justify-center opacity-40">
+                                    <Dices className="w-10 h-10 text-white" />
                                 </div>
-                                <div className="w-20 h-20 md:w-24 md:h-24 bg-white/5 rounded-xl border-2 border-dashed border-white/20 flex items-center justify-center">
-                                    <Dices className="w-10 h-10 text-white/20" />
+                                <div className="w-24 h-24 bg-white/5 rounded-2xl border-2 border-dashed border-white/20 flex items-center justify-center opacity-40">
+                                    <Dices className="w-10 h-10 text-white" />
                                 </div>
                             </div>
                         )}
                     </div>
 
                     {/* Résultat du Total */}
-                    {total !== null && !isRolling && (
-                        <div className="text-center mb-8 animate-in slide-in-from-top-4 fade-in duration-300">
-                            <div className={cn(
-                                "inline-flex items-center gap-3 px-6 py-3 rounded-2xl border-2",
-                                hasWon
-                                    ? "bg-green-500/20 border-green-500/50"
-                                    : "bg-red-500/20 border-red-500/50"
-                            )}>
-                                <span className="text-4xl font-display font-bold text-white">
-                                    {diceValues?.[0]} + {diceValues?.[1]} = {total}
-                                </span>
-                                {hasWon ? (
-                                    <Trophy className="w-8 h-8 text-green-400" />
-                                ) : (
-                                    <XCircle className="w-8 h-8 text-red-400" />
-                                )}
-                            </div>
+                    <div className="min-h-[120px] flex flex-col items-center justify-center mb-8">
+                        {total !== null && !isRolling && (
+                            <div className="text-center animate-in zoom-in slide-in-from-bottom-4 fade-in duration-500">
+                                <div className={cn(
+                                    "inline-flex flex-col md:flex-row items-center gap-4 px-8 py-4 rounded-3xl border-2 shadow-2xl backdrop-blur-md transition-all",
+                                    hasWon
+                                        ? "bg-green-500/20 border-green-500/50 shadow-green-500/20"
+                                        : "bg-red-500/20 border-red-500/50 shadow-red-500/20"
+                                )}>
+                                    <div className="flex items-center gap-4">
+                                        <span className="text-5xl font-display font-black text-white tracking-tighter">
+                                            {diceValues?.[0]} + {diceValues?.[1]} = {total}
+                                        </span>
+                                        {hasWon ? (
+                                            <Trophy className="w-10 h-10 text-green-400 animate-bounce" />
+                                        ) : (
+                                            <XCircle className="w-10 h-10 text-red-400 animate-pulse" />
+                                        )}
+                                    </div>
 
-                            {totalPayout > 0 && (
-                                <div className="mt-4 text-3xl font-display font-bold text-green-400">
-                                    +{totalPayout.toLocaleString()} SATS
+                                    {totalPayout > 0 && (
+                                        <div className="md:ml-4 pl-4 md:border-l border-white/20 text-4xl font-display font-black text-green-400 drop-shadow-glow-green">
+                                            +{totalPayout.toLocaleString()} <span className="text-xs uppercase opacity-70">Sats</span>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                    )}
+                            </div>
+                        )}
+                    </div>
 
                     {/* Panneau des Paris */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
