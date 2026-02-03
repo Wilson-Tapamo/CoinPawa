@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Rocket, Loader2, Trophy, Bomb, Users, Zap, History, TrendingUp, ArrowUpRight } from "lucide-react";
+import { Rocket, Loader2, Trophy, Bomb, Users, Zap, History, TrendingUp, ArrowUpRight, ArrowLeft, Info, X } from "lucide-react";
+import Link from "next/link";
 import { cn, formatToUSD } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
@@ -47,6 +48,7 @@ export default function CrashGame() {
     const [isCashingOut, setIsCashingOut] = useState(false);
     const [userActiveBet, setUserActiveBet] = useState<Bet | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [showRules, setShowRules] = useState(false);
 
     // --- MISE À JOUR DE L'ÉTAT (Polling) ---
     useEffect(() => {
@@ -101,7 +103,10 @@ export default function CrashGame() {
         return () => cancelAnimationFrame(animationFrame);
     }, [state]);
 
-    // --- CANVAS DRAWING (Graph) ---
+    // --- CANVAS DRAWING (Graph & Airplane) ---
+    const particles = useRef<{ x: number, y: number, size: number, opacity: number, vx: number, vy: number }[]>([]);
+    const [shake, setShake] = useState(0);
+
     useEffect(() => {
         if (!canvasRef.current || !state) return;
         const canvas = canvasRef.current;
@@ -109,51 +114,185 @@ export default function CrashGame() {
         if (!ctx) return;
 
         let frame: number;
+        let lastTime = Date.now();
+
+        const drawAirplane = (ctx: CanvasRenderingContext2D, x: number, y: number, angle: number) => {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+
+            // Stylized Airplane (Simplified SVG-like drawing)
+            ctx.fillStyle = '#6366f1';
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = 'rgba(99, 102, 241, 0.5)';
+
+            // Body
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 20, 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cockpit
+            ctx.fillStyle = '#a5b4fc';
+            ctx.beginPath();
+            ctx.ellipse(8, -2, 6, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Wings
+            ctx.fillStyle = '#4f46e5';
+            ctx.beginPath();
+            ctx.moveTo(-5, 0);
+            ctx.lineTo(-12, -15);
+            ctx.lineTo(2, -15);
+            ctx.lineTo(5, 0);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(-5, 0);
+            ctx.lineTo(-12, 15);
+            ctx.lineTo(2, 15);
+            ctx.lineTo(5, 0);
+            ctx.fill();
+
+            // Tail
+            ctx.beginPath();
+            ctx.moveTo(-15, 0);
+            ctx.lineTo(-22, -8);
+            ctx.lineTo(-18, 0);
+            ctx.lineTo(-22, 8);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
+        };
 
         const draw = () => {
+            const now = Date.now();
+            const deltaTime = now - lastTime;
+            lastTime = now;
+
             const w = canvas.width;
             const h = canvas.height;
             ctx.clearRect(0, 0, w, h);
 
+            // Screen Shake
+            if (shake > 0) {
+                const sx = (Math.random() - 0.5) * shake;
+                const sy = (Math.random() - 0.5) * shake;
+                ctx.translate(sx, sy);
+                setShake(prev => Math.max(0, prev - deltaTime * 0.1));
+            }
+
+            // Background Grid (moving)
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+            ctx.lineWidth = 1;
+            const gridSize = 50;
+            const offset = (state.phase === 'FLYING' ? (now % 1000) / 1000 : 0) * gridSize;
+
+            for (let x = -gridSize; x < w + gridSize; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x - offset, 0);
+                ctx.lineTo(x - offset, h);
+                ctx.stroke();
+            }
+            for (let y = -gridSize; y < h + gridSize; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(w, y);
+                ctx.stroke();
+            }
+
             if (state.phase === 'FLYING' || state.phase === 'CRASHED') {
-                // Courbe de croissance
+                const flyElapsed = Math.max(0, now - (state.startTime + 10000));
+                const points = 100;
+                const xBase = 40;
+                const yBase = h - 60;
+                const xScale = (w - 120) / 10; // Scale 10s of flight horizontally
+                const yScale = 60; // Pixels per multiplier unit
+
                 ctx.beginPath();
                 ctx.lineWidth = 4;
                 ctx.strokeStyle = state.phase === 'CRASHED' ? '#ef4444' : '#6366f1';
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
 
-                // Animation de la courbe proportionnelle au temps
-                const now = Date.now();
-                const elapsed = Math.max(0, now - (state.startTime + 10000));
-                const points = 50;
-                ctx.moveTo(40, h - 40);
+                let lastX = xBase;
+                let lastY = yBase;
+                ctx.moveTo(xBase, yBase);
 
-                for (let i = 0; i < points; i++) {
-                    const t = (elapsed / points) * i;
-                    const x = 40 + (i / points) * (w - 100);
+                for (let i = 1; i <= points; i++) {
+                    const t = (flyElapsed / points) * i;
                     const m = Math.exp(0.06 * (t / 1000));
-                    // Mapper le multiplicateur à la hauteur (log scale)
-                    const y = (h - 40) - Math.log(m) * 50;
+                    const x = xBase + (t / 1000) * xScale;
+                    const y = yBase - Math.log(m) * yScale;
+
+                    if (x > w - 40 || y < 40) break;
+
                     ctx.lineTo(x, y);
-                    if (m >= displayMultiplier && state.phase === 'FLYING') break;
+                    lastX = x;
+                    lastY = y;
                 }
                 ctx.stroke();
 
-                // Point Final / Rocket Icon would be here
+                // Smoke Particles
+                if (state.phase === 'FLYING') {
+                    if (Math.random() > 0.3) {
+                        particles.current.push({
+                            x: lastX,
+                            y: lastY,
+                            size: Math.random() * 5 + 2,
+                            opacity: 1,
+                            vx: -Math.random() * 2 - 1,
+                            vy: (Math.random() - 0.5) * 1
+                        });
+                    }
+                }
+
+                // Update & Draw Particles
+                ctx.save();
+                particles.current.forEach((p, i) => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.opacity -= 0.02;
+                    p.size += 0.1;
+
+                    ctx.fillStyle = state.phase === 'CRASHED' ? `rgba(239, 68, 68, ${p.opacity})` : `rgba(165, 180, 252, ${p.opacity * 0.5})`;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    if (p.opacity <= 0) particles.current.splice(i, 1);
+                });
+                ctx.restore();
+
+                // Draw Airplane at current tip
+                if (state.phase === 'FLYING') {
+                    const angle = 0.06 * (flyElapsed / 1000) * 0.5; // Estimated tangent
+                    drawAirplane(ctx, lastX, lastY, -angle);
+                } else if (state.phase === 'CRASHED') {
+                    // Explosion visual at crash site
+                    ctx.fillStyle = '#ef4444';
+                    ctx.beginPath();
+                    ctx.arc(lastX, lastY, 15, 0, Math.PI * 2);
+                    ctx.fill();
+                    if (shake === 0) setShake(20);
+                }
             }
 
-            // Axes
-            ctx.beginPath();
-            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-            ctx.lineWidth = 2;
-            ctx.moveTo(40, 20); ctx.lineTo(40, h - 40); ctx.lineTo(w - 20, h - 40);
-            ctx.stroke();
+            // Axes Labels (Simples)
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.font = '10px monospace';
+            ctx.fillText('1.00x', 10, h - 55);
+            ctx.fillText('Temps', w - 50, h - 30);
+
+            // Reset transform for next frame (after shake)
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
 
             frame = requestAnimationFrame(draw);
         };
 
         frame = requestAnimationFrame(draw);
         return () => cancelAnimationFrame(frame);
-    }, [state, displayMultiplier]);
+    }, [state, displayMultiplier, shake]);
 
     // --- ACTIONS ---
     const handlePlaceBet = async () => {
@@ -221,6 +360,31 @@ export default function CrashGame() {
     return (
         <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-700">
 
+            {/* Header Controls */}
+            <div className="flex items-center justify-between">
+                <Link
+                    href="/"
+                    className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors glass-card px-4 py-2"
+                >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span className="text-sm font-bold">Retour aux Jeux</span>
+                </Link>
+
+                <div className="flex items-center gap-3">
+                    <div className="hidden md:flex items-center gap-2 px-3 py-1.5 glass-card">
+                        <div className="w-2 h-2 bg-success rounded-full animate-pulse" />
+                        <span className="text-[10px] font-black text-white uppercase tracking-widest">Serveur en Ligne</span>
+                    </div>
+                    <button
+                        onClick={() => setShowRules(true)}
+                        className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors glass-card px-4 py-2"
+                    >
+                        <Info className="w-4 h-4" />
+                        <span className="text-sm font-bold">Règles</span>
+                    </button>
+                </div>
+            </div>
+
             {/* 1. TOP BAR : HISTORY */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-background-secondary rounded-lg border border-white/5 mr-4 shrink-0">
@@ -246,7 +410,7 @@ export default function CrashGame() {
 
                 {/* 2. LEFT: BETTING PANEL */}
                 <div className="lg:col-span-1 space-y-4 order-2 lg:order-1">
-                    <div className="bg-[#1A1D26] border border-white/5 rounded-2xl p-5 shadow-xl">
+                    <div className="glass-panel p-5 bg-mesh-gradient">
                         <div className="flex items-center justify-between mb-6">
                             <span className="text-sm font-bold text-white flex items-center gap-2">
                                 <Zap className="w-4 h-4 text-primary" /> Placer un Pari
@@ -268,9 +432,21 @@ export default function CrashGame() {
                                         className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-4 text-xl font-mono font-bold text-white focus:outline-none focus:border-primary/50 transition-all"
                                     />
                                     <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
-                                        <button onClick={() => setBetAmount(a => (parseInt(a) * 2).toString())} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold">2x</button>
-                                        <button onClick={() => setBetAmount(a => Math.max(10, Math.floor(parseInt(a) / 2)).toString())} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold">1/2</button>
+                                        <button onClick={() => setBetAmount(a => (parseInt(a) * 2).toString())} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold border border-white/5">2x</button>
+                                        <button onClick={() => setBetAmount(a => Math.max(10, Math.floor(parseInt(a) / 2)).toString())} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold border border-white/5">1/2</button>
                                     </div>
+                                </div>
+                                {/* PRESET AMOUNTS */}
+                                <div className="grid grid-cols-4 gap-2 mt-2">
+                                    {[100, 500, 1000, 5000].map((amt) => (
+                                        <button
+                                            key={amt}
+                                            onClick={() => setBetAmount(amt.toString())}
+                                            className="py-2 text-[10px] font-bold bg-white/5 hover:bg-white/10 text-text-tertiary hover:text-white rounded-lg border border-white/5 transition-all"
+                                        >
+                                            {amt >= 1000 ? (amt / 1000) + 'k' : amt}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
 
@@ -473,6 +649,63 @@ export default function CrashGame() {
                     </div>
                 </div>
             </div>
+
+            {/* Modal des Règles */}
+            {showRules && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-[#1A1D26] border border-white/10 rounded-3xl p-8 max-w-lg w-full relative shadow-2xl animate-in zoom-in duration-300">
+                        <button
+                            onClick={() => setShowRules(false)}
+                            className="absolute top-4 right-4 p-2 text-text-tertiary hover:text-white transition-colors"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+
+                        <h3 className="text-2xl font-display font-bold text-white mb-6 flex items-center gap-3">
+                            <Info className="w-6 h-6 text-primary" /> Règles de Crash
+                        </h3>
+
+                        <div className="space-y-6 text-text-secondary leading-relaxed overflow-y-auto max-h-[70vh] pr-2 no-scrollbar">
+                            <section>
+                                <h4 className="text-white font-bold mb-2 flex items-center gap-2">
+                                    <TrendingUp className="w-4 h-4 text-primary" /> Le Concept
+                                </h4>
+                                <p className="text-sm">
+                                    Une fusée décolle et son multiplicateur augmente de manière exponentielle. Le but est d'encaisser (Cashout) avant que la fusée n'explose (Crash).
+                                </p>
+                            </section>
+
+                            <section>
+                                <h4 className="text-white font-bold mb-2 flex items-center gap-2">
+                                    <Zap className="w-4 h-4 text-primary" /> Comment Jouer
+                                </h4>
+                                <ul className="text-sm space-y-2">
+                                    <li>1. <strong>Phase de Pari</strong> : Vous avez 10 secondes entre chaque round pour placer votre mise.</li>
+                                    <li>2. <strong>Le Vol</strong> : La fusée décolle. Le multiplicateur commence à 1.00x et monte.</li>
+                                    <li>3. <strong>Cashout</strong> : Cliquez sur le bouton "CASHOUT" à n'importe quel moment pour sécuriser vos gains. Gain = Mise x Multiplicateur actuel.</li>
+                                    <li>4. <strong>Le Crash</strong> : Si la fusée explose avant que vous n'ayez encaissé, vous perdez votre mise.</li>
+                                </ul>
+                            </section>
+
+                            <section className="bg-white/5 p-4 rounded-xl border border-white/5">
+                                <h4 className="text-white font-bold mb-2 text-sm flex items-center gap-2">
+                                    <Trophy className="w-4 h-4 text-primary" /> Stratégie & Équité
+                                </h4>
+                                <p className="text-xs">
+                                    Chaque round possède un point de crash prédéfini de manière algorithmique et vérifiable. Le crash peut survenir à n'importe quel moment, même à 1.00x !
+                                </p>
+                            </section>
+                        </div>
+
+                        <button
+                            onClick={() => setShowRules(false)}
+                            className="w-full mt-8 py-4 bg-primary hover:bg-primary-hover text-background font-black rounded-xl shadow-glow-gold transition-all"
+                        >
+                            JE SUIS PRÊT !
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

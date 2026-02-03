@@ -74,6 +74,18 @@ export async function POST() {
                 }
             });
 
+            // Log du gain
+            await tx.transaction.create({
+                data: {
+                    walletId: activeBet.walletId,
+                    type: 'WIN',
+                    amountSats: payout,
+                    paymentRef: `WIN_CRASH_${updatedRound.id}`,
+                    status: 'COMPLETED',
+                    metadata: { roundId: updatedRound.id, gameSlug: 'crash' }
+                }
+            })
+
             return { updatedRound, updatedWallet };
         });
 

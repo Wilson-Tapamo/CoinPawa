@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifySession } from '@/lib/auth'
@@ -79,6 +80,22 @@ export async function GET() {
         if (phase === 'FLYING' && now > startTime + BETTING_DURATION + flyDuration) {
             // Passer à CRASHED
             phase = 'CRASHED';
+
+            // FINALISER LES PARIS PERDANTS (Ceux qui n'ont pas cashout)
+            await prisma.gameRound.updateMany({
+                where: {
+                    gameId: game.id,
+                    status: 'ACTIVE',
+                    gameData: {
+                        path: ['roundId'],
+                        equals: roundId
+                    }
+                },
+                data: {
+                    status: 'COMPLETED',
+                    payoutAmountSats: 0
+                }
+            });
         }
 
         if (phase === 'CRASHED' && now > startTime + BETTING_DURATION + flyDuration + COOLDOWN_DURATION) {
@@ -99,6 +116,18 @@ export async function GET() {
                         activeRoundId: roundId,
                         history: [crashPoint, ...(config.history || []).slice(0, 9)]
                     }
+                }
+            });
+
+            // Par sécurité, on s'assure que TOUS les rounds du cycle précédent sont fermés
+            await prisma.gameRound.updateMany({
+                where: {
+                    gameId: game.id,
+                    status: 'ACTIVE',
+                },
+                data: {
+                    status: 'COMPLETED',
+                    payoutAmountSats: 0
                 }
             });
         } else if (phase !== config.phase) {

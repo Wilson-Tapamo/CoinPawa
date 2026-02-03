@@ -3,23 +3,15 @@ import { prisma } from '@/lib/prisma'
 import { verifySession } from '@/lib/auth'
 import { Prisma } from '@prisma/client'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: Request) {
     try {
         const userId = await verifySession()
         if (!userId) return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
 
         const body = await request.json()
-        const { amount } = body // amount: Sats, segment: string (risk level: 'low' | 'medium' | 'high') or specific multiplier?
-
-        // Spin Wheel Logic Simplifiée :
-        // Segments: 10x, 2x, 50x, 0x, ...
-        // On va faire un mode "Dream Catcher" simplifié
-        // Multiplicateurs disponibles : 1x (40%), 2x (30%), 5x (15%), 10x (10%), 20x (5%)
-
-        // Pour simplifier l'UX "Spin Wheel", l'utilisateur mise et lance la roue. Il ne choisit pas de segment "précis" (comme le Crazy Time),
-        // ou alors il parie sur une couleur/segment.
-        // Approche choisie : "Roue de la Fortune" classique. Mise -> Spin -> Résultat (Multiplicateur aléatoire pondéré).
-        // house edge intégré dans les probabilités.
+        const { amount } = body
 
         if (!amount || amount <= 0) {
             return NextResponse.json({ error: "Montant invalide" }, { status: 400 })
@@ -32,51 +24,39 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Fonds insuffisants" }, { status: 400 })
         }
 
-        // RNG Logic (Segments pondérés)
-        // Segments virtuels (Total 100)
-        // 0x (Perte) : 30%
-        // 1.5x : 40%
-        // 3x : 20%
-        // 10x : 9%
-        // 50x : 1%
+        // RNG Logic: 3 numbers between 1 and 9
+        const numbers = [
+            Math.floor(Math.random() * 9) + 1,
+            Math.floor(Math.random() * 9) + 1,
+            Math.floor(Math.random() * 9) + 1
+        ];
 
-        const random = Math.random() * 100;
-        let multiplier = 0;
-        let segmentLabel = "0x";
-
-        // Détermination résultat
-        if (random < 30) {
-            multiplier = 0;
-            segmentLabel = "0x (Try Again)";
-        } else if (random < 70) {
-            multiplier = 1.5;
-            segmentLabel = "1.5x";
-        } else if (random < 90) {
-            multiplier = 3;
-            segmentLabel = "3x";
-        } else if (random < 99) {
-            multiplier = 10;
-            segmentLabel = "10x";
-        } else {
-            multiplier = 50;
-            segmentLabel = "JACKPOT 50x";
+        // Match Logic
+        let matches = 0;
+        if (numbers[0] === numbers[1] && numbers[1] === numbers[2]) {
+            matches = 3;
+        } else if (numbers[0] === numbers[1] || numbers[1] === numbers[2] || numbers[0] === numbers[2]) {
+            matches = 2;
         }
 
+        let multiplier = 0;
+        if (matches === 3) multiplier = 100;
+        else if (matches === 2) multiplier = 5;
+
         const payout = Math.floor(amount * multiplier);
-        const isWin = payout > amount; // On considère Win si on récupère plus que la mise, sinon c'est partiel ou perte? 
-        // Ici multiplier 1.5x > 1x donc Win. 0x = Loss.
+        const isWin = payout > 0;
 
         const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             const game = await tx.game.upsert({
-                where: { slug: 'wheel' },
+                where: { slug: 'lottery' },
                 update: {},
                 create: {
-                    slug: 'wheel',
-                    name: 'Spin Wheel',
+                    slug: 'lottery',
+                    name: 'Loterie Rapide',
                     type: 'INSTANT',
                     isActive: true,
-                    rules: "Tournez la roue pour gagner jusqu'à 50x votre mise !",
-                    config: { houseEdge: 0.05 }
+                    rules: "Alignez 3 chiffres identiques pour gagner 100x votre mise !",
+                    config: { houseEdge: 0.1 }
                 }
             })
 
@@ -98,12 +78,13 @@ export async function POST(request: Request) {
                     payoutAmountSats: payout,
                     status: 'COMPLETED',
                     gameData: {
+                        numbers,
+                        matches,
                         multiplier,
-                        segmentLabel,
                         isWin
                     },
-                    clientSeed: "wheel",
-                    serverSeedHash: "wheel",
+                    clientSeed: "lottery",
+                    serverSeedHash: "lottery",
                     nonce: 1
                 }
             })
@@ -114,9 +95,9 @@ export async function POST(request: Request) {
                     walletId: wallet.id,
                     type: 'BET',
                     amountSats: BigInt(-amount),
-                    paymentRef: `BET_WHEEL_${round.id}`,
+                    paymentRef: `BET_LOTTERY_${round.id}`,
                     status: 'COMPLETED',
-                    metadata: { roundId: round.id, gameSlug: 'wheel' }
+                    metadata: { roundId: round.id, gameSlug: 'lottery' }
                 }
             })
 
@@ -136,20 +117,26 @@ export async function POST(request: Request) {
                         walletId: wallet.id,
                         type: 'WIN',
                         amountSats: BigInt(payout),
-                        paymentRef: `WIN_WHEEL_${round.id}`,
+                        paymentRef: `WIN_LOTTERY_${round.id}`,
                         status: 'COMPLETED',
-                        metadata: { roundId: round.id, gameSlug: 'wheel' }
+                        metadata: { roundId: round.id, gameSlug: 'lottery' }
                     }
                 })
             }
 
-            return { payout, newBalanceStr: finalWallet.balanceSats.toString(), multiplier, segmentLabel, isWin }
+            return {
+                payout,
+                newBalanceStr: finalWallet.balanceSats.toString(),
+                multiplier,
+                numbers,
+                isWin
+            }
         })
 
         return NextResponse.json({ success: true, result })
 
     } catch (error) {
-        console.error("Wheel error:", error);
+        console.error("Lottery error:", error);
         return NextResponse.json({ error: "Erreur serveur" }, { status: 500 })
     }
 }

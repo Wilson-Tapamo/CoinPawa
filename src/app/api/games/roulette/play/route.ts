@@ -100,16 +100,16 @@ export async function POST(request: Request) {
                 }
             })
 
-            const netChange = BigInt(totalPayout) - BigInt(totalBetAmount)
-
-            const updatedWallet = await tx.wallet.update({
+            // 1. Débiter la mise
+            const updatedWalletAfterBet = await tx.wallet.update({
                 where: { id: wallet.id },
                 data: {
-                    balanceSats: { increment: netChange },
+                    balanceSats: { decrement: BigInt(totalBetAmount) },
                     totalWageredSats: { increment: totalBetAmount }
                 }
             })
 
+            // 2. Créer le round
             const round = await tx.gameRound.create({
                 data: {
                     walletId: wallet.id,
@@ -130,7 +130,42 @@ export async function POST(request: Request) {
                 }
             })
 
-            return { updatedWallet, round, winningNumber, winningColor, totalPayout }
+            // 3. Log de la mise
+            await tx.transaction.create({
+                data: {
+                    walletId: wallet.id,
+                    type: 'BET',
+                    amountSats: BigInt(-totalBetAmount),
+                    paymentRef: `BET_ROULETTE_${round.id}`,
+                    status: 'COMPLETED',
+                    metadata: { roundId: round.id, gameSlug: 'roulette' }
+                }
+            })
+
+            let finalWallet = updatedWalletAfterBet;
+
+            // 4. Créditer le gain si présent
+            if (totalPayout > 0) {
+                finalWallet = await tx.wallet.update({
+                    where: { id: wallet.id },
+                    data: {
+                        balanceSats: { increment: BigInt(totalPayout) }
+                    }
+                })
+
+                await tx.transaction.create({
+                    data: {
+                        walletId: wallet.id,
+                        type: 'WIN',
+                        amountSats: BigInt(totalPayout),
+                        paymentRef: `WIN_ROULETTE_${round.id}`,
+                        status: 'COMPLETED',
+                        metadata: { roundId: round.id, gameSlug: 'roulette' }
+                    }
+                })
+            }
+
+            return { updatedWallet: finalWallet, round, winningNumber, winningColor, totalPayout }
         })
 
         return NextResponse.json({

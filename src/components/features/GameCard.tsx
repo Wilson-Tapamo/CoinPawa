@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { Play } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface GameCardProps {
     title: string;
@@ -11,13 +12,17 @@ interface GameCardProps {
     isHot?: boolean;
     isNew?: boolean;
     RTP?: string;
+    highlight?: boolean;
 }
 
-export function GameCard({ title, provider, image, imageSrc, isHot, isNew, RTP }: GameCardProps) {
+export function GameCard({ title, provider, image, imageSrc, isHot, isNew, RTP, highlight }: GameCardProps) {
     const hasImage = imageSrc && imageSrc.startsWith("/");
 
     return (
-        <div className="group relative rounded-xl overflow-hidden cursor-pointer">
+        <div className={cn(
+            "group relative rounded-xl overflow-hidden cursor-pointer transition-all",
+            highlight && "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-glow-gold scale-[1.02]"
+        )}>
             {/* Background Image or Gradient */}
             <div className="aspect-[3/4] w-full bg-surface relative overflow-hidden">
                 {hasImage ? (
@@ -36,10 +41,13 @@ export function GameCard({ title, provider, image, imageSrc, isHot, isNew, RTP }
 
                 {/* Badges */}
                 <div className="absolute top-2 left-2 flex gap-1">
+                    {highlight && (
+                        <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-primary text-background rounded-sm shadow-glow-gold animate-pulse">EN VEDETTE</span>
+                    )}
                     {isHot && (
                         <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-accent-rose text-white rounded-sm shadow-glow-purple">Hot</span>
                     )}
-                    {isNew && (
+                    {isNew && !highlight && (
                         <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-accent-cyan text-background rounded-sm shadow-glow-cyan">Nouveau</span>
                     )}
                 </div>
@@ -66,7 +74,10 @@ export function GameCard({ title, provider, image, imageSrc, isHot, isNew, RTP }
             </div>
 
             {/* Hover Border Glow */}
-            <div className="absolute inset-0 border border-white/5 group-hover:border-primary/50 rounded-xl transition-colors pointer-events-none" />
+            <div className={cn(
+                "absolute inset-0 border rounded-xl transition-colors pointer-events-none",
+                highlight ? "border-primary/50" : "border-white/5 group-hover:border-primary/50"
+            )} />
         </div>
     );
 }

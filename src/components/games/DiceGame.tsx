@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Dices, Loader2, Trophy, XCircle, Plus, Minus } from "lucide-react";
+import { Dices, Loader2, Trophy, XCircle, Plus, Minus, ArrowLeft, Info, X } from "lucide-react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 // ============================================
@@ -161,6 +162,7 @@ export default function DiceGame() {
     const [lastResults, setLastResults] = useState<BetResult[] | null>(null);
     const [error, setError] = useState("");
     const [totalPayout, setTotalPayout] = useState(0);
+    const [showRules, setShowRules] = useState(false);
 
     // Multiplicateurs
     const MULTIPLIERS = {
@@ -237,18 +239,37 @@ export default function DiceGame() {
     const hasWon = lastResults?.some((r) => r.isWin);
 
     return (
-        <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in zoom-in duration-500">
+        <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
             {/* Container Principal */}
-            <div className="bg-[#1A1D26] border border-white/5 rounded-3xl p-6 md:p-10 relative overflow-hidden shadow-2xl">
+            <div className="glass-panel p-6 md:p-10 relative overflow-hidden bg-mesh-gradient">
                 {/* Background FX */}
-                <div className="absolute top-0 right-0 w-96 h-96 bg-purple-600/10 rounded-full blur-[100px] pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-600/10 rounded-full blur-[100px] pointer-events-none" />
+                <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[120px] pointer-events-none animate-pulse-slow" />
+                <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent-violet/5 rounded-full blur-[120px] pointer-events-none animate-pulse-slow" />
 
                 <div className="relative z-10">
+                    {/* Header Controls */}
+                    <div className="flex items-center justify-between mb-8">
+                        <Link
+                            href="/"
+                            className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors bg-white/5 px-4 py-2 rounded-xl border border-white/5"
+                        >
+                            <ArrowLeft className="w-4 h-4" />
+                            <span className="text-sm font-bold">Retour</span>
+                        </Link>
+
+                        <button
+                            onClick={() => setShowRules(true)}
+                            className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors bg-white/5 px-4 py-2 rounded-xl border border-white/5"
+                        >
+                            <Info className="w-4 h-4" />
+                            <span className="text-sm font-bold">Règles</span>
+                        </button>
+                    </div>
+
                     {/* Header */}
                     <div className="text-center mb-8">
-                        <h2 className="text-3xl font-display font-bold text-white mb-2 flex items-center justify-center gap-3">
-                            <Dices className="w-8 h-8 text-primary" /> Dice
+                        <h2 className="text-4xl font-display font-bold text-white mb-2 flex items-center justify-center gap-3">
+                            <Dices className="w-10 h-10 text-primary" /> Dice
                         </h2>
                         <p className="text-text-secondary">
                             Lancez 2 dés et pariez sur le total : Moins de 7, Exactement 7, ou Plus de 7
@@ -345,6 +366,20 @@ export default function DiceGame() {
                                     <Plus className="w-4 h-4" />
                                 </button>
                             </div>
+
+                            {/* PRESET AMOUNTS */}
+                            <div className="flex flex-wrap justify-center gap-2 mt-4">
+                                {[100, 500, 1000, 5000].map((amt) => (
+                                    <button
+                                        key={amt}
+                                        onClick={() => setBetAmount("under7", amt.toString())}
+                                        className="px-2 py-1 text-[10px] font-bold bg-white/5 hover:bg-white/10 text-text-tertiary hover:text-white rounded-md border border-white/5 transition-all"
+                                    >
+                                        {amt >= 1000 ? (amt / 1000) + 'k' : amt}
+                                    </button>
+                                ))}
+                            </div>
+
                             {lastResults?.find((r) => r.type === "under7") && (
                                 <div className={cn(
                                     "mt-3 text-center text-sm font-bold",
@@ -389,6 +424,20 @@ export default function DiceGame() {
                                     <Plus className="w-4 h-4" />
                                 </button>
                             </div>
+
+                            {/* PRESET AMOUNTS */}
+                            <div className="flex flex-wrap justify-center gap-2 mt-4">
+                                {[100, 500, 1000, 5000].map((amt) => (
+                                    <button
+                                        key={amt}
+                                        onClick={() => setBetAmount("exact7", amt.toString())}
+                                        className="px-2 py-1 text-[10px] font-bold bg-white/5 hover:bg-white/10 text-text-tertiary hover:text-white rounded-md border border-white/5 transition-all"
+                                    >
+                                        {amt >= 1000 ? (amt / 1000) + 'k' : amt}
+                                    </button>
+                                ))}
+                            </div>
+
                             {lastResults?.find((r) => r.type === "exact7") && (
                                 <div className={cn(
                                     "mt-3 text-center text-sm font-bold",
@@ -433,6 +482,20 @@ export default function DiceGame() {
                                     <Plus className="w-4 h-4" />
                                 </button>
                             </div>
+
+                            {/* PRESET AMOUNTS */}
+                            <div className="flex flex-wrap justify-center gap-2 mt-4">
+                                {[100, 500, 1000, 5000].map((amt) => (
+                                    <button
+                                        key={amt}
+                                        onClick={() => setBetAmount("over7", amt.toString())}
+                                        className="px-2 py-1 text-[10px] font-bold bg-white/5 hover:bg-white/10 text-text-tertiary hover:text-white rounded-md border border-white/5 transition-all"
+                                    >
+                                        {amt >= 1000 ? (amt / 1000) + 'k' : amt}
+                                    </button>
+                                ))}
+                            </div>
+
                             {lastResults?.find((r) => r.type === "over7") && (
                                 <div className={cn(
                                     "mt-3 text-center text-sm font-bold",
@@ -494,6 +557,56 @@ export default function DiceGame() {
                     <li>• Vous pouvez placer plusieurs paris simultanément sur différentes options</li>
                 </ul>
             </div>
+
+            {/* Modal des Règles */}
+            {showRules && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-[#1A1D26] border border-white/10 rounded-3xl p-8 max-w-md w-full relative shadow-2xl animate-in zoom-in duration-300">
+                        <button
+                            onClick={() => setShowRules(false)}
+                            className="absolute top-4 right-4 p-2 text-text-tertiary hover:text-white transition-colors"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+
+                        <h3 className="text-2xl font-display font-bold text-white mb-6 flex items-center gap-3">
+                            <Info className="w-6 h-6 text-primary" /> Règles de Dice
+                        </h3>
+
+                        <div className="space-y-4 text-text-secondary leading-relaxed">
+                            <p>
+                                Dice est un jeu simple où vous lancez deux dés et pariez sur le résultat total.
+                            </p>
+                            <div className="space-y-2 bg-white/5 p-4 rounded-xl border border-white/5">
+                                <div className="flex justify-between items-center">
+                                    <span className="font-bold text-white">Moins de 7 (2-6)</span>
+                                    <span className="text-primary font-bold">x2.0</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="font-bold text-white">Exactement 7</span>
+                                    <span className="text-primary font-bold">x6.0</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="font-bold text-white">Plus de 7 (8-12)</span>
+                                    <span className="text-primary font-bold">x2.0</span>
+                                </div>
+                            </div>
+                            <p className="text-sm">
+                                • Choisissez votre montant de pari pour une ou plusieurs options.<br />
+                                • Les résultats sont générés de manière aléatoire et équitable.<br />
+                                • Le multiplicateur s'applique uniquement à la mise correspondante.
+                            </p>
+                        </div>
+
+                        <button
+                            onClick={() => setShowRules(false)}
+                            className="w-full mt-8 py-4 bg-primary hover:bg-primary-hover text-background font-black rounded-xl transition-all"
+                        >
+                            COMPRIS !
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
