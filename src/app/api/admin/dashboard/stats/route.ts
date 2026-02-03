@@ -1,4 +1,5 @@
 // src/app/api/admin/dashboard/stats/route.ts
+export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifySession } from '@/lib/auth'
@@ -74,8 +75,8 @@ export async function GET() {
     })
 
     // House edge = (Wagered - Won) / Wagered * 100
-    const houseEdge = totalWagered > 0 
-      ? ((totalWagered - totalWon) / totalWagered) * 100 
+    const houseEdge = totalWagered > 0
+      ? ((totalWagered - totalWon) / totalWagered) * 100
       : 0
 
     // Retraits en attente

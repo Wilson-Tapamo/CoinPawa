@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Trophy, XCircle, RotateCw, Coins, History, Trash2 } from "lucide-react";
+import { Loader2, Trophy, XCircle, RotateCw, Coins, History, Trash2, ArrowLeft, Info, X, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 import { cn, formatToUSD } from "@/lib/utils";
 import { RouletteTable } from "./RouletteTable";
 
@@ -22,6 +23,7 @@ export default function RouletteGame() {
     const [lastResult, setLastResult] = useState<{ number: number, color: string, payout: number } | null>(null);
     const [error, setError] = useState("");
     const [rotation, setRotation] = useState(0);
+    const [showRules, setShowRules] = useState(false);
 
     const totalBet = Object.values(bets).reduce((a, b) => a + b, 0);
 
@@ -98,24 +100,44 @@ export default function RouletteGame() {
         <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
 
             {/* 1. HEADER & HISTORIQUE (Simulé) */}
-            <div className="flex justify-between items-center bg-[#1A1D26] border border-white/5 rounded-2xl p-4">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                        <RotateCw className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                        <h2 className="text-lg font-display font-bold text-white">Roulette 1xbet</h2>
-                        <p className="text-[10px] text-text-tertiary uppercase font-bold tracking-widest">Européenne • Multi-Paris</p>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#1A1D26] border border-white/5 rounded-2xl p-4">
+                <div className="flex items-center justify-between md:justify-start gap-4 flex-1">
+                    <Link
+                        href="/games"
+                        className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors bg-white/5 px-3 py-2 rounded-xl border border-white/5"
+                    >
+                        <ArrowLeft className="w-4 h-4" />
+                        <span className="text-xs font-bold">Retour</span>
+                    </Link>
+
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                            <RotateCw className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-display font-bold text-white leading-none mb-1">Roulette</h2>
+                            <p className="text-[8px] text-text-tertiary uppercase font-bold tracking-widest leading-none">Européenne • Multi-Paris</p>
+                        </div>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-text-tertiary font-bold uppercase mr-2">Derniers :</span>
-                    {[32, 15, 0, 19, 4].map((n, i) => (
-                        <div key={i} className={cn("w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white", n === 0 ? "bg-green-600" : [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36].includes(n) ? "bg-red-600" : "bg-zinc-800")}>
-                            {n}
-                        </div>
-                    ))}
+                <div className="flex items-center justify-between md:justify-end gap-4 flex-1">
+                    <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-text-tertiary font-bold uppercase mr-2">Derniers :</span>
+                        {[32, 15, 0, 19, 4].map((n, i) => (
+                            <div key={i} className={cn("w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white", n === 0 ? "bg-green-600" : [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36].includes(n) ? "bg-red-600" : "bg-zinc-800")}>
+                                {n}
+                            </div>
+                        ))}
+                    </div>
+
+                    <button
+                        onClick={() => setShowRules(true)}
+                        className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors bg-white/5 px-3 py-2 rounded-xl border border-white/5"
+                    >
+                        <Info className="w-4 h-4" />
+                        <span className="text-xs font-bold">Règles</span>
+                    </button>
                 </div>
             </div>
 
@@ -245,6 +267,69 @@ export default function RouletteGame() {
             {error && (
                 <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm font-bold text-center animate-in shake duration-300">
                     {error}
+                </div>
+            )}
+
+            {/* Modal des Règles */}
+            {showRules && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-[#1A1D26] border border-white/10 rounded-3xl p-8 max-w-lg w-full relative shadow-2xl animate-in zoom-in duration-300">
+                        <button
+                            onClick={() => setShowRules(false)}
+                            className="absolute top-4 right-4 p-2 text-text-tertiary hover:text-white transition-colors"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+
+                        <h3 className="text-2xl font-display font-bold text-white mb-6 flex items-center gap-3">
+                            <Info className="w-6 h-6 text-primary" /> Règles de Roulette
+                        </h3>
+
+                        <div className="space-y-6 text-text-secondary leading-relaxed overflow-y-auto max-h-[70vh] pr-2 no-scrollbar">
+                            <section>
+                                <h4 className="text-white font-bold mb-2 flex items-center gap-2">
+                                    <RotateCw className="w-4 h-4 text-primary" /> Le Jeu
+                                </h4>
+                                <p className="text-sm">
+                                    La roulette européenne comprend 37 numéros (0 à 36). Placez vos jetons sur la table et lancez la bille !
+                                </p>
+                            </section>
+
+                            <section>
+                                <h4 className="text-white font-bold mb-2 flex items-center gap-2">
+                                    <Coins className="w-4 h-4 text-primary" /> Types de Paris
+                                </h4>
+                                <div className="grid grid-cols-2 gap-4 text-xs">
+                                    <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                                        <div className="flex justify-between mb-1"><strong>Numéro Plein</strong> <span>x36</span></div>
+                                        <div className="flex justify-between mb-1"><strong>Cheval</strong> <span>x18</span></div>
+                                        <div className="flex justify-between mb-1"><strong>Carré</strong> <span>x9</span></div>
+                                    </div>
+                                    <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                                        <div className="flex justify-between mb-1"><strong>Rouge/Noir</strong> <span>x2</span></div>
+                                        <div className="flex justify-between mb-1"><strong>Pair/Impair</strong> <span>x2</span></div>
+                                        <div className="flex justify-between mb-1"><strong>Douzaine</strong> <span>x3</span></div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section className="bg-white/5 p-4 rounded-xl border border-white/5">
+                                <h4 className="text-white font-bold mb-2 text-sm flex items-center gap-2 text-success">
+                                    <ShieldCheck className="w-4 h-4" /> Jeu Responsable
+                                </h4>
+                                <p className="text-xs">
+                                    Sélectionnez vos jetons en fonction de votre capital. Vous pouvez effacer vos paris avec l'icône corbeille avant de lancer la bille.
+                                </p>
+                            </section>
+                        </div>
+
+                        <button
+                            onClick={() => setShowRules(false)}
+                            className="w-full mt-8 py-4 bg-primary hover:bg-primary-hover text-background font-black rounded-xl shadow-glow-gold transition-all"
+                        >
+                            À VOS JEUX !
+                        </button>
+                    </div>
                 </div>
             )}
         </div>

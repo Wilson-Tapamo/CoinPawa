@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Rocket, Loader2, Trophy, Bomb, Users, Zap, History, TrendingUp, ArrowUpRight } from "lucide-react";
+import { Rocket, Loader2, Trophy, Bomb, Users, Zap, History, TrendingUp, ArrowUpRight, ArrowLeft, Info, X } from "lucide-react";
+import Link from "next/link";
 import { cn, formatToUSD } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
@@ -47,6 +48,7 @@ export default function CrashGame() {
     const [isCashingOut, setIsCashingOut] = useState(false);
     const [userActiveBet, setUserActiveBet] = useState<Bet | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [showRules, setShowRules] = useState(false);
 
     // --- MISE À JOUR DE L'ÉTAT (Polling) ---
     useEffect(() => {
@@ -221,6 +223,31 @@ export default function CrashGame() {
     return (
         <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-700">
 
+            {/* Header Controls */}
+            <div className="flex items-center justify-between">
+                <Link
+                    href="/games"
+                    className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors bg-[#1A1D26] px-4 py-2 rounded-xl border border-white/5 shadow-lg"
+                >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span className="text-sm font-bold">Retour aux Jeux</span>
+                </Link>
+
+                <div className="flex items-center gap-3">
+                    <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-[#1A1D26] rounded-lg border border-white/5">
+                        <div className="w-2 h-2 bg-success rounded-full animate-pulse" />
+                        <span className="text-[10px] font-black text-white uppercase tracking-widest">Serveur en Ligne</span>
+                    </div>
+                    <button
+                        onClick={() => setShowRules(true)}
+                        className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors bg-[#1A1D26] px-4 py-2 rounded-xl border border-white/5 shadow-lg"
+                    >
+                        <Info className="w-4 h-4" />
+                        <span className="text-sm font-bold">Règles</span>
+                    </button>
+                </div>
+            </div>
+
             {/* 1. TOP BAR : HISTORY */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-background-secondary rounded-lg border border-white/5 mr-4 shrink-0">
@@ -268,9 +295,21 @@ export default function CrashGame() {
                                         className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-4 text-xl font-mono font-bold text-white focus:outline-none focus:border-primary/50 transition-all"
                                     />
                                     <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
-                                        <button onClick={() => setBetAmount(a => (parseInt(a) * 2).toString())} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold">2x</button>
-                                        <button onClick={() => setBetAmount(a => Math.max(10, Math.floor(parseInt(a) / 2)).toString())} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold">1/2</button>
+                                        <button onClick={() => setBetAmount(a => (parseInt(a) * 2).toString())} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold border border-white/5">2x</button>
+                                        <button onClick={() => setBetAmount(a => Math.max(10, Math.floor(parseInt(a) / 2)).toString())} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold border border-white/5">1/2</button>
                                     </div>
+                                </div>
+                                {/* PRESET AMOUNTS */}
+                                <div className="grid grid-cols-4 gap-2 mt-2">
+                                    {[100, 500, 1000, 5000].map((amt) => (
+                                        <button
+                                            key={amt}
+                                            onClick={() => setBetAmount(amt.toString())}
+                                            className="py-2 text-[10px] font-bold bg-white/5 hover:bg-white/10 text-text-tertiary hover:text-white rounded-lg border border-white/5 transition-all"
+                                        >
+                                            {amt >= 1000 ? (amt / 1000) + 'k' : amt}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
 
@@ -473,6 +512,63 @@ export default function CrashGame() {
                     </div>
                 </div>
             </div>
+
+            {/* Modal des Règles */}
+            {showRules && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-[#1A1D26] border border-white/10 rounded-3xl p-8 max-w-lg w-full relative shadow-2xl animate-in zoom-in duration-300">
+                        <button
+                            onClick={() => setShowRules(false)}
+                            className="absolute top-4 right-4 p-2 text-text-tertiary hover:text-white transition-colors"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+
+                        <h3 className="text-2xl font-display font-bold text-white mb-6 flex items-center gap-3">
+                            <Info className="w-6 h-6 text-primary" /> Règles de Crash
+                        </h3>
+
+                        <div className="space-y-6 text-text-secondary leading-relaxed overflow-y-auto max-h-[70vh] pr-2 no-scrollbar">
+                            <section>
+                                <h4 className="text-white font-bold mb-2 flex items-center gap-2">
+                                    <TrendingUp className="w-4 h-4 text-primary" /> Le Concept
+                                </h4>
+                                <p className="text-sm">
+                                    Une fusée décolle et son multiplicateur augmente de manière exponentielle. Le but est d'encaisser (Cashout) avant que la fusée n'explose (Crash).
+                                </p>
+                            </section>
+
+                            <section>
+                                <h4 className="text-white font-bold mb-2 flex items-center gap-2">
+                                    <Zap className="w-4 h-4 text-primary" /> Comment Jouer
+                                </h4>
+                                <ul className="text-sm space-y-2">
+                                    <li>1. <strong>Phase de Pari</strong> : Vous avez 10 secondes entre chaque round pour placer votre mise.</li>
+                                    <li>2. <strong>Le Vol</strong> : La fusée décolle. Le multiplicateur commence à 1.00x et monte.</li>
+                                    <li>3. <strong>Cashout</strong> : Cliquez sur le bouton "CASHOUT" à n'importe quel moment pour sécuriser vos gains. Gain = Mise x Multiplicateur actuel.</li>
+                                    <li>4. <strong>Le Crash</strong> : Si la fusée explose avant que vous n'ayez encaissé, vous perdez votre mise.</li>
+                                </ul>
+                            </section>
+
+                            <section className="bg-white/5 p-4 rounded-xl border border-white/5">
+                                <h4 className="text-white font-bold mb-2 text-sm flex items-center gap-2">
+                                    <Trophy className="w-4 h-4 text-primary" /> Stratégie & Équité
+                                </h4>
+                                <p className="text-xs">
+                                    Chaque round possède un point de crash prédéfini de manière algorithmique et vérifiable. Le crash peut survenir à n'importe quel moment, même à 1.00x !
+                                </p>
+                            </section>
+                        </div>
+
+                        <button
+                            onClick={() => setShowRules(false)}
+                            className="w-full mt-8 py-4 bg-primary hover:bg-primary-hover text-background font-black rounded-xl shadow-glow-gold transition-all"
+                        >
+                            JE SUIS PRÊT !
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
