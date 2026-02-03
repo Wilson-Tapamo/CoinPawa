@@ -24,6 +24,7 @@ import DiceGame from "@/components/games/DiceGame";
 import RouletteGame from "@/components/games/RouletteGame";
 import WheelGame from "@/components/games/WheelGame";
 import CrashGame from "@/components/games/CrashGame";
+import LotteryGame from "@/components/games/LotteryGame";
 
 export default function GameDetailsPage({ params }: { params: { id: string } }) {
     const [isPlaying, setIsPlaying] = useState(false);
@@ -34,6 +35,7 @@ export default function GameDetailsPage({ params }: { params: { id: string } }) 
     if (params.id === 'roulette') return <RouletteGame />;
     if (params.id === 'wheel') return <WheelGame />;
     if (params.id === 'crash') return <CrashGame />;
+    if (params.id === 'lottery') return <LotteryGame />;
 
     return (
         <div className="max-w-6xl mx-auto space-y-6">
