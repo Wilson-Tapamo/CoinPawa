@@ -45,18 +45,23 @@ body {
   0% {
     transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg);
   }
+
   20% {
     transform: rotateX(180deg) rotateY(90deg) rotateZ(45deg);
   }
+
   40% {
     transform: rotateX(360deg) rotateY(180deg) rotateZ(90deg);
   }
+
   60% {
     transform: rotateX(540deg) rotateY(270deg) rotateZ(135deg);
   }
+
   80% {
     transform: rotateX(720deg) rotateY(360deg) rotateZ(180deg);
   }
+
   100% {
     transform: rotateX(900deg) rotateY(450deg) rotateZ(225deg);
   }
@@ -78,9 +83,12 @@ body {
 
 /* Slow pulse animation */
 @keyframes pulse-slow {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.3;
   }
+
   50% {
     opacity: 0.5;
   }
@@ -88,4 +96,32 @@ body {
 
 .animate-pulse-slow {
   animation: pulse-slow 4s ease-in-out infinite;
+}
+
+/* Custom Scrollbar Styles - Ultra Modern & Discreet */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  border: 1px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+  background-clip: content-box;
+}
+
+/* Firefox support */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
 }

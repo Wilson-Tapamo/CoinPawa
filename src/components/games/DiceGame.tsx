@@ -250,7 +250,7 @@ export default function DiceGame() {
                     {/* Header Controls */}
                     <div className="flex items-center justify-between mb-8">
                         <Link
-                            href="/games"
+                            href="/"
                             className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors bg-white/5 px-4 py-2 rounded-xl border border-white/5"
                         >
                             <ArrowLeft className="w-4 h-4" />
