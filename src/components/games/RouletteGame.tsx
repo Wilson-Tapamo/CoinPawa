@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Trophy, XCircle, RotateCw, Coins, History, Trash2, ArrowLeft, Info, X, ShieldCheck } from "lucide-react";
 import Link from "next/link";
-import { cn, formatToUSD } from "@/lib/utils";
+import { cn, formatToUSD, usdToSats, satsToUsd } from "@/lib/utils";
 import { RouletteTable } from "./RouletteTable";
 
 // Configuration de la roue (ordre européen des numéros)
@@ -15,8 +15,8 @@ export default function RouletteGame() {
 
     // États des paris
     const [bets, setBets] = useState<{ [key: string]: number }>({});
-    const [activeChip, setActiveChip] = useState<number>(100);
-    const CHIPS = [10, 50, 100, 500, 1000, 5000];
+    const [activeChip, setActiveChip] = useState<number>(1);
+    const CHIPS = [0.1, 0.5, 1, 5, 10, 25, 100];
 
     // États du jeu
     const [isSpinning, setIsSpinning] = useState(false);
@@ -50,10 +50,16 @@ export default function RouletteGame() {
         setError("");
 
         try {
+            // Convertir les paris en SATS pour l'API
+            const betsSats = Object.entries(bets).reduce((acc, [key, val]) => ({
+                ...acc,
+                [key]: usdToSats(val)
+            }), {});
+
             const res = await fetch("/api/games/roulette/play", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ bets })
+                body: JSON.stringify({ bets: betsSats })
             });
 
             const data = await res.json();
@@ -75,7 +81,7 @@ export default function RouletteGame() {
                     setLastResult({
                         number: data.result.number,
                         color: data.result.color,
-                        payout: data.result.payout
+                        payout: satsToUsd(data.result.payout) // Convertir SATS -> USD pour l'affichage
                     });
                     setIsSpinning(false);
                     router.refresh(); // Sync balance
@@ -245,7 +251,7 @@ export default function RouletteGame() {
                     <div className="bg-[#1A1D26] border border-white/5 rounded-2xl p-6 flex items-center justify-between gap-6 shadow-xl">
                         <div className="flex-1">
                             <p className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest mb-1">Mise Totale</p>
-                            <div className="text-2xl font-display font-black text-white">{totalBet.toLocaleString()} SATS</div>
+                            <div className="text-2xl font-display font-black text-white">{formatToUSD(totalBet)}</div>
                         </div>
 
                         <button
