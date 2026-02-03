@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { GameCard } from "@/components/features/GameCard";
 import { LiveWinsTable } from "@/components/features/LiveWinsTable";
-import { cn } from "@/lib/utils";
+import { cn, formatToUSD } from "@/lib/utils";
 import Image from "next/image";
 
 // --- DONNÉES DES JEUX ---
@@ -31,7 +31,7 @@ export default function Home() {
 
   // --- ÉTATS ---
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [balance, setBalance] = useState("0");
+  const [balance, setBalance] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("lobby");
 
@@ -42,7 +42,9 @@ export default function Home() {
         const res = await fetch("/api/wallet/balance");
         if (res.ok) {
           const data = await res.json();
-          setBalance(data.balance);
+          const balanceUsd = parseInt(data.balance) / 100_000_000;
+          setBalance(balanceUsd);
+          // setBalance(data.balance);
           setIsLoggedIn(true);
         } else {
           setIsLoggedIn(false);
@@ -93,7 +95,7 @@ export default function Home() {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
       setIsLoggedIn(false);
-      setBalance("0");
+      setBalance(0);
       router.refresh();
     } catch (error) {
       console.error("Erreur logout", error);
@@ -101,7 +103,7 @@ export default function Home() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 min-h-screen p-6">
 
       {/* 1. HERO SECTION */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -142,8 +144,8 @@ export default function Home() {
               </div>
 
               <div className="flex items-baseline gap-2 mb-6">
-                <span className="text-4xl md:text-6xl font-display font-bold text-white">{parseInt(balance).toLocaleString()}</span>
-                <span className="text-2xl md:text-4xl font-display text-white/50">SATS</span>
+                <span className="text-4xl md:text-6xl font-display font-bold text-white">{formatToUSD(balance) }</span>
+                {/* <span className="text-2xl md:text-4xl font-display text-white/50">SATS</span> */}
               </div>
 
               <div className="flex items-center gap-3">

@@ -70,6 +70,8 @@ model User {
   username     String   @unique
   email        String?  @unique
   passwordHash String 
+  avatarUrl    String?
+  bannerUrl    String?
   
   // 🆕 ADMIN & MODÉRATION
   role         UserRole @default(USER)

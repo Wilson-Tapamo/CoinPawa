@@ -61,7 +61,7 @@ export function HeaderActions({ isLoggedIn, initialBalance, username }: HeaderAc
           </div>
           <div className="flex flex-col md:flex-row md:items-baseline gap-1">
             <span className="text-sm font-bold text-white font-display">
-              {formatToUSD(initialBalance / 100000)}
+              {formatToUSD((initialBalance) / 100000000)}
             </span>
           </div>
         </div>

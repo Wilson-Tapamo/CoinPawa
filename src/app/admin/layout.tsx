@@ -14,7 +14,8 @@ import {
   Menu,
   X,
   Bell,
-  Search
+  Search,
+  ArrowLeft
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -104,9 +105,8 @@ export default function AdminLayout({
         <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-[#1A1D26] border-r border-white/5 px-6 pb-4">
           {/* Logo */}
           <div className="flex h-16 shrink-0 items-center border-b border-white/5">
-            <h1 className="text-xl font-display font-bold text-white flex items-center gap-2">
-              <span className="text-2xl">🎰</span>
-              CoinPawa Admin
+            <h1 className="text-xl font-display font-bold text-yellow flex items-center gap-2">
+              CoinPower Admin
             </h1>
           </div>
 
@@ -145,8 +145,19 @@ export default function AdminLayout({
                 </ul>
               </li>
 
-              {/* Admin Info */}
+              {/* Retour à l'application */}
               <li className="mt-auto">
+                <Link
+                  href="/"
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold leading-6 text-accent-cyan hover:bg-accent-cyan/10 transition-all"
+                >
+                  <ArrowLeft className="h-5 w-5 shrink-0" />
+                  Retour à l'application
+                </Link>
+              </li>
+
+              {/* Admin Info */}
+              <li>
                 <div className="p-3 rounded-xl bg-background-secondary border border-white/5">
                   {adminInfo ? (
                     <>
@@ -238,6 +249,16 @@ export default function AdminLayout({
                         );
                       })}
                     </ul>
+                  </li>
+
+                  <li className="mt-auto">
+                    <Link
+                      href="/"
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold leading-6 text-accent-cyan hover:bg-accent-cyan/10 transition-all"
+                    >
+                      <ArrowLeft className="h-5 w-5 shrink-0" />
+                      Retour à l'application
+                    </Link>
                   </li>
 
                   <li className="mt-auto">

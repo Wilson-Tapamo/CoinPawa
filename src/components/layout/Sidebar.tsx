@@ -1,3 +1,4 @@
+// Sidebar
 "use client";
 
 import Link from "next/link";
@@ -17,6 +18,11 @@ export const SECONDARY_NAV_ITEMS = [
 
 export function Sidebar() {
     const pathname = usePathname();
+
+    // ❌ NE PAS AFFICHER la sidebar dans /admin
+    if (pathname.startsWith('/admin')) {
+        return null;
+    }
 
     return (
         <aside className="hidden md:flex flex-col w-64 h-screen fixed left-0 top-0 bg-background-secondary border-r border-white/5 z-40">

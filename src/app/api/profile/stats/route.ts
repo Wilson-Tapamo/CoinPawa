@@ -5,150 +5,89 @@ import { verifySession } from '@/lib/auth'
 
 export async function GET() {
   try {
-    // 1. Vérifier l'authentification
     const userId = await verifySession()
     if (!userId) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     }
 
-    // 2. Récupérer le wallet
-    const wallet = await prisma.wallet.findUnique({
-      where: { userId },
-      select: {
-        balanceSats: true,
-        totalDepositedSats: true,
-        totalWageredSats: true,
-      }
-    })
-
-    // 3. Récupérer les infos de l'utilisateur
+    // Récupérer l'utilisateur
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
+        id: true,
         username: true,
         email: true,
-        createdAt: true,
+        avatarUrl: true,  // ✅ AJOUTER (après migration)
+        bannerUrl: true,  // ✅ AJOUTER (après migration)
+        createdAt: true
       }
     })
 
-    if (!wallet || !user) {
-      return NextResponse.json({ error: 'Wallet ou utilisateur introuvable' }, { status: 404 })
+    if (!user) {
+      return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 })
     }
 
-    // 4. Récupérer toutes les transactions
-    const transactions = await prisma.transaction.findMany({
-      where: {
-        wallet: { userId }
-      },
+    // Récupérer le wallet
+    const wallet = await prisma.wallet.findUnique({
+      where: { userId },
       select: {
-        type: true,
-        amountSats: true,
-        status: true,
-        createdAt: true,
+        id: true,  // ✅ AJOUTER
+        balanceSats: true,
+        totalDepositedSats: true,
+        totalWageredSats: true
       }
     })
 
-    // 5. Calculer les statistiques
-    const stats = {
-      // Dépôts
-      totalDeposited: 0,
-      depositCount: 0,
-      
-      // Retraits
-      totalWithdrawn: 0,
-      withdrawalCount: 0,
-      
-      // Paris
-      totalWagered: 0,
-      totalBets: 0,
-      
-      // Gains
-      totalWon: 0,
-      winCount: 0,
-      maxWin: 0,
-      
-      // Calculés
-      winRate: 0,
-      netProfit: 0,
-      currentBalance: 0,
-    }
-
-    transactions.forEach(tx => {
-      const amountUsd = Number(tx.amountSats) / 100_000_000
-
-      switch (tx.type) {
-        case 'DEPOSIT':
-        case 'DEPOSIT_BONUS':
-          if (tx.status === 'COMPLETED') {
-            stats.totalDeposited += amountUsd
-            stats.depositCount++
-          }
-          break
-
-        case 'WITHDRAW':
-          if (tx.status === 'COMPLETED') {
-            stats.totalWithdrawn += amountUsd
-            stats.withdrawalCount++
-          }
-          break
-
-        case 'BET':
-          if (tx.status === 'COMPLETED') {
-            stats.totalWagered += amountUsd
-            stats.totalBets++
-          }
-          break
-
-        case 'WIN':
-          if (tx.status === 'COMPLETED') {
-            stats.totalWon += amountUsd
-            stats.winCount++
-            if (amountUsd > stats.maxWin) {
-              stats.maxWin = amountUsd
-            }
-          }
-          break
+    // Récupérer toutes les transactions BET
+    const betTransactions = await prisma.gameRound.findMany({
+      where: { walletId: wallet?.id },
+      select: {
+        betAmountSats: true,
+        payoutAmountSats: true,
+        status: true
       }
     })
 
-    // Calculs dérivés
-    stats.winRate = stats.totalBets > 0 
-      ? (stats.winCount / stats.totalBets) * 100 
+    // Calculer les stats
+    const totalBets = betTransactions.length
+    const completedRounds = betTransactions.filter(r => r.status === 'COMPLETED')
+    const winCount = completedRounds.filter(r => Number(r.payoutAmountSats) > Number(r.betAmountSats)).length
+    
+    const totalWagered = Number(wallet?.totalWageredSats || 0)
+    const totalWon = completedRounds.reduce((sum, r) => sum + Number(r.payoutAmountSats), 0)
+    
+    const maxWin = completedRounds.length > 0 
+      ? Math.max(...completedRounds.map(r => Number(r.payoutAmountSats) - Number(r.betAmountSats)))
       : 0
 
-    stats.netProfit = stats.totalWon - stats.totalWagered
+    const stats = {
+      totalDeposited: Number(wallet?.totalDepositedSats || 0) / 100_000_000,
+      totalWithdrawn: 0, // Pas de champ dans votre schema
+      totalWagered: totalWagered / 100_000_000,
+      totalWon: totalWon / 100_000_000,
+      totalBets,
+      winCount,
+      maxWin: maxWin / 100_000_000,
+      winRate: totalBets > 0 ? (winCount / totalBets) * 100 : 0,
+      netProfit: (totalWon - totalWagered) / 100_000_000,
+      currentBalance: Number(wallet?.balanceSats || 0) / 100_000_000
+    }
 
-    stats.currentBalance = Number(wallet.balanceSats) / 100_000_000
-
-    // 6. Arrondir les valeurs
-    Object.keys(stats).forEach((key) => {
-      const statKey = key as keyof typeof stats
-      if (
-        typeof stats[statKey] === 'number' && 
-        statKey !== 'totalBets' && 
-        statKey !== 'winCount' && 
-        statKey !== 'depositCount' && 
-        statKey !== 'withdrawalCount'
-      ) {
-        stats[statKey] = Math.round(stats[statKey] * 100) / 100
-      }
-    })
-
-    // 7. Retourner stats + infos user
     return NextResponse.json({
       success: true,
       stats,
       user: {
         username: user.username,
         email: user.email,
-        userId: userId,
-        joinDate: user.createdAt,
+        userId: user.id,
+        joinDate: user.createdAt.toISOString(),
+        avatarUrl: user.avatarUrl,  // ✅ RETOURNER
+        bannerUrl: user.bannerUrl   // ✅ RETOURNER
       }
     })
 
   } catch (error) {
     console.error('Error fetching profile stats:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Erreur serveur'
-    return NextResponse.json({ error: errorMessage }, { status: 500 })
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
