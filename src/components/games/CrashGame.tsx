@@ -266,15 +266,34 @@ export default function CrashGame() {
 
                 // Draw Airplane at current tip
                 if (state.phase === 'FLYING') {
-                    const angle = 0.06 * (flyElapsed / 1000) * 0.5; // Estimated tangent
-                    drawAirplane(ctx, lastX, lastY, -angle);
+                    const angle = -0.15; // fixed upward angle for better "takeoff" look
+                    drawAirplane(ctx, lastX, lastY, angle);
                 } else if (state.phase === 'CRASHED') {
                     // Explosion visual at crash site
-                    ctx.fillStyle = '#ef4444';
+                    const gradient = ctx.createRadialGradient(lastX, lastY, 0, lastX, lastY, 40);
+                    gradient.addColorStop(0, '#ff4d4d');
+                    gradient.addColorStop(0.5, '#ff8000');
+                    gradient.addColorStop(1, 'transparent');
+
+                    ctx.fillStyle = gradient;
                     ctx.beginPath();
-                    ctx.arc(lastX, lastY, 15, 0, Math.PI * 2);
+                    ctx.arc(lastX, lastY, 40, 0, Math.PI * 2);
                     ctx.fill();
-                    if (shake === 0) setShake(20);
+
+                    // More particles for explosion
+                    if (shake === 0) {
+                        setShake(30);
+                        for (let i = 0; i < 20; i++) {
+                            particles.current.push({
+                                x: lastX,
+                                y: lastY,
+                                size: Math.random() * 8 + 4,
+                                opacity: 1,
+                                vx: (Math.random() - 0.5) * 15,
+                                vy: (Math.random() - 0.5) * 15
+                            });
+                        }
+                    }
                 }
             }
 
@@ -534,16 +553,16 @@ export default function CrashGame() {
                                     </div>
                                 </div>
                             ) : state?.phase === 'FLYING' ? (
-                                <div className="text-center scale-150 md:scale-[2]">
-                                    <div className="text-6xl md:text-8xl font-display font-black text-white drop-shadow-glow-white tracking-tighter">
+                                <div className="text-center scale-150 md:scale-[2] animate-in zoom-in duration-200">
+                                    <div className="text-7xl md:text-9xl font-display font-black text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.4)] tracking-tighter">
                                         {displayMultiplier.toFixed(2)}x
                                     </div>
-                                    <div className="mt-2 text-[10px] font-bold text-primary uppercase tracking-[0.3em]">En plein vol...</div>
+                                    <div className="mt-2 text-[12px] font-black text-primary uppercase tracking-[0.4em] drop-shadow-md">VOL EN COURS...</div>
                                 </div>
                             ) : (
                                 <div className="text-center animate-in zoom-in duration-300">
-                                    <div className="text-sm font-bold text-red-500 uppercase tracking-[0.4em] mb-2">CROQUÉ !</div>
-                                    <div className="text-7xl md:text-9xl font-display font-black text-red-500 drop-shadow-glow-red">
+                                    <div className="text-xl font-black text-red-500 uppercase tracking-[0.6em] mb-4 drop-shadow-md">CROQUÉ !</div>
+                                    <div className="text-8xl md:text-[12rem] font-display font-black text-red-500 drop-shadow-[0_0_50px_rgba(239,68,68,0.6)] animate-pulse">
                                         {state?.crashPoint?.toFixed(2)}x
                                     </div>
                                 </div>

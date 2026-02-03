@@ -42,12 +42,16 @@ export default function WheelGame() {
                 // Random variation inside segment (+- 15deg)
                 const fuzz = Math.random() * 30 - 15;
 
-                if (data.result.multiplier === 0) targetAngle = 0 + fuzz; // Top
-                else if (data.result.multiplier === 1.5) targetAngle = 45 + fuzz;
-                else if (data.result.multiplier === 3) targetAngle = 135 + fuzz;
-                else if (data.result.multiplier === 10) targetAngle = 225 + fuzz;
-                else if (data.result.multiplier === 50) targetAngle = 315 + fuzz;
-                else targetAngle = 90 + fuzz; // Fallback
+                if (data.result.multiplier === 0) {
+                    // There are 4 "0x" segments. Pick one randomly for visual variety.
+                    const options = [22.5, 112.5, 202.5, 292.5];
+                    targetAngle = options[Math.floor(Math.random() * options.length)] + fuzz;
+                }
+                else if (data.result.multiplier === 1.5) targetAngle = 67.5 + fuzz;
+                else if (data.result.multiplier === 3) targetAngle = 157.5 + fuzz;
+                else if (data.result.multiplier === 10) targetAngle = 247.5 + fuzz;
+                else if (data.result.multiplier === 50) targetAngle = 337.5 + fuzz;
+                else targetAngle = 67.5 + fuzz; // Fallback to 1.5x
 
                 // Spin effect: Add multiple full rotations (5 * 360 = 1800)
                 // Note: CSS rotation direction vs Wheel values. 
@@ -172,26 +176,54 @@ export default function WheelGame() {
                     </div>
 
                     {/* RIGHT: WHEEL VISUALIZATION */}
-                    <div className="flex flex-col items-center justify-center min-h-[400px] relative overflow-hidden">
-
+                    <div className="flex flex-col items-center justify-center min-h-[400px] relative">
                         {/* THE WHEEL */}
                         <div className="relative">
                             {/* Pointer */}
-                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[16px] border-l-transparent border-t-[32px] border-t-white border-r-[16px] border-r-transparent z-30 drop-shadow-xl" />
+                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[16px] border-l-transparent border-t-[32px] border-t-white border-r-[16px] border-r-transparent z-40 drop-shadow-xl" />
+                            <div className="absolute -top-5 left-1/2 -translate-x-1/2 w-10 h-10 bg-white/10 rounded-full blur-xl z-30" />
 
                             <div
-                                className="w-80 h-80 rounded-full border-[8px] border-gray-800 shadow-2xl relative transition-transform duration-[3000ms] cubic-bezier(0.2, 0.8, 0.2, 1)"
+                                className="w-80 h-80 rounded-full border-[10px] border-gray-800 shadow-[0_0_50px_rgba(0,0,0,0.5)] relative transition-transform duration-[3000ms] cubic-bezier(0.2, 0.8, 0.2, 1) overflow-hidden"
                                 style={{ transform: `rotate(${rotation}deg)` }}
                             >
-                                {/* Generating segments with conic-gradient for visual simplicity */}
-                                <div className="w-full h-full rounded-full bg-[conic-gradient(#ef4444_0deg_45deg,#3b82f6_45deg_90deg,#ef4444_90deg_135deg,#22c55e_135deg_180deg,#ef4444_180deg_225deg,#a855f7_225deg_270deg,#ef4444_270deg_315deg,#f59e0b_315deg_360deg)] shadow-inner" />
+                                {/* Segments - Using Conic Gradient for background and Absolute divs for labels */}
+                                <div className="absolute inset-0 bg-[conic-gradient(#ef4444_0deg_45deg,#3b82f6_45deg_90deg,#ef4444_90deg_135deg,#22c55e_135deg_180deg,#ef4444_180deg_225deg,#a855f7_225deg_270deg,#ef4444_270deg_315deg,#f59e0b_315deg_360deg)]" />
 
-                                <div className="absolute inset-0 rounded-full border-4 border-white/10" />
+                                {/* Labels */}
+                                {[
+                                    { angle: 22.5, label: "0x", icon: "💀" },
+                                    { angle: 67.5, label: "1.5x" },
+                                    { angle: 112.5, label: "0x", icon: "💀" },
+                                    { angle: 157.5, label: "3x" },
+                                    { angle: 202.5, label: "0x", icon: "💀" },
+                                    { angle: 247.5, label: "10x" },
+                                    { angle: 292.5, label: "0x", icon: "💀" },
+                                    { angle: 337.5, label: "50x" },
+                                ].map((seg, i) => (
+                                    <div
+                                        key={i}
+                                        className="absolute top-0 left-1/2 -translate-x-1/2 h-1/2 origin-bottom flex flex-col items-center pt-6 text-white font-black drop-shadow-lg"
+                                        style={{ transform: `rotate(${seg.angle}deg)` }}
+                                    >
+                                        <span className={cn("text-xl leading-none", seg.label === "0x" && "text-white/80")}>
+                                            {seg.label}
+                                        </span>
+                                        {seg.icon && <span className="text-lg mt-1">{seg.icon}</span>}
+                                    </div>
+                                ))}
+
+                                {/* Inner Circle Decoration */}
+                                <div className="absolute inset-0 rounded-full border-[3px] border-white/20 z-10" />
+                                <div className="absolute inset-0 rounded-full border-[40px] border-black/10 z-0" />
 
                                 {/* Center Hub */}
-                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-gray-900 rounded-full shadow-2xl border-4 border-gray-700 flex items-center justify-center z-20">
-                                    <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-700 rounded-full flex items-center justify-center">
-                                        <span className="text-xs font-black text-white uppercase tracking-widest">CoinPawa</span>
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-gray-900 rounded-full shadow-2xl border-4 border-gray-700 flex items-center justify-center z-20">
+                                    <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-700 rounded-full flex items-center justify-center border-2 border-white/20 shadow-inner">
+                                        <div className="flex flex-col items-center">
+                                            <Coins className="w-5 h-5 text-white mb-0.5" />
+                                            <span className="text-[10px] font-black text-white uppercase tracking-tighter">CPWA</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
