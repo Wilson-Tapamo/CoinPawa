@@ -35,12 +35,12 @@ export async function GET() {
     })
 
     const settings = {
-      minDepositUsd: parseFloat(configs.find(c => c.key === 'min_deposit_usd')?.value || '10'),
-      minWithdrawalUsd: parseFloat(configs.find(c => c.key === 'min_withdrawal_usd')?.value || '10'),
-      withdrawalFeePercent: parseFloat(configs.find(c => c.key === 'withdrawal_fee_percent')?.value || '1'),
-      maxDailyWithdrawal: parseFloat(configs.find(c => c.key === 'max_daily_withdrawal')?.value || '10000'),
-      houseEdgeDefault: parseFloat(configs.find(c => c.key === 'house_edge_default')?.value || '2.0'),
-      kycRequiredAmount: parseFloat(configs.find(c => c.key === 'kyc_required_amount')?.value || '1000')
+      minDepositUsd: parseFloat(String(configs.find(c => c.key === 'min_deposit_usd')?.value || '10')),
+      minWithdrawalUsd: parseFloat(String(configs.find(c => c.key === 'min_withdrawal_usd')?.value || '10')),
+      withdrawalFeePercent: parseFloat(String(configs.find(c => c.key === 'withdrawal_fee_percent')?.value || '1')),
+      maxDailyWithdrawal: parseFloat(String(configs.find(c => c.key === 'max_daily_withdrawal')?.value || '10000')),
+      houseEdgeDefault: parseFloat(String(configs.find(c => c.key === 'house_edge_default')?.value || '2.0')),
+      kycRequiredAmount: parseFloat(String(configs.find(c => c.key === 'kyc_required_amount')?.value || '1000'))
     }
 
     return NextResponse.json({ success: true, settings })
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
     }
 
     await prisma.$transaction([
-      ...updates.map(u => 
+      ...updates.map(u =>
         prisma.systemConfig.upsert({
           where: { key: u.key },
           create: {
