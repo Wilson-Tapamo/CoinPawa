@@ -148,7 +148,7 @@ export async function GET() {
         }
 
         // 3. Récupérer les tickets de l'utilisateur pour le tirage en cours
-        let myTickets = [];
+        let myTickets: any[] = [];
         if (userId) {
             myTickets = await prisma.gameRound.findMany({
                 where: {
