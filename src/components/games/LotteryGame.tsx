@@ -77,7 +77,7 @@ export default function LotteryGame() {
             <div className="flex items-center justify-between">
                 <Link
                     href="/"
-                    className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors bg-white/5 px-4 py-2 rounded-xl border border-white/5"
+                    className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors glass-card px-4 py-2"
                 >
                     <ArrowLeft className="w-4 h-4" />
                     <span className="text-sm font-bold">Retour</span>
@@ -90,7 +90,7 @@ export default function LotteryGame() {
 
                 <button
                     onClick={() => setShowRules(true)}
-                    className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors bg-white/5 px-4 py-2 rounded-xl border border-white/5"
+                    className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors glass-card px-4 py-2"
                 >
                     <Info className="w-4 h-4" />
                     <span className="text-sm font-bold">Règles</span>
@@ -98,9 +98,10 @@ export default function LotteryGame() {
             </div>
 
             {/* Main Game Area */}
-            <div className="relative bg-[#1A1D26] border border-white/10 rounded-[2.5rem] p-8 md:p-12 overflow-hidden shadow-2xl">
+            <div className="relative glass-panel p-8 md:p-12 overflow-hidden bg-mesh-gradient">
                 {/* Background Glow */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-primary/5 blur-[120px] pointer-events-none" />
+                <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[120px] pointer-events-none animate-pulse-slow" />
+                <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent-violet/5 rounded-full blur-[120px] pointer-events-none animate-pulse-slow" />
 
                 <div className="relative z-10 flex flex-col items-center gap-12">
                     <div className="text-center space-y-2">
@@ -226,7 +227,7 @@ export default function LotteryGame() {
             {/* Modal des Règles */}
             {showRules && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
-                    <div className="bg-[#1A1D26] border border-white/10 rounded-3xl p-8 max-w-md w-full relative shadow-2xl animate-in zoom-in duration-300">
+                    <div className="glass-panel p-8 max-w-md w-full relative animate-in zoom-in duration-300">
                         <button
                             onClick={() => setShowRules(false)}
                             className="absolute top-4 right-4 p-2 text-text-tertiary hover:text-white transition-colors"

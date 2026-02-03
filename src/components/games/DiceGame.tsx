@@ -239,12 +239,12 @@ export default function DiceGame() {
     const hasWon = lastResults?.some((r) => r.isWin);
 
     return (
-        <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in zoom-in duration-500">
+        <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
             {/* Container Principal */}
-            <div className="bg-[#1A1D26] border border-white/5 rounded-3xl p-6 md:p-10 relative overflow-hidden shadow-2xl">
+            <div className="glass-panel p-6 md:p-10 relative overflow-hidden bg-mesh-gradient">
                 {/* Background FX */}
-                <div className="absolute top-0 right-0 w-96 h-96 bg-purple-600/10 rounded-full blur-[100px] pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-600/10 rounded-full blur-[100px] pointer-events-none" />
+                <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[120px] pointer-events-none animate-pulse-slow" />
+                <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent-violet/5 rounded-full blur-[120px] pointer-events-none animate-pulse-slow" />
 
                 <div className="relative z-10">
                     {/* Header Controls */}
