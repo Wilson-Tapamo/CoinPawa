@@ -103,7 +103,7 @@ export default function RouletteGame() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#1A1D26] border border-white/5 rounded-2xl p-4">
                 <div className="flex items-center justify-between md:justify-start gap-4 flex-1">
                     <Link
-                        href="/games"
+                        href="/"
                         className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors bg-white/5 px-3 py-2 rounded-xl border border-white/5"
                     >
                         <ArrowLeft className="w-4 h-4" />

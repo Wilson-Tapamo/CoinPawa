@@ -363,7 +363,7 @@ export default function CrashGame() {
             {/* Header Controls */}
             <div className="flex items-center justify-between">
                 <Link
-                    href="/games"
+                    href="/"
                     className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors bg-[#1A1D26] px-4 py-2 rounded-xl border border-white/5 shadow-lg"
                 >
                     <ArrowLeft className="w-4 h-4" />
