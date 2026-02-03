@@ -1,4 +1,5 @@
 // src/app/api/profile/stats/route.ts
+export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifySession } from '@/lib/auth'
@@ -53,20 +54,20 @@ export async function GET() {
       // Dépôts
       totalDeposited: 0,
       depositCount: 0,
-      
+
       // Retraits
       totalWithdrawn: 0,
       withdrawalCount: 0,
-      
+
       // Paris
       totalWagered: 0,
       totalBets: 0,
-      
+
       // Gains
       totalWon: 0,
       winCount: 0,
       maxWin: 0,
-      
+
       // Calculés
       winRate: 0,
       netProfit: 0,
@@ -112,8 +113,8 @@ export async function GET() {
     })
 
     // Calculs dérivés
-    stats.winRate = stats.totalBets > 0 
-      ? (stats.winCount / stats.totalBets) * 100 
+    stats.winRate = stats.totalBets > 0
+      ? (stats.winCount / stats.totalBets) * 100
       : 0
 
     stats.netProfit = stats.totalWon - stats.totalWagered
@@ -124,10 +125,10 @@ export async function GET() {
     Object.keys(stats).forEach((key) => {
       const statKey = key as keyof typeof stats
       if (
-        typeof stats[statKey] === 'number' && 
-        statKey !== 'totalBets' && 
-        statKey !== 'winCount' && 
-        statKey !== 'depositCount' && 
+        typeof stats[statKey] === 'number' &&
+        statKey !== 'totalBets' &&
+        statKey !== 'winCount' &&
+        statKey !== 'depositCount' &&
         statKey !== 'withdrawalCount'
       ) {
         stats[statKey] = Math.round(stats[statKey] * 100) / 100

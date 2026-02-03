@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifySession } from '@/lib/auth'
@@ -18,10 +19,10 @@ export async function GET(request: Request) {
 
   // Construire le filtre WHERE
   const where: any = {}
-  
+
   if (type && type !== 'all') where.type = type
   if (status && status !== 'all') where.status = status
-  
+
   // Date range filter
   if (dateRange && dateRange !== 'all') {
     const now = new Date()
@@ -29,7 +30,7 @@ export async function GET(request: Request) {
     const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000)
     where.createdAt = { gte: startDate }
   }
-  
+
   // Search filter
   if (search) {
     where.OR = [
