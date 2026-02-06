@@ -6,29 +6,74 @@ import Link from "next/link";
 import { Timer, Trophy, ArrowRight, Sparkles, Coins, Crown, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const RECENT_LOTTERY_WINNERS = [
-    { user: "LuckyDragon", amount: "$5,000", time: "2m ago" },
-    { user: "CryptoWhale", amount: "$150", time: "5m ago" },
-    { user: "SatoshiDream", amount: "$50", time: "12m ago" },
-    { user: "MoonWalker", amount: "$1,200", time: "18m ago" },
+import { formatToUSD } from "@/lib/utils";
+
+// Données simulées en fallback
+const MOCK_WINNERS = [
+    { user: "LuckyDragon", amount: 5000, time: Date.now() - 120000 },
+    { user: "CryptoWhale", amount: 150, time: Date.now() - 300000 },
 ];
 
 export function LotteryFeature() {
-    // Compte à rebours simulé pour le prochain tirage (ex: toutes les 10 min)
-    const [timeLeft, setTimeLeft] = useState<{ m: number; s: number }>({ m: 4, s: 59 });
+    // États pour les données réelles
+    const [timeLeft, setTimeLeft] = useState<{ m: number; s: number }>({ m: 59, s: 59 });
+    const [nextDrawTime, setNextDrawTime] = useState<number | null>(null);
+    const [winners, setWinners] = useState<any[]>(MOCK_WINNERS);
+    const [loading, setLoading] = useState(true);
 
+    // Fetch des données réelles
     useEffect(() => {
-        const timer = setInterval(() => {
-            setTimeLeft((prev) => {
-                if (prev.s === 0) {
-                    if (prev.m === 0) return { m: 9, s: 59 }; // Reset
-                    return { m: prev.m - 1, s: 59 };
+        const fetchData = async () => {
+            try {
+                const res = await fetch("/api/games/loto/state");
+                const data = await res.json();
+                if (data.success && data.state) {
+                    setNextDrawTime(data.state.nextDrawTime);
+                    if (data.state.recentWinners && data.state.recentWinners.length > 0) {
+                        setWinners(data.state.recentWinners);
+                    }
                 }
-                return { m: prev.m, s: prev.s - 1 };
-            });
-        }, 1000);
-        return () => clearInterval(timer);
+            } catch (error) {
+                console.error("Failed to fetch lottery state", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+        const interval = setInterval(fetchData, 30000); // Refresh winners/time every 30s
+        return () => clearInterval(interval);
     }, []);
+
+    // Compte à rebours réel
+    useEffect(() => {
+        if (!nextDrawTime) return;
+
+        const timer = setInterval(() => {
+            const now = Date.now();
+            const diff = Math.max(0, nextDrawTime - now);
+
+            const hours = Math.floor(diff / 3600000);
+            const minutes = Math.floor((diff % 3600000) / 60000);
+            const seconds = Math.floor((diff % 60000) / 1000);
+
+            // Si on dépasse 1h (bug potentiel), on affiche juste mm:ss ou hh:mm:ss
+            // Ici on va afficher hh:mm:ss si > 1h, sinon mm:ss
+            setTimeLeft({ m: minutes + (hours * 60), s: seconds });
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [nextDrawTime]);
+
+    // Formatage du temps relatif (ex: "2m ago")
+    const formatTimeAgo = (timestamp: string | number) => {
+        const diff = Date.now() - new Date(timestamp).getTime();
+        const mins = Math.floor(diff / 60000);
+        if (mins < 1) return "à l'instant";
+        if (mins < 60) return `${mins}m ago`;
+        const hours = Math.floor(mins / 60);
+        return `${hours}h ago`;
+    };
 
     return (
         <section className="relative w-full rounded-3xl overflow-hidden border border-white/5 shadow-2xl group">
@@ -73,13 +118,16 @@ export function LotteryFeature() {
                             <div>
                                 <p className="text-xs font-bold text-text-tertiary uppercase">Prochain Tirage</p>
                                 <p className="text-2xl font-mono font-bold text-white tabular-nums">
-                                    00:{timeLeft.m.toString().padStart(2, '0')}:{timeLeft.s.toString().padStart(2, '0')}
+                                    {timeLeft.m > 60
+                                        ? `${Math.floor(timeLeft.m / 60).toString().padStart(2, '0')}:${(timeLeft.m % 60).toString().padStart(2, '0')}:${timeLeft.s.toString().padStart(2, '0')}`
+                                        : `${timeLeft.m.toString().padStart(2, '0')}:${timeLeft.s.toString().padStart(2, '0')}`
+                                    }
                                 </p>
                             </div>
                         </div>
 
                         <Link
-                            href="/games/lottery"
+                            href="/games/loto"
                             className="flex-1 min-w-[180px] h-20 flex items-center justify-center gap-3 bg-primary hover:bg-primary-hover text-background text-lg font-black rounded-2xl transition-all shadow-glow-gold hover:-translate-y-1"
                         >
                             <Zap className="w-6 h-6 fill-current" />
@@ -112,15 +160,18 @@ export function LotteryFeature() {
                             </span>
                         </div>
                         <div className="space-y-3">
-                            {RECENT_LOTTERY_WINNERS.map((w, i) => (
+                            {winners.slice(0, 4).map((w, i) => (
                                 <div key={i} className="flex items-center justify-between text-sm">
                                     <div className="flex items-center gap-2">
                                         <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[10px] text-text-secondary">
                                             {w.user.charAt(0)}
                                         </div>
-                                        <span className="text-text-secondary">{w.user}</span>
+                                        <span className="text-text-secondary truncate max-w-[100px]">{w.user}</span>
                                     </div>
-                                    <span className="font-bold text-success">{w.amount}</span>
+                                    <div className="text-right">
+                                        <div className="font-bold text-success">{formatToUSD(w.amount)}</div>
+                                        <div className="text-[10px] text-text-tertiary">{formatTimeAgo(w.time)}</div>
+                                    </div>
                                 </div>
                             ))}
                         </div>
