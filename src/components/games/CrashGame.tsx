@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Rocket, Loader2, Trophy, Bomb, Users, Zap, History, TrendingUp, ArrowUpRight, ArrowLeft, Info, X } from "lucide-react";
 import Link from "next/link";
-import { cn, formatToUSD } from "@/lib/utils";
+import { cn, formatToUSD, usdToSats, satsToUsd, formatSatsToUSD } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
 // ============================================
@@ -320,7 +320,7 @@ export default function CrashGame() {
         try {
             const res = await fetch("/api/games/crash/bet", {
                 method: "POST",
-                body: JSON.stringify({ amount: parseInt(betAmount) })
+                body: JSON.stringify({ amount: usdToSats(parseFloat(betAmount)) })
             });
             const data = await res.json();
             if (data.success) {
@@ -441,7 +441,7 @@ export default function CrashGame() {
                             <div className="space-y-2">
                                 <div className="flex justify-between items-center text-[10px] font-bold text-text-tertiary uppercase">
                                     <span>Montant</span>
-                                    <span>SATS</span>
+                                    <span>$ USD</span>
                                 </div>
                                 <div className="relative group">
                                     <input
@@ -451,19 +451,19 @@ export default function CrashGame() {
                                         className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-4 text-xl font-mono font-bold text-white focus:outline-none focus:border-primary/50 transition-all"
                                     />
                                     <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
-                                        <button onClick={() => setBetAmount(a => (parseInt(a) * 2).toString())} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold border border-white/5">2x</button>
-                                        <button onClick={() => setBetAmount(a => Math.max(10, Math.floor(parseInt(a) / 2)).toString())} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold border border-white/5">1/2</button>
+                                        <button onClick={() => setBetAmount(a => (parseFloat(a) * 2).toFixed(2))} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold border border-white/5">2x</button>
+                                        <button onClick={() => setBetAmount(a => Math.max(1, parseFloat(a) / 2).toFixed(2))} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold border border-white/5">1/2</button>
                                     </div>
                                 </div>
                                 {/* PRESET AMOUNTS */}
                                 <div className="grid grid-cols-4 gap-2 mt-2">
-                                    {[100, 500, 1000, 5000].map((amt) => (
+                                    {[1, 5, 10, 50].map((amt) => (
                                         <button
                                             key={amt}
                                             onClick={() => setBetAmount(amt.toString())}
                                             className="py-2 text-[10px] font-bold bg-white/5 hover:bg-white/10 text-text-tertiary hover:text-white rounded-lg border border-white/5 transition-all"
                                         >
-                                            {amt >= 1000 ? (amt / 1000) + 'k' : amt}
+                                            ${amt}
                                         </button>
                                     ))}
                                 </div>
@@ -479,7 +479,7 @@ export default function CrashGame() {
                                     {isCashingOut ? <Loader2 className="animate-spin" /> : (
                                         <>
                                             <span>CASHOUT</span>
-                                            <span className="text-base opacity-90">{(parseInt(betAmount) * displayMultiplier).toLocaleString()} SATS</span>
+                                            <span className="text-base opacity-90">{formatToUSD(parseFloat(betAmount) * displayMultiplier)}</span>
                                         </>
                                     )}
                                 </button>
@@ -516,7 +516,7 @@ export default function CrashGame() {
                         </div>
                         <div className="text-right">
                             <div className="text-[10px] text-text-tertiary font-bold uppercase">Misé total</div>
-                            <div className="text-sm font-bold text-primary">{(liveBets.reduce((a, b) => a + b.amount, 0)).toLocaleString()} SATS</div>
+                            <div className="text-sm font-bold text-primary">{formatSatsToUSD(liveBets.reduce((a, b) => a + b.amount, 0))}</div>
                         </div>
                     </div>
                 </div>
@@ -602,14 +602,14 @@ export default function CrashGame() {
                                         </div>
                                         <div>
                                             <div className="text-[11px] font-bold text-white leading-none mb-1">{bet.username}</div>
-                                            <div className="text-[10px] text-text-tertiary font-mono">{bet.amount.toLocaleString()}</div>
+                                            <div className="text-[10px] text-text-tertiary font-mono">{formatSatsToUSD(bet.amount)}</div>
                                         </div>
                                     </div>
                                     <div className="text-right">
                                         {bet.status === 'COMPLETED' ? (
                                             <div className="flex flex-col items-end">
                                                 <div className="text-[10px] font-black text-green-400">{bet.multiplier}x</div>
-                                                <div className="text-[11px] font-bold text-white">+{bet.payout?.toLocaleString()}</div>
+                                                <div className="text-[11px] font-bold text-white">+{formatSatsToUSD(bet.payout || 0)}</div>
                                             </div>
                                         ) : (
                                             <Loader2 className="w-3 h-3 text-white/20 animate-spin" />

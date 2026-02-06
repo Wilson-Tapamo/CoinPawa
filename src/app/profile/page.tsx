@@ -18,7 +18,7 @@ import {
     Trophy,
     Loader2
 } from "lucide-react";
-import { cn, formatToUSD } from "@/lib/utils";
+import { cn, formatToUSD, formatSatsToUSD } from "@/lib/utils";
 import { AvatarSelector } from "@/components/AvatarSelector";
 import { BannerSelector } from "@/components/BannerSelector";
 import Image from "next/image";
@@ -261,7 +261,7 @@ export default function ProfilePage() {
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                         <div className="p-4 bg-background-secondary rounded-xl text-center border border-white/5">
                                             <div className="text-2xl font-bold text-primary font-display">
-                                                {formatToUSD(stats?.totalWagered || 0)}
+                                                {formatSatsToUSD(stats?.totalWagered || 0)}
                                             </div>
                                             <div className="text-xs text-text-tertiary uppercase">Misé Total</div>
                                         </div>
@@ -279,7 +279,7 @@ export default function ProfilePage() {
                                         </div>
                                         <div className="p-4 bg-background-secondary rounded-xl text-center border border-white/5 text-xs">
                                             <div className="text-2xl font-bold text-accent-rose font-display">
-                                                {formatToUSD(stats?.maxWin || 0)}
+                                                {formatSatsToUSD(stats?.maxWin || 0)}
                                             </div>
                                             <div className="text-xs text-text-tertiary uppercase">Max Gain</div>
                                         </div>
@@ -320,7 +320,7 @@ export default function ProfilePage() {
                                                     "font-bold font-mono text-sm",
                                                     item.type === 'WIN' ? "text-success" : "text-text-secondary"
                                                 )}>
-                                                    {item.type === 'WIN' ? "+" : "-"}{formatToUSD(item.amount)}
+                                                    {item.type === 'WIN' ? "+" : "-"}{formatSatsToUSD(item.amount)}
                                                 </p>
                                             </div>
                                         </div>

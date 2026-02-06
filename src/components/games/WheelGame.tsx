@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { Loader2, Sparkles, AlertCircle, ArrowLeft, Info, X, Coins, Trophy } from "lucide-react";
 import Link from "next/link";
-import { cn, formatToUSD } from "@/lib/utils";
+import { cn, formatToUSD, usdToSats, satsToUsd, formatSatsToUSD } from "@/lib/utils";
 
 export default function WheelGame() {
-    const [betAmount, setBetAmount] = useState<string>("10");
+    const [betAmount, setBetAmount] = useState<string>("1");
     const [isSpinning, setIsSpinning] = useState(false);
     const [lastResult, setLastResult] = useState<{ multiplier: number, segmentLabel: string, payout: number } | null>(null);
     const [error, setError] = useState("");
@@ -23,7 +23,7 @@ export default function WheelGame() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    amount: parseInt(betAmount)
+                    amount: usdToSats(parseFloat(betAmount))
                 })
             });
 
@@ -65,7 +65,7 @@ export default function WheelGame() {
                     setLastResult({
                         multiplier: data.result.multiplier,
                         segmentLabel: data.result.segmentLabel,
-                        payout: data.result.payout
+                        payout: satsToUsd(data.result.payout)
                     });
                     setIsSpinning(false);
                 }, 3000); // 3s spin
@@ -121,7 +121,7 @@ export default function WheelGame() {
 
                         {/* Bet Amount */}
                         <div className="bg-background-secondary p-4 rounded-2xl border border-white/5 shadow-inner">
-                            <label className="text-xs font-bold text-text-tertiary uppercase mb-2 block">Bet Amount (Sats)</label>
+                            <label className="text-xs font-bold text-text-tertiary uppercase mb-2 block">Bet Amount ($ USD)</label>
                             <div className="flex gap-2">
                                 <input
                                     type="number"
@@ -129,18 +129,18 @@ export default function WheelGame() {
                                     onChange={(e) => setBetAmount(e.target.value)}
                                     className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white font-mono font-bold focus:outline-none focus:border-amber-400/50 transition-colors"
                                 />
-                                <button onClick={() => setBetAmount((prev) => (parseInt(prev || "0") * 2).toString())} className="px-4 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-xs text-text-secondary transition-colors border border-white/5">2x</button>
-                                <button onClick={() => setBetAmount((prev) => Math.max(10, Math.floor(parseInt(prev || "0") / 2)).toString())} className="px-4 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-xs text-text-secondary transition-colors border border-white/5">/2</button>
+                                <button onClick={() => setBetAmount((prev) => (parseFloat(prev || "0") * 2).toFixed(2))} className="px-4 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-xs text-text-secondary transition-colors border border-white/5">2x</button>
+                                <button onClick={() => setBetAmount((prev) => Math.max(1, parseFloat(prev || "0") / 2).toFixed(2))} className="px-4 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-xs text-text-secondary transition-colors border border-white/5">/2</button>
                             </div>
                             {/* PRESET AMOUNTS */}
                             <div className="flex flex-wrap gap-2 mt-4">
-                                {[100, 500, 1000, 5000].map((amt) => (
+                                {[1, 5, 10, 50].map((amt) => (
                                     <button
                                         key={amt}
                                         onClick={() => setBetAmount(amt.toString())}
                                         className="flex-1 py-2 text-[11px] font-bold bg-white/5 hover:bg-white/10 text-text-secondary hover:text-white rounded-lg border border-white/5 transition-all"
                                     >
-                                        {amt >= 1000 ? (amt / 1000) + 'k' : amt}
+                                        ${amt}
                                     </button>
                                 ))}
                             </div>

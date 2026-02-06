@@ -3,12 +3,12 @@
 import { useState, useEffect, useRef } from "react";
 import { Loader2, Sparkles, Trophy, XCircle, ArrowLeft, Info, X, Coins, Zap } from "lucide-react";
 import Link from "next/link";
-import { cn, formatToUSD } from "@/lib/utils";
+import { cn, formatToUSD, usdToSats, formatSatsToUSD } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
 export default function LotteryGame() {
     const router = useRouter();
-    const [betAmount, setBetAmount] = useState("100");
+    const [betAmount, setBetAmount] = useState("5");
     const [isPlaying, setIsPlaying] = useState(false);
     const [numbers, setNumbers] = useState([7, 7, 7]);
     const [rolling, setRolling] = useState([false, false, false]);
@@ -27,7 +27,7 @@ export default function LotteryGame() {
         try {
             const res = await fetch("/api/games/lottery/play", {
                 method: "POST",
-                body: JSON.stringify({ amount: parseInt(betAmount) })
+                body: JSON.stringify({ amount: usdToSats(parseFloat(betAmount)) })
             });
             const data = await res.json();
 
@@ -140,7 +140,7 @@ export default function LotteryGame() {
                     <div className="w-full max-w-sm space-y-6">
                         <div className="space-y-3">
                             <div className="flex justify-between text-xs font-bold text-text-tertiary uppercase tracking-wider px-1">
-                                <span>Mise (SATS)</span>
+                                <span>Mise ($ USD)</span>
                                 <span className="text-white">Solde: —</span>
                             </div>
                             <div className="relative group">
@@ -155,14 +155,14 @@ export default function LotteryGame() {
                             </div>
                             {/* Presets */}
                             <div className="grid grid-cols-4 gap-2">
-                                {[100, 500, 1000, 5000].map(amt => (
+                                {[1, 5, 10, 50].map(amt => (
                                     <button
                                         key={amt}
                                         onClick={() => setBetAmount(amt.toString())}
                                         disabled={isPlaying}
                                         className="py-2.5 text-xs font-black bg-white/5 hover:bg-white/10 text-text-secondary hover:text-white rounded-xl border border-white/5 transition-all"
                                     >
-                                        {amt >= 1000 ? (amt / 1000) + 'K' : amt}
+                                        ${amt}
                                     </button>
                                 ))}
                             </div>
@@ -213,7 +213,7 @@ export default function LotteryGame() {
                                             <Trophy className="w-8 h-8 text-amber-400 animate-bounce" />
                                             <span className="text-4xl font-display font-black">GAGNÉ !</span>
                                         </div>
-                                        <span className="text-lg font-mono font-bold tracking-tight">+{result.payout} SATS (x{result.multiplier})</span>
+                                        <span className="text-lg font-mono font-bold tracking-tight">+{formatSatsToUSD(result.payout)} (x{result.multiplier})</span>
                                     </>
                                 ) : (
                                     <span className="text-sm font-bold uppercase tracking-widest opacity-50 italic">Pas de chance... réessayez !</span>
