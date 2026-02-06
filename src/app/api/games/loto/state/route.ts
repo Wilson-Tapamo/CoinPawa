@@ -163,12 +163,38 @@ export async function GET() {
 
         const updatedConfig = game!.config as any;
 
+        // 4. Récupérer les derniers gagnants (REAL DATA)
+        const recentWinners = await prisma.transaction.findMany({
+            where: {
+                type: 'WIN',
+                metadata: {
+                    path: ['gameSlug'],
+                    equals: 'loto'
+                }
+            },
+            take: 5,
+            orderBy: { createdAt: 'desc' },
+            include: {
+                wallet: {
+                    include: { user: { select: { username: true } } }
+                }
+            }
+        });
+
+        // Formatter pour le frontend
+        const formattedWinners = recentWinners.map(tx => ({
+            user: tx.wallet.user.username,
+            amount: Number(tx.amountSats) / 2000, // Conversion rapide SATS -> USD (ou utiliser utils si dispo)
+            time: tx.createdAt
+        }));
+
         return NextResponse.json({
             success: true,
             state: {
                 nextDrawTime: updatedConfig.nextDrawTime,
                 lastWinningNumbers: updatedConfig.lastWinningNumbers || [],
                 history: updatedConfig.history || [],
+                recentWinners: formattedWinners,
                 serverTime: Date.now()
             },
             myTickets: myTickets.map((t: any) => ({
