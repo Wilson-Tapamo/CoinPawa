@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifySession } from '@/lib/auth'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     // 1. Vérifier l'authentification
@@ -33,10 +35,10 @@ export async function GET() {
 
     // 3. Formater les données
     const history = gameTransactions.map(tx => {
-    const amountUsd = Number(tx.amountSats) / 100_000_000
-    const metadata = tx.metadata as any // Cast pour accéder aux propriétés
-    
-    return {
+      const amountUsd = Number(tx.amountSats) / 100_000_000
+      const metadata = tx.metadata as any // Cast pour accéder aux propriétés
+
+      return {
         id: tx.id,
         type: tx.type,
         amount: amountUsd,
@@ -46,10 +48,10 @@ export async function GET() {
         // Pour WIN, inclure le montant du pari original
         betAmount: tx.type === 'WIN' ? metadata?.betAmount : null,
         // Calculer le profit net pour les wins
-        netProfit: tx.type === 'WIN' && metadata?.betAmount 
-        ? amountUsd - metadata.betAmount 
-        : null
-    }
+        netProfit: tx.type === 'WIN' && metadata?.betAmount
+          ? amountUsd - metadata.betAmount
+          : null
+      }
     })
 
     return NextResponse.json({
