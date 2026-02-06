@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { GameCard } from "@/components/features/GameCard";
 import { LiveWinsTable } from "@/components/features/LiveWinsTable";
+import { LotteryFeature } from "@/components/features/LotteryFeature";
 import { cn, formatToUSD } from "@/lib/utils";
 import Image from "next/image";
 
@@ -146,7 +147,7 @@ export default function Home() {
               </div>
 
               <div className="flex items-baseline gap-2 mb-6">
-                <span className="text-4xl md:text-6xl font-display font-bold text-white">{formatToUSD(balance) }</span>
+                <span className="text-4xl md:text-6xl font-display font-bold text-white">{formatToUSD(balance)}</span>
                 {/* <span className="text-2xl md:text-4xl font-display text-white/50">SATS</span> */}
               </div>
 
@@ -213,6 +214,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* 1.5 LOTTERY FEATURE */}
+      <LotteryFeature />
 
       {/* 2. CATÉGORIES */}
       <section className="space-y-4">

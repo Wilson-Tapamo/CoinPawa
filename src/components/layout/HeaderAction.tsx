@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Bell, Wallet, LogOut, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { formatToUSD } from "@/lib/utils";
+import { formatToUSD, formatSatsToUSD } from "@/lib/utils";
 
 // ✅ AJOUT : On définit bien que username est attendu (string ou null/undefined)
 interface HeaderActionsProps {
@@ -61,7 +61,7 @@ export function HeaderActions({ isLoggedIn, initialBalance, username }: HeaderAc
           </div>
           <div className="flex flex-col md:flex-row md:items-baseline gap-1">
             <span className="text-sm font-bold text-white font-display">
-              {formatToUSD((initialBalance) / 100000000)}
+              {formatSatsToUSD(initialBalance)}
             </span>
           </div>
         </div>
