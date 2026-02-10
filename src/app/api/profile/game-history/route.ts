@@ -3,53 +3,69 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifySession } from '@/lib/auth'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    // 1. Vérifier l'authentification
+    // 1. Vérifier la session
     const userId = await verifySession()
     if (!userId) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     }
 
-    // 2. Récupérer les transactions de jeu (BET et WIN)
-    const gameTransactions = await prisma.transaction.findMany({
+    // 2. Récupérer le wallet de l'utilisateur
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        wallet: {
+          select: { id: true }
+        }
+      }
+    })
+
+    if (!user || !user.wallet) {
+      return NextResponse.json({ error: 'Wallet non trouvé' }, { status: 404 })
+    }
+
+    // 3. Récupérer les 50 derniers GameRounds
+    const gameRounds = await prisma.gameRound.findMany({
       where: {
-        wallet: { userId },
-        type: { in: ['BET', 'WIN'] },
-        status: 'COMPLETED'
+        walletId: user.wallet.id,
+        status: 'COMPLETED' // Seulement les parties terminées
+      },
+      select: {
+        id: true,
+        betAmountSats: true,
+        payoutAmountSats: true,
+        createdAt: true,
+        game: {
+          select: {
+            name: true
+          }
+        }
       },
       orderBy: {
         createdAt: 'desc'
       },
-      take: 20, // Dernières 20 transactions
-      select: {
-        id: true,
-        type: true,
-        amountSats: true,
-        createdAt: true,
-        metadata: true,
-      }
+      take: 50
     })
 
-    // 3. Formater les données
-    const history = gameTransactions.map(tx => {
-    const amountUsd = Number(tx.amountSats) / 100_000_000
-    const metadata = tx.metadata as any // Cast pour accéder aux propriétés
-    
-    return {
-        id: tx.id,
-        type: tx.type,
-        amount: amountUsd,
-        gameName: metadata?.gameName || 'Unknown Game',
-        gameId: metadata?.gameId || null,
-        timestamp: tx.createdAt,
-        // Pour WIN, inclure le montant du pari original
-        betAmount: tx.type === 'WIN' ? metadata?.betAmount : null,
-        // Calculer le profit net pour les wins
-        netProfit: tx.type === 'WIN' && metadata?.betAmount 
-        ? amountUsd - metadata.betAmount 
-        : null
-    }
+    // 4. Formater l'historique
+    const history = gameRounds.map(round => {
+      const betAmount = Number(round.betAmountSats) / 100_000_000
+      const payoutAmount = Number(round.payoutAmountSats) / 100_000_000
+      const isWin = payoutAmount > betAmount
+      const netProfit = payoutAmount - betAmount
+
+      return {
+        id: round.id,
+        type: isWin ? 'WIN' : 'BET',
+        amount: Math.abs(netProfit),
+        gameName: round.game.name,
+        timestamp: round.createdAt.toISOString(),
+        betAmount: betAmount,
+        payoutAmount: payoutAmount,
+        netProfit: netProfit,
+        isWin: isWin
+      }
     })
 
     return NextResponse.json({
@@ -58,8 +74,10 @@ export async function GET() {
     })
 
   } catch (error) {
-    console.error('Error fetching game history:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Erreur serveur'
-    return NextResponse.json({ error: errorMessage }, { status: 500 })
+    console.error('Game history error:', error)
+    return NextResponse.json({ 
+      error: 'Erreur serveur',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }

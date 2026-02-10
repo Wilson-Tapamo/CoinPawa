@@ -1,4 +1,5 @@
 // src/app/api/admin/dashboard/route.ts
+// VERSION CORRIGÉE : Revenus = House Edge (pas dépôts)
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifySession } from '@/lib/auth'
@@ -35,13 +36,14 @@ export async function GET(request: Request) {
     const totalUsers = await prisma.user.count()
 
     // Utilisateurs actifs (ont joué dans la période)
-    const activeUsersCount = await prisma.gameRound.groupBy({
-      by: ['walletId'],
-      where: { createdAt: { gte: startDate } }
+    const activeUsersData = await prisma.gameRound.findMany({
+      where: { createdAt: { gte: startDate } },
+      select: { walletId: true },
+      distinct: ['walletId']
     })
-    const activeUsers = activeUsersCount.length
+    const activeUsers = activeUsersData.length
 
-    // Total dépôts
+    // Total dépôts (pour info, pas les revenus)
     const depositsData = await prisma.transaction.aggregate({
       where: {
         type: 'DEPOSIT',
@@ -67,8 +69,21 @@ export async function GET(request: Request) {
     })
     const totalWagered = Number(wageredData._sum.totalWageredSats || 0) / 100_000_000
 
-    // Profit maison
-    const houseProfit = totalDeposits - totalWithdrawals
+    // ✅ VRAIS REVENUS = House Edge (Total misé - Total payé)
+    const allRounds = await prisma.gameRound.findMany({
+      select: {
+        betAmountSats: true,
+        payoutAmountSats: true
+      }
+    })
+    
+    const totalBet = allRounds.reduce((sum, r) => sum + Number(r.betAmountSats), 0)
+    const totalPayout = allRounds.reduce((sum, r) => sum + Number(r.payoutAmountSats), 0)
+    const houseRevenue = (totalBet - totalPayout) / 100_000_000 // ✅ VRAIS REVENUS
+
+    // Profit net = Revenus - (Dépôts - Retraits en suspens)
+    // Simplification : Revenus house edge = profit direct
+    const houseProfit = houseRevenue
 
     // Retraits en attente
     const pendingWithdrawals = await prisma.transaction.count({
@@ -99,98 +114,91 @@ export async function GET(request: Request) {
       ? ((usersThisPeriod - usersPrevPeriod) / usersPrevPeriod) * 100 
       : 0
 
-    // Croissance revenus
-    const depositsThisPeriod = await prisma.transaction.aggregate({
-      where: {
-        type: 'DEPOSIT',
-        status: 'COMPLETED',
-        createdAt: { gte: startDate }
-      },
-      _sum: { amountSats: true }
+    // ✅ Croissance REVENUS (house edge)
+    const roundsThisPeriod = await prisma.gameRound.findMany({
+      where: { createdAt: { gte: startDate } },
+      select: { betAmountSats: true, payoutAmountSats: true }
     })
-    const depositsPrevPeriod = await prisma.transaction.aggregate({
+    const roundsPrevPeriod = await prisma.gameRound.findMany({
       where: {
-        type: 'DEPOSIT',
-        status: 'COMPLETED',
         createdAt: { gte: prevStartDate, lt: startDate }
       },
-      _sum: { amountSats: true }
+      select: { betAmountSats: true, payoutAmountSats: true }
     })
 
-    const revenueThis = Number(depositsThisPeriod._sum.amountSats || 0)
-    const revenuePrev = Number(depositsPrevPeriod._sum.amountSats || 0)
+    const revenueThis = roundsThisPeriod.reduce((sum, r) => 
+      sum + Number(r.betAmountSats) - Number(r.payoutAmountSats), 0
+    )
+    const revenuePrev = roundsPrevPeriod.reduce((sum, r) => 
+      sum + Number(r.betAmountSats) - Number(r.payoutAmountSats), 0
+    )
     const revenueGrowth = revenuePrev > 0
       ? ((revenueThis - revenuePrev) / revenuePrev) * 100
       : 0
 
-    // ========== GRAPHIQUE REVENUS (par jour) ==========
+    // ========== GRAPHIQUE REVENUS (House Edge par jour) ==========
 
     const revenueData = []
+    const groupSize = daysAgo === 7 ? 1 : daysAgo === 30 ? 3 : 7
     
-    for (let i = 0; i < daysAgo; i++) {
+    for (let i = 0; i < daysAgo; i += groupSize) {
       const date = new Date(startDate)
       date.setDate(date.getDate() + i)
       
       const nextDate = new Date(date)
-      nextDate.setDate(nextDate.getDate() + 1)
+      nextDate.setDate(nextDate.getDate() + groupSize)
 
-      // Dépôts du jour
-      const dayDeposits = await prisma.transaction.aggregate({
+      // ✅ REVENUS = House Edge des jeux
+      const periodRounds = await prisma.gameRound.findMany({
         where: {
-          type: 'DEPOSIT',
-          status: 'COMPLETED',
           createdAt: { gte: date, lt: nextDate }
         },
-        _sum: { amountSats: true }
+        select: {
+          betAmountSats: true,
+          payoutAmountSats: true
+        }
       })
 
-      // Retraits du jour
-      const dayWithdrawals = await prisma.transaction.aggregate({
-        where: {
-          type: 'WITHDRAW',
-          status: 'COMPLETED',
-          createdAt: { gte: date, lt: nextDate }
-        },
-        _sum: { amountSats: true }
-      })
+      const periodBet = periodRounds.reduce((sum, r) => sum + Number(r.betAmountSats), 0)
+      const periodPayout = periodRounds.reduce((sum, r) => sum + Number(r.payoutAmountSats), 0)
+      const periodRevenue = (periodBet - periodPayout) / 100_000_000
 
-      const deposits = Number(dayDeposits._sum.amountSats || 0) / 100_000_000
-      const withdrawals = Number(dayWithdrawals._sum.amountSats || 0) / 100_000_000
+      // Wagered pour info
+      const periodWagered = periodBet / 100_000_000
 
       revenueData.push({
         date: date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
-        revenue: Math.round(deposits - withdrawals),
-        deposits: Math.round(deposits),
-        withdrawals: Math.round(withdrawals)
+        revenue: Math.round(periodRevenue * 100) / 100, // ✅ House Edge
+        wagered: Math.round(periodWagered * 100) / 100, // Total misé
+        payout: Math.round((periodPayout / 100_000_000) * 100) / 100 // Total payé
       })
     }
 
-    // ========== GRAPHIQUE UTILISATEURS (par jour) ==========
+    // ========== GRAPHIQUE UTILISATEURS ==========
 
     const userGrowthData = []
     
-    for (let i = 0; i < daysAgo; i++) {
+    for (let i = 0; i < daysAgo; i += groupSize) {
       const date = new Date(startDate)
       date.setDate(date.getDate() + i)
       
       const nextDate = new Date(date)
-      nextDate.setDate(nextDate.getDate() + 1)
+      nextDate.setDate(nextDate.getDate() + groupSize)
 
-      // Total users à cette date
       const usersAtDate = await prisma.user.count({
         where: { createdAt: { lte: nextDate } }
       })
 
-      // Users actifs ce jour
-      const activeDayCount = await prisma.gameRound.groupBy({
-        by: ['walletId'],
-        where: { createdAt: { gte: date, lt: nextDate } }
+      const activePeriod = await prisma.gameRound.findMany({
+        where: { createdAt: { gte: date, lt: nextDate } },
+        select: { walletId: true },
+        distinct: ['walletId']
       })
 
       userGrowthData.push({
         date: date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
         users: usersAtDate,
-        active: activeDayCount.length
+        active: activePeriod.length
       })
     }
 
@@ -216,19 +224,20 @@ export async function GET(request: Request) {
         return {
           name: game.name,
           plays: game.rounds.length,
-          revenue: Math.round((totalBet - totalPayout) / 100_000_000)
+          revenue: Math.round(((totalBet - totalPayout) / 100_000_000) * 100) / 100, // House Edge
+          wagered: Math.round((totalBet / 100_000_000) * 100) / 100 // Total misé
         }
       })
       .filter(g => g.plays > 0)
 
-    // ========== MÉTHODES DE PAIEMENT (✅ CORRIGÉ : cryptoCurrency) ==========
+    // ========== MÉTHODES DE PAIEMENT ==========
 
     const cryptoData = await prisma.transaction.groupBy({
-      by: ['cryptoCurrency'], // ✅ CHANGÉ DE crypto À cryptoCurrency
+      by: ['cryptoCurrency'],
       where: {
         type: 'DEPOSIT',
         status: 'COMPLETED',
-        cryptoCurrency: { not: null } // ✅ CHANGÉ DE crypto À cryptoCurrency
+        cryptoCurrency: { not: null }
       },
       _sum: { amountSats: true }
     })
@@ -272,10 +281,10 @@ export async function GET(request: Request) {
     const recentActivity = recentTransactions.map(tx => {
       const minutesAgo = Math.floor((Date.now() - tx.createdAt.getTime()) / 60000)
       const hoursAgo = Math.floor(minutesAgo / 60)
-      const daysAgo = Math.floor(hoursAgo / 24)
+      const daysAgoCalc = Math.floor(hoursAgo / 24)
 
       let timestamp = ''
-      if (daysAgo > 0) timestamp = `Il y a ${daysAgo}j`
+      if (daysAgoCalc > 0) timestamp = `Il y a ${daysAgoCalc}j`
       else if (hoursAgo > 0) timestamp = `Il y a ${hoursAgo}h`
       else timestamp = `Il y a ${minutesAgo}min`
 
@@ -298,12 +307,13 @@ export async function GET(request: Request) {
       stats: {
         totalUsers,
         activeUsers,
-        totalDeposits: Math.round(totalDeposits),
-        totalWithdrawals: Math.round(totalWithdrawals),
-        totalWagered: Math.round(totalWagered),
+        totalDeposits: Math.round(totalDeposits * 100) / 100, // Pour info
+        totalWithdrawals: Math.round(totalWithdrawals * 100) / 100, // Pour info
+        totalWagered: Math.round(totalWagered * 100) / 100,
+        houseRevenue: Math.round(houseRevenue * 100) / 100, // ✅ VRAIS REVENUS
         totalGames,
         pendingWithdrawals,
-        houseProfit: Math.round(houseProfit),
+        houseProfit: Math.round(houseProfit * 100) / 100, // ✅ = House Revenue
         userGrowth: Math.round(userGrowth * 10) / 10,
         revenueGrowth: Math.round(revenueGrowth * 10) / 10
       },

@@ -58,7 +58,7 @@ export default function WithdrawalsPage() {
   };
 
   const handleApprove = async (withdrawalId: string) => {
-    if (!confirm('Approuver ce retrait ?')) return;
+    if (!confirm('Êtes-vous sûr de vouloir approuver ce retrait ?')) return;
 
     try {
       const res = await fetch('/api/admin/withdrawals/approve', {
@@ -68,20 +68,23 @@ export default function WithdrawalsPage() {
       });
 
       if (res.ok) {
-        alert('Retrait approuvé');
+        alert('Retrait approuvé avec succès');
         fetchWithdrawals();
       } else {
         const data = await res.json();
-        alert(data.error || 'Erreur');
+        alert(data.error || 'Erreur lors de l\'approbation');
       }
     } catch (error) {
-      alert('Erreur lors de l\'approbation');
+      alert('Erreur lors de l\'approbation du retrait');
     }
   };
 
   const handleReject = async (withdrawalId: string) => {
-    const reason = prompt('Raison du rejet:');
-    if (!reason) return;
+    const reason = prompt('Raison du rejet (obligatoire):');
+    if (!reason || reason.trim() === '') {
+      alert('Vous devez fournir une raison pour le rejet');
+      return;
+    }
 
     try {
       const res = await fetch('/api/admin/withdrawals/reject', {
@@ -95,10 +98,10 @@ export default function WithdrawalsPage() {
         fetchWithdrawals();
       } else {
         const data = await res.json();
-        alert(data.error || 'Erreur');
+        alert(data.error || 'Erreur lors du rejet');
       }
     } catch (error) {
-      alert('Erreur lors du rejet');
+      alert('Erreur lors du rejet du retrait');
     }
   };
 
@@ -106,9 +109,9 @@ export default function WithdrawalsPage() {
     <div className="space-y-6">
       {/* HEADER */}
       <div>
-        <h1 className="text-3xl font-display font-bold text-white">Withdrawals</h1>
+        <h1 className="text-3xl font-display font-bold text-white">Retraits</h1>
         <p className="text-text-secondary text-sm mt-1">
-          Valider les demandes de retrait
+          Valider et gérer les demandes de retrait en attente
         </p>
       </div>
 
@@ -119,7 +122,7 @@ export default function WithdrawalsPage() {
             <div className="p-3 bg-accent-rose/10 rounded-xl">
               <Clock className="w-6 h-6 text-accent-rose" />
             </div>
-            <span className="text-xs font-bold text-text-tertiary uppercase">Pending Withdrawals</span>
+            <span className="text-xs font-bold text-text-tertiary uppercase">Retraits en Attente</span>
           </div>
           <p className="text-3xl font-display font-bold text-white">
             {stats.pending}
@@ -131,7 +134,7 @@ export default function WithdrawalsPage() {
             <div className="p-3 bg-primary/10 rounded-xl">
               <DollarSign className="w-6 h-6 text-primary" />
             </div>
-            <span className="text-xs font-bold text-text-tertiary uppercase">Total Amount</span>
+            <span className="text-xs font-bold text-text-tertiary uppercase">Montant Total</span>
           </div>
           <p className="text-3xl font-display font-bold text-white">
             {formatToUSD(stats.totalAmount / 100_000_000)}
@@ -149,6 +152,7 @@ export default function WithdrawalsPage() {
           <div className="text-center py-20 text-text-tertiary">
             <Check className="w-12 h-12 mx-auto mb-3 opacity-20" />
             <p className="text-sm">Aucun retrait en attente</p>
+            <p className="text-xs mt-1">Tous les retraits ont été traités</p>
           </div>
         ) : (
           <div className="divide-y divide-white/5">
@@ -173,7 +177,7 @@ export default function WithdrawalsPage() {
                           {withdrawal.user.username}
                         </p>
                         <p className="text-xs text-text-tertiary">
-                          {withdrawal.user.email || "No email"}
+                          {withdrawal.user.email || "Aucun email"}
                         </p>
                       </div>
                     </div>
@@ -181,19 +185,19 @@ export default function WithdrawalsPage() {
                     {/* Amount */}
                     <div className="grid grid-cols-3 gap-4">
                       <div>
-                        <p className="text-xs text-text-tertiary mb-1">Amount</p>
+                        <p className="text-xs text-text-tertiary mb-1">Montant</p>
                         <p className="text-sm font-bold font-mono text-white">
                           {formatToUSD(Number(withdrawal.amountSats) / 100_000_000)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-text-tertiary mb-1">Fee</p>
+                        <p className="text-xs text-text-tertiary mb-1">Frais</p>
                         <p className="text-sm font-bold font-mono text-accent-rose">
                           -{formatToUSD(Number(withdrawal.withdrawalFee) / 100_000_000)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-text-tertiary mb-1">Net Amount</p>
+                        <p className="text-xs text-text-tertiary mb-1">Montant Net</p>
                         <p className="text-sm font-bold font-mono text-success">
                           {formatToUSD(Number(withdrawal.netAmount) / 100_000_000)}
                         </p>
@@ -202,8 +206,8 @@ export default function WithdrawalsPage() {
 
                     {/* Address */}
                     <div>
-                      <p className="text-xs text-text-tertiary mb-1">Destination Address</p>
-                      <code className="text-xs font-mono text-white bg-background-secondary px-2 py-1 rounded">
+                      <p className="text-xs text-text-tertiary mb-1">Adresse de Destination</p>
+                      <code className="text-xs font-mono text-white bg-background-secondary px-2 py-1 rounded break-all">
                         {withdrawal.toAddress}
                       </code>
                     </div>
@@ -211,11 +215,11 @@ export default function WithdrawalsPage() {
                     {/* Risk */}
                     {withdrawal.isFlagged && (
                       <div className="flex items-center gap-2 p-2 bg-accent-rose/10 rounded-lg border border-accent-rose/20">
-                        <AlertTriangle className="w-4 h-4 text-accent-rose" />
+                        <AlertTriangle className="w-4 h-4 text-accent-rose flex-shrink-0" />
                         <div>
-                          <p className="text-xs font-bold text-accent-rose">Flagged Transaction</p>
+                          <p className="text-xs font-bold text-accent-rose">Transaction Signalée</p>
                           <p className="text-xs text-white">
-                            {withdrawal.flagReason || "Manual review required"}
+                            {withdrawal.flagReason || "Vérification manuelle requise"}
                           </p>
                         </div>
                       </div>
@@ -224,7 +228,13 @@ export default function WithdrawalsPage() {
                     {/* Date */}
                     <div className="flex items-center gap-2 text-xs text-text-tertiary">
                       <Calendar className="w-3 h-3" />
-                      {new Date(withdrawal.createdAt).toLocaleString()}
+                      {new Date(withdrawal.createdAt).toLocaleString('fr-FR', {
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
                     </div>
                   </div>
 
@@ -232,17 +242,17 @@ export default function WithdrawalsPage() {
                   <div className="flex flex-col gap-2">
                     <button
                       onClick={() => handleApprove(withdrawal.id)}
-                      className="flex items-center gap-2 px-4 py-2 bg-success text-white rounded-lg font-bold text-sm hover:bg-success/90 transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 bg-success text-white rounded-lg font-bold text-sm hover:bg-success/90 transition-colors whitespace-nowrap"
                     >
                       <Check className="w-4 h-4" />
-                      Approve
+                      Approuver
                     </button>
                     <button
                       onClick={() => handleReject(withdrawal.id)}
-                      className="flex items-center gap-2 px-4 py-2 bg-accent-rose text-white rounded-lg font-bold text-sm hover:bg-accent-rose/90 transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 bg-accent-rose text-white rounded-lg font-bold text-sm hover:bg-accent-rose/90 transition-colors whitespace-nowrap"
                     >
                       <X className="w-4 h-4" />
-                      Reject
+                      Rejeter
                     </button>
                   </div>
                 </div>

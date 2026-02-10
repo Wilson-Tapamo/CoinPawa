@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 
 const MENU_ITEMS = [
   {
-    label: "Dashboard",
+    label: "Tableau de Bord",
     href: "/admin",
     icon: LayoutDashboard,
   },
@@ -44,12 +44,7 @@ const MENU_ITEMS = [
     label: "Retraits",
     href: "/admin/withdrawals",
     icon: ArrowDownToLine,
-    badgeKey: "pendingWithdrawals", // Clé pour le badge dynamique
-  },
-  {
-    label: "Paramètres",
-    href: "/admin/settings",
-    icon: Settings,
+    badgeKey: "pendingWithdrawals",
   },
 ];
 
@@ -105,8 +100,8 @@ export default function AdminLayout({
         <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-[#1A1D26] border-r border-white/5 px-6 pb-4">
           {/* Logo */}
           <div className="flex h-16 shrink-0 items-center border-b border-white/5">
-            <h1 className="text-xl font-display font-bold text-yellow flex items-center gap-2">
-              CoinPower Admin
+            <h1 className="text-xl font-display font-bold text-primary flex items-center gap-2">
+              🎰 CoinPawa Admin
             </h1>
           </div>
 
@@ -204,9 +199,8 @@ export default function AdminLayout({
           <aside className="fixed inset-y-0 left-0 z-50 w-72 bg-[#1A1D26] border-r border-white/5 lg:hidden">
             <div className="flex h-full flex-col gap-y-5 overflow-y-auto px-6 pb-4">
               <div className="flex h-16 items-center justify-between border-b border-white/5">
-                <h1 className="text-xl font-display font-bold text-white flex items-center gap-2">
-                  <span className="text-2xl">🎰</span>
-                  CoinPawa Admin
+                <h1 className="text-xl font-display font-bold text-primary flex items-center gap-2">
+                  🎰 CoinPawa Admin
                 </h1>
                 <button
                   onClick={() => setSidebarOpen(false)}

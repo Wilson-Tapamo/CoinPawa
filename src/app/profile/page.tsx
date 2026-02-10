@@ -16,7 +16,9 @@ import {
     TrendingUp,
     TrendingDown,
     Trophy,
-    Loader2
+    Loader2,
+    Target,
+    Flame
 } from "lucide-react";
 import { cn, formatToUSD } from "@/lib/utils";
 import { AvatarSelector } from "@/components/AvatarSelector";
@@ -32,16 +34,32 @@ const DEFAULT_USER = {
 };
 
 interface Stats {
+    // Balance & Profits
+    currentBalance: number;
     totalDeposited: number;
     totalWithdrawn: number;
+    netProfit: number;  // Total Won - Total Wagered
+    
+    // Activity
     totalWagered: number;
     totalWon: number;
     totalBets: number;
+    
+    // Performance
     winCount: number;
-    maxWin: number;
+    lossCount: number;
     winRate: number;
-    netProfit: number;
-    currentBalance: number;
+    maxWin: number;
+    
+    // Streaks
+    currentStreak: number;
+    bestStreak: number;
+    
+    // Favorite Game
+    favoriteGame: {
+        name: string;
+        plays: number;
+    } | null;
 }
 
 interface UserInfo {
@@ -61,6 +79,7 @@ interface GameHistoryEntry {
     timestamp: string;
     betAmount?: number;
     netProfit?: number;
+    isWin: boolean;
 }
 
 const TABS = [
@@ -78,7 +97,7 @@ export default function ProfilePage() {
     const [isLoadingStats, setIsLoadingStats] = useState(true);
     const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 
-    // 🆕 États pour les modals
+    // États pour les modals
     const [showAvatarSelector, setShowAvatarSelector] = useState(false);
     const [showBannerSelector, setShowBannerSelector] = useState(false);
     const [currentAvatar, setCurrentAvatar] = useState<string | null>(null);
@@ -93,7 +112,6 @@ export default function ProfilePage() {
                     const data = await res.json();
                     setStats(data.stats);
                     setUserInfo(data.user);
-                    // 🆕 Charger avatar et bannière
                     setCurrentAvatar(data.user.avatarUrl);
                     setCurrentBanner(data.user.bannerUrl);
                 }
@@ -187,6 +205,23 @@ export default function ProfilePage() {
                         </div>
                         <p className="text-text-tertiary text-sm">ID Utilisateur: <span className="text-text-secondary font-mono">{userId}</span></p>
                     </div>
+
+                    {/* Balance Card - NOUVEAU */}
+                    {!isLoadingStats && stats && (
+                        <div className="bg-background-secondary border border-white/10 rounded-xl px-6 py-4">
+                            <p className="text-xs text-text-tertiary uppercase mb-1">Balance</p>
+                            <p className="text-2xl font-bold font-display text-white">{formatToUSD(stats.currentBalance)}</p>
+                            <div className="flex items-center gap-2 mt-2">
+                                <span className={cn(
+                                    "text-xs font-bold px-2 py-1 rounded",
+                                    stats.netProfit >= 0 ? "text-success bg-success/10" : "text-accent-rose bg-accent-rose/10"
+                                )}>
+                                    {stats.netProfit >= 0 ? "+" : ""}{formatToUSD(stats.netProfit)}
+                                </span>
+                                <span className="text-xs text-text-tertiary">Profit Net</span>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -251,39 +286,96 @@ export default function ProfilePage() {
                                 </div>
                             </div>
 
+                            {/* STATS PRINCIPALES - AMÉLIORÉES */}
                             <div className="border-t border-white/5 pt-6">
-                                <h2 className="text-xl font-bold text-white mb-4">Statistiques de Jeu</h2>
+                                <h2 className="text-xl font-bold text-white mb-4">Vue d'Ensemble</h2>
                                 {isLoadingStats ? (
                                     <div className="flex justify-center py-10">
                                         <Loader2 className="w-8 h-8 text-primary animate-spin" />
                                     </div>
                                 ) : (
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                        <div className="p-4 bg-background-secondary rounded-xl text-center border border-white/5">
-                                            <div className="text-2xl font-bold text-primary font-display">
-                                                {formatToUSD(stats?.totalWagered || 0)}
+                                    <>
+                                        {/* Row 1: Stats principales */}
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                                            <div className="p-4 bg-background-secondary rounded-xl text-center border border-white/5">
+                                                <div className="text-2xl font-bold text-primary font-display">
+                                                    {formatToUSD(stats?.totalWagered || 0)}
+                                                </div>
+                                                <div className="text-xs text-text-tertiary uppercase">Total Misé</div>
                                             </div>
-                                            <div className="text-xs text-text-tertiary uppercase">Misé Total</div>
-                                        </div>
-                                        <div className="p-4 bg-background-secondary rounded-xl text-center border border-white/5">
-                                            <div className="text-2xl font-bold text-success font-display">
-                                                {stats?.totalBets || 0}
+                                            <div className="p-4 bg-background-secondary rounded-xl text-center border border-white/5">
+                                                <div className={cn(
+                                                    "text-2xl font-bold font-display",
+                                                    (stats?.netProfit || 0) >= 0 ? "text-success" : "text-accent-rose"
+                                                )}>
+                                                    {(stats?.netProfit || 0) >= 0 ? "+" : ""}{formatToUSD(stats?.netProfit || 0)}
+                                                </div>
+                                                <div className="text-xs text-text-tertiary uppercase">Profit Net</div>
                                             </div>
-                                            <div className="text-xs text-text-tertiary uppercase">Total Paris</div>
-                                        </div>
-                                        <div className="p-4 bg-background-secondary rounded-xl text-center border border-white/5">
-                                            <div className="text-2xl font-bold text-accent-cyan font-display">
-                                                {stats?.winCount || 0}
+                                            <div className="p-4 bg-background-secondary rounded-xl text-center border border-white/5">
+                                                <div className="text-2xl font-bold text-accent-cyan font-display">
+                                                    {((stats?.winRate || 0) * 100).toFixed(1)}%
+                                                </div>
+                                                <div className="text-xs text-text-tertiary uppercase">Taux Victoire</div>
                                             </div>
-                                            <div className="text-xs text-text-tertiary uppercase">Victoires</div>
-                                        </div>
-                                        <div className="p-4 bg-background-secondary rounded-xl text-center border border-white/5 text-xs">
-                                            <div className="text-2xl font-bold text-accent-rose font-display">
-                                                {formatToUSD(stats?.maxWin || 0)}
+                                            <div className="p-4 bg-background-secondary rounded-xl text-center border border-white/5 text-xs">
+                                                <div className="text-2xl font-bold text-accent-rose font-display">
+                                                    {formatToUSD(stats?.maxWin || 0)}
+                                                </div>
+                                                <div className="text-xs text-text-tertiary uppercase">Record</div>
                                             </div>
-                                            <div className="text-xs text-text-tertiary uppercase">Max Gain</div>
                                         </div>
-                                    </div>
+
+                                        {/* Row 2: Stats secondaires */}
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            <div className="p-4 bg-background-secondary rounded-xl text-center border border-white/5">
+                                                <div className="text-xl font-bold text-white font-display">
+                                                    {stats?.totalBets || 0}
+                                                </div>
+                                                <div className="text-xs text-text-tertiary uppercase">Parties Jouées</div>
+                                            </div>
+                                            <div className="p-4 bg-background-secondary rounded-xl text-center border border-white/5">
+                                                <div className="text-xl font-bold text-success font-display">
+                                                    {stats?.winCount || 0}
+                                                </div>
+                                                <div className="text-xs text-text-tertiary uppercase">Victoires</div>
+                                            </div>
+                                            <div className="p-4 bg-background-secondary rounded-xl border border-white/5">
+                                                <div className="flex items-center justify-center gap-1 mb-1">
+                                                    <Flame className="w-4 h-4 text-primary" />
+                                                    <div className="text-xl font-bold text-primary font-display">
+                                                        {stats?.currentStreak || 0}
+                                                    </div>
+                                                </div>
+                                                <div className="text-xs text-text-tertiary uppercase text-center">Série Actuelle</div>
+                                            </div>
+                                            <div className="p-4 bg-background-secondary rounded-xl border border-white/5">
+                                                <div className="flex items-center justify-center gap-1 mb-1">
+                                                    <Trophy className="w-4 h-4 text-accent-violet" />
+                                                    <div className="text-xl font-bold text-accent-violet font-display">
+                                                        {stats?.bestStreak || 0}
+                                                    </div>
+                                                </div>
+                                                <div className="text-xs text-text-tertiary uppercase text-center">Meilleure Série</div>
+                                            </div>
+                                        </div>
+
+                                        {/* Jeu Favori */}
+                                        {stats?.favoriteGame && (
+                                            <div className="mt-6 p-4 bg-gradient-to-r from-primary/10 to-transparent border border-primary/20 rounded-xl">
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <p className="text-xs text-text-tertiary uppercase mb-1">Jeu Favori</p>
+                                                        <p className="text-lg font-bold text-white">{stats.favoriteGame.name}</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-2xl font-bold text-primary font-display">{stats.favoriteGame.plays}</p>
+                                                        <p className="text-xs text-text-tertiary">parties</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         </div>
@@ -306,9 +398,9 @@ export default function ProfilePage() {
                                             <div className="flex items-center gap-3">
                                                 <div className={cn(
                                                     "w-10 h-10 rounded-lg flex items-center justify-center",
-                                                    item.type === 'WIN' ? "bg-success/10 text-success" : "bg-white/5 text-text-secondary"
+                                                    item.isWin ? "bg-success/10 text-success" : "bg-accent-rose/10 text-accent-rose"
                                                 )}>
-                                                    {item.type === 'WIN' ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
+                                                    {item.isWin ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
                                                 </div>
                                                 <div>
                                                     <p className="text-sm font-bold text-white uppercase">{item.gameName}</p>
@@ -318,10 +410,13 @@ export default function ProfilePage() {
                                             <div className="text-right">
                                                 <p className={cn(
                                                     "font-bold font-mono text-sm",
-                                                    item.type === 'WIN' ? "text-success" : "text-text-secondary"
+                                                    item.isWin ? "text-success" : "text-accent-rose"
                                                 )}>
-                                                    {item.type === 'WIN' ? "+" : "-"}{formatToUSD(item.amount)}
+                                                    {item.isWin ? "+" : "-"}{formatToUSD(item.amount)}
                                                 </p>
+                                                {item.betAmount && (
+                                                    <p className="text-xs text-text-tertiary">Misé: {formatToUSD(item.betAmount)}</p>
+                                                )}
                                             </div>
                                         </div>
                                     ))}
@@ -404,7 +499,7 @@ export default function ProfilePage() {
                 </div>
             </div>
 
-            {/* 🆕 MODALS */}
+            {/* MODALS */}
             {showAvatarSelector && (
                 <AvatarSelector
                     currentAvatar={currentAvatar}
