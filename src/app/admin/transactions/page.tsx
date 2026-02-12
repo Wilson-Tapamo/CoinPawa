@@ -78,7 +78,7 @@ export default function TransactionsPage() {
         setTotalPages(Math.ceil(data.total / itemsPerPage));
       }
     } catch (error) {
-      console.error("Error loading transactions:", error);
+      console.error("Erreur chargement transactions:", error);
     } finally {
       setIsLoading(false);
     }
@@ -122,7 +122,7 @@ export default function TransactionsPage() {
           className="flex items-center gap-2 px-4 py-2 bg-primary text-background font-bold rounded-xl shadow-glow-gold hover:bg-primary-hover transition-colors text-sm"
         >
           <Download className="w-4 h-4" />
-          Export CSV
+          Exporter CSV
         </button>
       </div>
 
@@ -158,7 +158,7 @@ export default function TransactionsPage() {
               <div className="p-2 bg-success/10 rounded-lg">
                 <ArrowDownToLine className="w-4 h-4 text-success" />
               </div>
-              <span className="text-xs font-bold text-text-tertiary uppercase">Deposits</span>
+              <span className="text-xs font-bold text-text-tertiary uppercase">Dépôts</span>
             </div>
             <p className="text-xl font-display font-bold text-white">
               {stats.deposits}
@@ -170,7 +170,7 @@ export default function TransactionsPage() {
               <div className="p-2 bg-accent-rose/10 rounded-lg">
                 <TrendingUp className="w-4 h-4 text-accent-rose" />
               </div>
-              <span className="text-xs font-bold text-text-tertiary uppercase">Withdrawals</span>
+              <span className="text-xs font-bold text-text-tertiary uppercase">Retraits</span>
             </div>
             <p className="text-xl font-display font-bold text-white">
               {stats.withdrawals}
@@ -182,7 +182,7 @@ export default function TransactionsPage() {
               <div className="p-2 bg-accent-cyan/10 rounded-lg">
                 <Gamepad2 className="w-4 h-4 text-accent-cyan" />
               </div>
-              <span className="text-xs font-bold text-text-tertiary uppercase">Bets</span>
+              <span className="text-xs font-bold text-text-tertiary uppercase">Paris</span>
             </div>
             <p className="text-xl font-display font-bold text-white">
               {stats.bets}
@@ -194,7 +194,7 @@ export default function TransactionsPage() {
               <div className="p-2 bg-primary/10 rounded-lg">
                 <Trophy className="w-4 h-4 text-primary" />
               </div>
-              <span className="text-xs font-bold text-text-tertiary uppercase">Wins</span>
+              <span className="text-xs font-bold text-text-tertiary uppercase">Gains</span>
             </div>
             <p className="text-xl font-display font-bold text-white">
               {stats.wins}
@@ -212,7 +212,7 @@ export default function TransactionsPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
               <input
                 type="text"
-                placeholder="Search username or ref..."
+                placeholder="Rechercher nom d'utilisateur ou référence..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-background-secondary border border-white/10 rounded-xl py-2.5 pl-10 pr-3 text-sm text-white placeholder:text-text-tertiary focus:outline-none focus:border-primary/50 transition-colors"
@@ -227,12 +227,12 @@ export default function TransactionsPage() {
               onChange={(e) => setTypeFilter(e.target.value)}
               className="w-full bg-background-secondary border border-white/10 rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-primary/50 transition-colors"
             >
-              <option value="all">All Types</option>
-              <option value="DEPOSIT">Deposits</option>
-              <option value="WITHDRAW">Withdrawals</option>
-              <option value="BET">Bets</option>
-              <option value="WIN">Wins</option>
-              <option value="DEPOSIT_BONUS">Bonuses</option>
+              <option value="all">Tous les types</option>
+              <option value="DEPOSIT">Dépôts</option>
+              <option value="WITHDRAW">Retraits</option>
+              <option value="BET">Paris</option>
+              <option value="WIN">Gains</option>
+              <option value="DEPOSIT_BONUS">Bonus</option>
             </select>
           </div>
 
@@ -243,11 +243,11 @@ export default function TransactionsPage() {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="w-full bg-background-secondary border border-white/10 rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-primary/50 transition-colors"
             >
-              <option value="all">All Status</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="PENDING">Pending</option>
-              <option value="FAILED">Failed</option>
-              <option value="EXPIRED">Expired</option>
+              <option value="all">Tous les statuts</option>
+              <option value="COMPLETED">Complété</option>
+              <option value="PENDING">En attente</option>
+              <option value="FAILED">Échoué</option>
+              <option value="EXPIRED">Expiré</option>
             </select>
           </div>
 
@@ -258,11 +258,11 @@ export default function TransactionsPage() {
               onChange={(e) => setDateRange(e.target.value)}
               className="w-full bg-background-secondary border border-white/10 rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-primary/50 transition-colors"
             >
-              <option value="all">All Time</option>
-              <option value="1d">Last 24h</option>
-              <option value="7d">Last 7 days</option>
-              <option value="30d">Last 30 days</option>
-              <option value="90d">Last 90 days</option>
+              <option value="all">Toute la période</option>
+              <option value="1d">Dernières 24h</option>
+              <option value="7d">7 derniers jours</option>
+              <option value="30d">30 derniers jours</option>
+              <option value="90d">90 derniers jours</option>
             </select>
           </div>
         </div>
@@ -286,11 +286,11 @@ export default function TransactionsPage() {
                 <thead className="bg-background-secondary border-b border-white/5">
                   <tr>
                     <th className="text-left py-3 px-4 text-xs font-bold text-text-tertiary uppercase">Type</th>
-                    <th className="text-left py-3 px-4 text-xs font-bold text-text-tertiary uppercase">User</th>
-                    <th className="text-right py-3 px-4 text-xs font-bold text-text-tertiary uppercase">Amount</th>
-                    <th className="text-left py-3 px-4 text-xs font-bold text-text-tertiary uppercase">Status</th>
+                    <th className="text-left py-3 px-4 text-xs font-bold text-text-tertiary uppercase">Utilisateur</th>
+                    <th className="text-right py-3 px-4 text-xs font-bold text-text-tertiary uppercase">Montant</th>
+                    <th className="text-left py-3 px-4 text-xs font-bold text-text-tertiary uppercase">Statut</th>
                     <th className="text-left py-3 px-4 text-xs font-bold text-text-tertiary uppercase">Crypto</th>
-                    <th className="text-left py-3 px-4 text-xs font-bold text-text-tertiary uppercase">Reference</th>
+                    <th className="text-left py-3 px-4 text-xs font-bold text-text-tertiary uppercase">Référence</th>
                     <th className="text-left py-3 px-4 text-xs font-bold text-text-tertiary uppercase">Date</th>
                   </tr>
                 </thead>
@@ -314,7 +314,11 @@ export default function TransactionsPage() {
                           {tx.type === "BET" && "🎲"}
                           {tx.type === "WIN" && "🎉"}
                           {tx.type === "DEPOSIT_BONUS" && "🎁"}
-                          {tx.type.replace("_", " ")}
+                          {tx.type === "DEPOSIT" && "Dépôt"}
+                          {tx.type === "WITHDRAW" && "Retrait"}
+                          {tx.type === "BET" && "Pari"}
+                          {tx.type === "WIN" && "Gain"}
+                          {tx.type === "DEPOSIT_BONUS" && "Bonus"}
                         </div>
                       </td>
 
@@ -351,7 +355,11 @@ export default function TransactionsPage() {
                             tx.status === "EXPIRED" && "bg-text-tertiary/10 text-text-tertiary"
                           )}
                         >
-                          {tx.status}
+                          {tx.status === "COMPLETED" && "Complété"}
+                          {tx.status === "PENDING" && "En attente"}
+                          {tx.status === "FAILED" && "Échoué"}
+                          {tx.status === "EXPIRED" && "Expiré"}
+                          {!["COMPLETED", "PENDING", "FAILED", "EXPIRED"].includes(tx.status) && tx.status}
                         </span>
                       </td>
 
@@ -372,7 +380,13 @@ export default function TransactionsPage() {
                       {/* Date */}
                       <td className="py-3 px-4">
                         <span className="text-xs text-text-tertiary">
-                          {new Date(tx.createdAt).toLocaleString()}
+                          {new Date(tx.createdAt).toLocaleString('fr-FR', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
                         </span>
                       </td>
                     </tr>

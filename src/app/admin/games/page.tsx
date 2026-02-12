@@ -71,7 +71,7 @@ export default function GamesPage() {
         fetchGames();
       }
     } catch (error) {
-      alert('Erreur');
+      alert('Erreur lors de la modification du statut');
     }
   };
 
@@ -79,9 +79,9 @@ export default function GamesPage() {
     <div className="space-y-6">
       {/* HEADER */}
       <div>
-        <h1 className="text-3xl font-display font-bold text-white">Games</h1>
+        <h1 className="text-3xl font-display font-bold text-white">Jeux</h1>
         <p className="text-text-secondary text-sm mt-1">
-          Statistiques et gestion des jeux
+          Statistiques et gestion des jeux de la plateforme
         </p>
       </div>
 
@@ -93,7 +93,7 @@ export default function GamesPage() {
               <div className="p-2 bg-accent-violet/10 rounded-lg">
                 <Gamepad2 className="w-4 h-4 text-accent-violet" />
               </div>
-              <span className="text-xs font-bold text-text-tertiary uppercase">Total Games</span>
+              <span className="text-xs font-bold text-text-tertiary uppercase">Total Jeux</span>
             </div>
             <p className="text-2xl font-display font-bold text-white">
               {stats.totalGames}
@@ -105,7 +105,7 @@ export default function GamesPage() {
               <div className="p-2 bg-success/10 rounded-lg">
                 <ToggleRight className="w-4 h-4 text-success" />
               </div>
-              <span className="text-xs font-bold text-text-tertiary uppercase">Active</span>
+              <span className="text-xs font-bold text-text-tertiary uppercase">Actifs</span>
             </div>
             <p className="text-2xl font-display font-bold text-white">
               {stats.activeGames}
@@ -117,7 +117,7 @@ export default function GamesPage() {
               <div className="p-2 bg-accent-cyan/10 rounded-lg">
                 <Trophy className="w-4 h-4 text-accent-cyan" />
               </div>
-              <span className="text-xs font-bold text-text-tertiary uppercase">Total Bets</span>
+              <span className="text-xs font-bold text-text-tertiary uppercase">Total Paris</span>
             </div>
             <p className="text-2xl font-display font-bold text-white">
               {stats.totalBets.toLocaleString()}
@@ -129,7 +129,7 @@ export default function GamesPage() {
               <div className="p-2 bg-primary/10 rounded-lg">
                 <DollarSign className="w-4 h-4 text-primary" />
               </div>
-              <span className="text-xs font-bold text-text-tertiary uppercase">Total Wagered</span>
+              <span className="text-xs font-bold text-text-tertiary uppercase">Total Misé</span>
             </div>
             <p className="text-xl font-display font-bold text-white">
               {formatToUSD(stats.totalWagered / 100_000_000)}
@@ -141,7 +141,7 @@ export default function GamesPage() {
               <div className="p-2 bg-accent-rose/10 rounded-lg">
                 <TrendingUp className="w-4 h-4 text-accent-rose" />
               </div>
-              <span className="text-xs font-bold text-text-tertiary uppercase">Avg House Edge</span>
+              <span className="text-xs font-bold text-text-tertiary uppercase">House Edge Moy.</span>
             </div>
             <p className="text-2xl font-display font-bold text-white">
               {stats.averageHouseEdge.toFixed(2)}%
@@ -166,14 +166,14 @@ export default function GamesPage() {
             <table className="w-full">
               <thead className="bg-background-secondary border-b border-white/5">
                 <tr>
-                  <th className="text-left py-3 px-4 text-xs font-bold text-text-tertiary uppercase">Game</th>
+                  <th className="text-left py-3 px-4 text-xs font-bold text-text-tertiary uppercase">Jeu</th>
                   <th className="text-left py-3 px-4 text-xs font-bold text-text-tertiary uppercase">Type</th>
-                  <th className="text-center py-3 px-4 text-xs font-bold text-text-tertiary uppercase">Status</th>
+                  <th className="text-center py-3 px-4 text-xs font-bold text-text-tertiary uppercase">Statut</th>
                   <th className="text-right py-3 px-4 text-xs font-bold text-text-tertiary uppercase">House Edge</th>
-                  <th className="text-right py-3 px-4 text-xs font-bold text-text-tertiary uppercase">Total Bets</th>
-                  <th className="text-right py-3 px-4 text-xs font-bold text-text-tertiary uppercase">Wagered</th>
-                  <th className="text-right py-3 px-4 text-xs font-bold text-text-tertiary uppercase">Payout</th>
-                  <th className="text-center py-3 px-4 text-xs font-bold text-text-tertiary uppercase">Plays</th>
+                  <th className="text-right py-3 px-4 text-xs font-bold text-text-tertiary uppercase">Total Paris</th>
+                  <th className="text-right py-3 px-4 text-xs font-bold text-text-tertiary uppercase">Misé</th>
+                  <th className="text-right py-3 px-4 text-xs font-bold text-text-tertiary uppercase">Payé</th>
+                  <th className="text-center py-3 px-4 text-xs font-bold text-text-tertiary uppercase">Parties</th>
                   <th className="text-right py-3 px-4 text-xs font-bold text-text-tertiary uppercase">Actions</th>
                 </tr>
               </thead>
@@ -205,12 +205,12 @@ export default function GamesPage() {
                         {game.isActive ? (
                           <div className="inline-flex items-center gap-1 text-success">
                             <div className="w-2 h-2 rounded-full bg-success"></div>
-                            <span className="text-xs font-bold">Active</span>
+                            <span className="text-xs font-bold">Actif</span>
                           </div>
                         ) : (
                           <div className="inline-flex items-center gap-1 text-accent-rose">
                             <div className="w-2 h-2 rounded-full bg-accent-rose"></div>
-                            <span className="text-xs font-bold">Inactive</span>
+                            <span className="text-xs font-bold">Inactif</span>
                           </div>
                         )}
                       </td>
@@ -222,7 +222,7 @@ export default function GamesPage() {
                             {game.houseEdge.toFixed(2)}%
                           </p>
                           <p className="text-xs text-text-tertiary">
-                            Actual: {actualHouseEdge.toFixed(2)}%
+                            Réel: {actualHouseEdge.toFixed(2)}%
                           </p>
                         </div>
                       </td>
