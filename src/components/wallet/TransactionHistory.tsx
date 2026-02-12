@@ -2,13 +2,13 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { formatToUSD } from '@/lib/utils'
-import { 
-  ArrowDownLeft, 
-  ArrowUpRight, 
-  Gift, 
-  Clock, 
-  CheckCircle, 
+import { formatToUSD, satsToUsd } from '@/lib/utils'
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  Gift,
+  Clock,
+  CheckCircle,
   XCircle,
   AlertCircle,
   Copy,
@@ -55,10 +55,7 @@ export default function TransactionHistory() {
     }
   }
 
-  // Convertir sats en USD
-  const satsToUsd = (sats: string) => {
-    return Number(sats) / 100_000_000
-  }
+
 
   // Copier dans le presse-papier
   const handleCopy = (text: string, id: string) => {
@@ -177,7 +174,7 @@ export default function TransactionHistory() {
       {transactions.map((tx) => {
         const isExpanded = expandedTx === tx.id
         const isCredit = ['DEPOSIT', 'DEPOSIT_BONUS', 'WIN'].includes(tx.type)
-        const amountUsd = satsToUsd(tx.amountSats)
+        const amountUsd = satsToUsd(Number(tx.amountSats))
 
         return (
           <div
@@ -191,7 +188,7 @@ export default function TransactionHistory() {
             )}
           >
             {/* Header - Toujours visible */}
-            <div 
+            <div
               className="p-4 cursor-pointer"
               onClick={() => setExpandedTx(isExpanded ? null : tx.id)}
             >
@@ -241,7 +238,7 @@ export default function TransactionHistory() {
             {/* Détails - Visible si étendu */}
             {isExpanded && (
               <div className="px-4 pb-4 pt-2 border-t border-white/5 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                
+
                 {/* Détails du bonus de surplus */}
                 {tx.type === 'DEPOSIT_BONUS' && tx.metadata && (
                   <div className="bg-purple-500/10 rounded-lg p-3 border border-purple-500/20">

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Loader2, Timer, Trophy, History, ArrowLeft, Info, X, Coins, Zap, Check, Sparkles, Ticket } from "lucide-react";
 import Link from "next/link";
-import { cn, formatToUSD } from "@/lib/utils";
+import { cn, formatToUSD, usdToSats, satsToUsd, formatSatsToUSD } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
 // --- TYPES ---
@@ -34,7 +34,7 @@ export default function LotoGame() {
     const [state, setState] = useState<LotoState | null>(null);
     const [myTickets, setMyTickets] = useState<LotoTicket[]>([]);
     const [selectedNumbers, setSelectedNumbers] = useState<number[]>([]);
-    const [betAmount, setBetAmount] = useState("100");
+    const [betAmount, setBetAmount] = useState("1");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState("");
     const [showRules, setShowRules] = useState(false);
@@ -97,7 +97,7 @@ export default function LotoGame() {
                 method: "POST",
                 body: JSON.stringify({
                     selection: selectedNumbers,
-                    amount: parseInt(betAmount)
+                    amount: usdToSats(parseFloat(betAmount))
                 })
             });
             const data = await res.json();
@@ -212,8 +212,8 @@ export default function LotoGame() {
                                         />
                                     </div>
                                     <div className="flex gap-2">
-                                        {[100, 500, 1000, 5000].map(amt => (
-                                            <button key={amt} onClick={() => setBetAmount(amt.toString())} className="flex-1 py-2 text-[10px] font-black bg-white/5 hover:bg-white/10 text-text-secondary rounded-lg border border-white/5 transition-all uppercase">{amt}</button>
+                                        {[1, 5, 10, 20].map(amt => (
+                                            <button key={amt} onClick={() => setBetAmount(amt.toString())} className="flex-1 py-2 text-[10px] font-black bg-white/5 hover:bg-white/10 text-text-secondary rounded-lg border border-white/5 transition-all uppercase">${amt}</button>
                                         ))}
                                     </div>
                                 </div>
@@ -252,7 +252,7 @@ export default function LotoGame() {
                                     </div>
                                     <div className="text-right">
                                         <p className="text-[10px] font-black text-text-tertiary uppercase tracking-tighter">MISE</p>
-                                        <p className="text-sm font-mono font-bold text-white">{ticket.amount}</p>
+                                        <p className="text-sm font-mono font-bold text-white">{formatSatsToUSD(ticket.amount)}</p>
                                     </div>
                                 </div>
                             ))}

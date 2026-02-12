@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { headers } from 'next/headers'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     // Récupérer l'userId depuis les headers (envoyé par le middleware)
@@ -35,9 +37,9 @@ export async function GET() {
     }
 
     // User est admin
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      role: user.role 
+      role: user.role
     })
 
   } catch (error) {

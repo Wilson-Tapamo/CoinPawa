@@ -20,7 +20,7 @@ import {
     Target,
     Flame
 } from "lucide-react";
-import { cn, formatToUSD } from "@/lib/utils";
+import { cn, formatToUSD, formatSatsToUSD } from "@/lib/utils";
 import { AvatarSelector } from "@/components/AvatarSelector";
 import { BannerSelector } from "@/components/BannerSelector";
 import Image from "next/image";
@@ -294,14 +294,10 @@ export default function ProfilePage() {
                                         <Loader2 className="w-8 h-8 text-primary animate-spin" />
                                     </div>
                                 ) : (
-                                    <>
-                                        {/* Row 1: Stats principales */}
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                                            <div className="p-4 bg-background-secondary rounded-xl text-center border border-white/5">
-                                                <div className="text-2xl font-bold text-primary font-display">
-                                                    {formatToUSD(stats?.totalWagered || 0)}
-                                                </div>
-                                                <div className="text-xs text-text-tertiary uppercase">Total Misé</div>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        <div className="p-4 bg-background-secondary rounded-xl text-center border border-white/5">
+                                            <div className="text-2xl font-bold text-primary font-display">
+                                                {formatSatsToUSD(stats?.totalWagered || 0)}
                                             </div>
                                             <div className="p-4 bg-background-secondary rounded-xl text-center border border-white/5">
                                                 <div className={cn(
@@ -325,38 +321,9 @@ export default function ProfilePage() {
                                                 <div className="text-xs text-text-tertiary uppercase">Record</div>
                                             </div>
                                         </div>
-
-                                        {/* Row 2: Stats secondaires */}
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                            <div className="p-4 bg-background-secondary rounded-xl text-center border border-white/5">
-                                                <div className="text-xl font-bold text-white font-display">
-                                                    {stats?.totalBets || 0}
-                                                </div>
-                                                <div className="text-xs text-text-tertiary uppercase">Parties Jouées</div>
-                                            </div>
-                                            <div className="p-4 bg-background-secondary rounded-xl text-center border border-white/5">
-                                                <div className="text-xl font-bold text-success font-display">
-                                                    {stats?.winCount || 0}
-                                                </div>
-                                                <div className="text-xs text-text-tertiary uppercase">Victoires</div>
-                                            </div>
-                                            <div className="p-4 bg-background-secondary rounded-xl border border-white/5">
-                                                <div className="flex items-center justify-center gap-1 mb-1">
-                                                    <Flame className="w-4 h-4 text-primary" />
-                                                    <div className="text-xl font-bold text-primary font-display">
-                                                        {stats?.currentStreak || 0}
-                                                    </div>
-                                                </div>
-                                                <div className="text-xs text-text-tertiary uppercase text-center">Série Actuelle</div>
-                                            </div>
-                                            <div className="p-4 bg-background-secondary rounded-xl border border-white/5">
-                                                <div className="flex items-center justify-center gap-1 mb-1">
-                                                    <Trophy className="w-4 h-4 text-accent-violet" />
-                                                    <div className="text-xl font-bold text-accent-violet font-display">
-                                                        {stats?.bestStreak || 0}
-                                                    </div>
-                                                </div>
-                                                <div className="text-xs text-text-tertiary uppercase text-center">Meilleure Série</div>
+                                        <div className="p-4 bg-background-secondary rounded-xl text-center border border-white/5 text-xs">
+                                            <div className="text-2xl font-bold text-accent-rose font-display">
+                                                {formatSatsToUSD(stats?.maxWin || 0)}
                                             </div>
                                         </div>
 
@@ -412,7 +379,7 @@ export default function ProfilePage() {
                                                     "font-bold font-mono text-sm",
                                                     item.isWin ? "text-success" : "text-accent-rose"
                                                 )}>
-                                                    {item.isWin ? "+" : "-"}{formatToUSD(item.amount)}
+                                                    {item.type === 'WIN' ? "+" : "-"}{formatSatsToUSD(item.amount)}
                                                 </p>
                                                 {item.betAmount && (
                                                     <p className="text-xs text-text-tertiary">Misé: {formatToUSD(item.betAmount)}</p>

@@ -17,7 +17,7 @@ import {
     ExternalLink,
     History
 } from "lucide-react";
-import { cn, formatToUSD } from "@/lib/utils";
+import { cn, formatToUSD, satsToUsd, formatSatsToUSD } from "@/lib/utils";
 import PendingWithdrawals from "@/components/wallet/PendingWithdrawals";
 import TransactionHistory from "@/components/wallet/TransactionHistory";
 
@@ -91,8 +91,8 @@ export default function WalletPage() {
             const res = await fetch("/api/wallet/balance");
             if (res.ok) {
                 const data = await res.json();
-                // Convertir sats en USD (1 USD = 100,000,000 sats)
-                const balanceUsd = parseInt(data.balance) / 100_000_000;
+                // Convertir sats en USD via utilitaire centralisé
+                const balanceUsd = satsToUsd(parseInt(data.balance));
                 setBalance(balanceUsd);
             }
         } catch (error) {
@@ -253,28 +253,28 @@ export default function WalletPage() {
     };
 
     // --- UTILITAIRES ---
-   const handleCopy = async () => {
-    if (paymentData) {
-        try {
-            await navigator.clipboard.writeText(paymentData.payAddress);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        } catch (error) {
-            // Fallback pour les navigateurs qui bloquent clipboard
-            const textArea = document.createElement('textarea');
-            textArea.value = paymentData.payAddress;
-            textArea.style.position = 'fixed';
-            textArea.style.left = '-999999px';
-            document.body.appendChild(textArea);
-            textArea.select();
+    const handleCopy = async () => {
+        if (paymentData) {
             try {
-                document.execCommand('copy');
+                await navigator.clipboard.writeText(paymentData.payAddress);
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2000);
-            } catch (err) {
-                console.error('Erreur copie:', err);
-            }
-            document.body.removeChild(textArea);
+            } catch (error) {
+                // Fallback pour les navigateurs qui bloquent clipboard
+                const textArea = document.createElement('textarea');
+                textArea.value = paymentData.payAddress;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                } catch (err) {
+                    console.error('Erreur copie:', err);
+                }
+                document.body.removeChild(textArea);
             }
         }
     };
@@ -477,8 +477,8 @@ export default function WalletPage() {
                                                 <label className="text-xs font-bold text-primary uppercase">
                                                     📍 Adresse de paiement USDT TRC20
                                                 </label>
-                                                
-                                                <input 
+
+                                                <input
                                                     type="text"
                                                     readOnly
                                                     value={paymentData.payAddress}
@@ -491,13 +491,13 @@ export default function WalletPage() {
                                                     className="w-full bg-background-secondary text-white font-mono text-sm p-3 rounded-lg border-2 border-primary/30 cursor-pointer hover:border-primary transition-colors"
                                                     placeholder="Cliquez pour sélectionner et copier"
                                                 />
-                                                
+
                                                 {copied && (
                                                     <p className="text-xs text-green-500 font-bold flex items-center gap-1">
                                                         <Check className="w-3 h-3" /> Adresse copiée dans le presse-papier !
                                                     </p>
                                                 )}
-                                                
+
                                                 <p className="text-[10px] text-text-tertiary">
                                                     💡 Cliquez sur l'adresse pour la sélectionner automatiquement
                                                 </p>

@@ -35,3 +35,11 @@ export function usdToSats(usdAmount: number): number {
 export function satsToUsd(satsAmount: number): number {
   return satsAmount / SATS_PER_USD;
 }
+
+/**
+ * Formate un montant en Sats directement en USD pour l'affichage
+ */
+export function formatSatsToUSD(satsAmount: number | bigint) {
+  const sats = typeof satsAmount === 'bigint' ? Number(satsAmount) : satsAmount;
+  return formatToUSD(satsToUsd(sats));
+}

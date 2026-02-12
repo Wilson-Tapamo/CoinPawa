@@ -3,7 +3,9 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifySession } from '@/lib/auth'
 
-export async function GET(request: Request) {
+export const dynamic = 'force-dynamic'
+
+export async function GET() {
   try {
     // 1. Vérifier la session
     const userId = await verifySession()
@@ -48,23 +50,24 @@ export async function GET(request: Request) {
       take: 50
     })
 
-    // 4. Formater l'historique
-    const history = gameRounds.map(round => {
-      const betAmount = Number(round.betAmountSats) / 100_000_000
-      const payoutAmount = Number(round.payoutAmountSats) / 100_000_000
-      const isWin = payoutAmount > betAmount
-      const netProfit = payoutAmount - betAmount
+    // 3. Formater les données
+    const history = gameTransactions.map(tx => {
+      const amountUsd = Number(tx.amountSats) / 100_000_000
+      const metadata = tx.metadata as any // Cast pour accéder aux propriétés
 
       return {
-        id: round.id,
-        type: isWin ? 'WIN' : 'BET',
-        amount: Math.abs(netProfit),
-        gameName: round.game.name,
-        timestamp: round.createdAt.toISOString(),
-        betAmount: betAmount,
-        payoutAmount: payoutAmount,
-        netProfit: netProfit,
-        isWin: isWin
+        id: tx.id,
+        type: tx.type,
+        amount: amountUsd,
+        gameName: metadata?.gameName || 'Unknown Game',
+        gameId: metadata?.gameId || null,
+        timestamp: tx.createdAt,
+        // Pour WIN, inclure le montant du pari original
+        betAmount: tx.type === 'WIN' ? metadata?.betAmount : null,
+        // Calculer le profit net pour les wins
+        netProfit: tx.type === 'WIN' && metadata?.betAmount
+          ? amountUsd - metadata.betAmount
+          : null
       }
     })
 
