@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifySession } from '@/lib/auth'
+import { satsToUsd } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -51,23 +52,23 @@ export async function GET() {
     })
 
     // 3. Formater les données
-    const history = gameTransactions.map(tx => {
-      const amountUsd = Number(tx.amountSats) / 100_000_000
-      const metadata = tx.metadata as any // Cast pour accéder aux propriétés
+    const history = gameRounds.map(round => {
+      const isWin = Number(round.payoutAmountSats) > 0
+      const betAmountSats = Number(round.betAmountSats)
+      const payoutAmountSats = Number(round.payoutAmountSats)
 
       return {
-        id: tx.id,
-        type: tx.type,
-        amount: amountUsd,
-        gameName: metadata?.gameName || 'Unknown Game',
-        gameId: metadata?.gameId || null,
-        timestamp: tx.createdAt,
-        // Pour WIN, inclure le montant du pari original
-        betAmount: tx.type === 'WIN' ? metadata?.betAmount : null,
-        // Calculer le profit net pour les wins
-        netProfit: tx.type === 'WIN' && metadata?.betAmount
-          ? amountUsd - metadata.betAmount
-          : null
+        id: round.id,
+        type: isWin ? 'WIN' : 'BET',
+        // Frontend uses formatSatsToUSD for this field, so keep it in SATS
+        amount: isWin ? payoutAmountSats : betAmountSats,
+        gameName: round.game.name,
+        gameId: null,
+        timestamp: round.createdAt,
+        // Frontend uses formatToUSD for these, so convert to USD
+        betAmount: satsToUsd(betAmountSats),
+        netProfit: satsToUsd(payoutAmountSats - betAmountSats),
+        isWin
       }
     })
 
@@ -78,7 +79,7 @@ export async function GET() {
 
   } catch (error) {
     console.error('Game history error:', error)
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Erreur serveur',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
