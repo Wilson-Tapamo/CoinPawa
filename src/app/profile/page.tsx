@@ -39,22 +39,22 @@ interface Stats {
     totalDeposited: number;
     totalWithdrawn: number;
     netProfit: number;  // Total Won - Total Wagered
-    
+
     // Activity
     totalWagered: number;
     totalWon: number;
     totalBets: number;
-    
+
     // Performance
     winCount: number;
     lossCount: number;
     winRate: number;
     maxWin: number;
-    
+
     // Streaks
     currentStreak: number;
     bestStreak: number;
-    
+
     // Favorite Game
     favoriteGame: {
         name: string;
@@ -342,7 +342,7 @@ export default function ProfilePage() {
                                                 </div>
                                             </div>
                                         )}
-                                    </>
+                                    </div>
                                 )}
                             </div>
                         </div>
