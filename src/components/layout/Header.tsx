@@ -6,22 +6,23 @@ import { HeaderSearch } from "./HeaderSearch";
 export async function Header() {
     const userId = await verifySession();
     let balance = 0;
-    let username = ""; // Variable par défaut vide
+    let username = "";
+    let email = "";
     let isLoggedIn = false;
 
     if (userId) {
         isLoggedIn = true;
 
         try {
-            // ✅ CORRECTION : On demande le wallet ET les infos User
             const wallet = await prisma.wallet.findUnique({
                 where: { userId },
-                include: { user: true } // <-- INDISPENSABLE pour avoir le pseudo
+                include: { user: true }
             });
 
             if (wallet) {
                 balance = Number(wallet.balanceSats);
-                username = wallet.user.username; // On remplit la variable
+                username = wallet.user.username;
+                email = wallet.user.email || "";
             }
         } catch (error) {
             console.error("⚠️ Erreur Header BDD", error);
@@ -35,15 +36,15 @@ export async function Header() {
                 <span className="text-xl font-display font-bold text-white tracking-tight">CoinPower</span>
             </div>
 
-            {/* Barre de recherche (Client Side for interaction) */}
+            {/* Barre de recherche */}
             <HeaderSearch />
 
             <div className="ml-auto">
-                {/* ✅ IMPORTANT : On passe bien 'username' ici */}
                 <HeaderActions
                     isLoggedIn={isLoggedIn}
                     initialBalance={balance}
                     username={username}
+                    email={email}
                 />
             </div>
         </header>
