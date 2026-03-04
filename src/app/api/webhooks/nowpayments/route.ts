@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logPayment } from '@/lib/nowpayments'
 import { usdToSats } from '@/lib/payment-limits'
+import { notifyDepositConfirmed } from '@/lib/notifications' // 🆕 AJOUTÉ
 import crypto from 'crypto'
 
 const NOWPAYMENTS_IPN_SECRET = process.env.NOWPAYMENTS_IPN_SECRET!
@@ -71,7 +72,7 @@ export async function POST(request: Request) {
     // 4. Récupérer la transaction en BDD
     const transaction = await prisma.transaction.findUnique({
       where: { nowPaymentId: payment_id },
-      include: { wallet: true },
+      include: { wallet: { include: { user: true } } }, // 🆕 INCLURE USER
     })
 
     if (!transaction) {
@@ -201,7 +202,7 @@ async function handleSuccessfulPayment(transaction: any, webhookData: any) {
       await tx.transaction.create({
         data: {
           walletId: transaction.walletId,
-          type: 'DEPOSIT_BONUS', // 🆕 Nouveau type
+          type: 'DEPOSIT_BONUS',
           amountSats: bonusAmountSats,
           status: 'COMPLETED',
           paymentRef: `BONUS_${transaction.paymentRef}`,
@@ -237,6 +238,20 @@ async function handleSuccessfulPayment(transaction: any, webhookData: any) {
       })
     }
   })
+
+  // 🆕 4. CRÉER LA NOTIFICATION
+  try {
+    const userId = transaction.wallet.user.id
+    const totalAmount = usdtReceived // Montant total reçu
+    const currency = outcome_currency || pay_currency || 'USDT'
+
+    await notifyDepositConfirmed(userId, totalAmount, currency)
+    
+    console.log(`🔔 Notification envoyée pour user ${userId}`)
+  } catch (notifError) {
+    console.error('❌ Erreur création notification:', notifError)
+    // Ne pas faire échouer le webhook si la notification échoue
+  }
 
   logPayment('PAYMENT_FULLY_PROCESSED', {
     walletId: transaction.walletId,

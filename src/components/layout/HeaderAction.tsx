@@ -1,3 +1,4 @@
+// components/layout/HeaderAction.tsx
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -6,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatToUSD, formatSatsToUSD } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { NotificationBell } from "@/components/NotificationBell"; // 🆕 IMPORT
 
 interface HeaderActionsProps {
   isLoggedIn: boolean;
@@ -42,60 +44,36 @@ export function HeaderActions({ isLoggedIn, initialBalance, username, email }: H
 
   // Actualisation automatique du wallet toutes les 5 secondes
   useEffect(() => {
-    console.log("🔵 useEffect actualisation - isLoggedIn:", isLoggedIn, "balance actuelle:", balance);
-    
-    if (!isLoggedIn) {
-      console.log("⚠️ User pas connecté, arrêt");
-      return;
-    }
+    if (!isLoggedIn) return;
 
     const fetchBalance = async () => {
-      console.log("🔄 [" + new Date().toLocaleTimeString() + "] Fetching balance...");
       try {
         const res = await fetch("/api/wallet/balance");
-        console.log("📡 Status:", res.status);
-        
         const data = await res.json();
-        console.log("📦 Data reçue:", data);
         
         if (data.success) {
           const newBalance = data.balance;
-          console.log("💰 Comparaison - Actuel:", balance, "→ Nouveau:", newBalance, "→ Égal?", newBalance === balance);
           
           if (newBalance !== balance) {
-            const type = newBalance > balance ? 'increase' : 'decrease';
-            console.log("✅ CHANGEMENT DÉTECTÉ! Type:", type);
-            
-            setBalanceChangeType(type);
+            setBalanceChangeType(newBalance > balance ? 'increase' : 'decrease');
             setIsBalanceChanged(true);
             setBalance(newBalance);
             
             setTimeout(() => {
-              console.log("⏰ Fin animation");
               setIsBalanceChanged(false);
               setBalanceChangeType(null);
             }, 2000);
-          } else {
-            console.log("➡️ Pas de changement");
           }
-        } else {
-          console.log("❌ data.success est false ou manquant");
         }
       } catch (error) {
-        console.error("❌ Erreur fetch:", error);
+        console.error("Erreur actualisation balance:", error);
       }
     };
 
-    console.log("🚀 Lancement première actualisation");
     fetchBalance();
-
-    console.log("⏰ Démarrage interval 5s");
     const interval = setInterval(fetchBalance, 5000);
 
-    return () => {
-      console.log("🛑 Cleanup interval");
-      clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, [isLoggedIn, balance]);
 
   const handleLogout = async () => {
@@ -188,7 +166,6 @@ export function HeaderActions({ isLoggedIn, initialBalance, username, email }: H
           {/* DROPDOWN MENU */}
           {isDropdownOpen && (
             <div className="absolute right-0 top-full mt-2 w-64 bg-surface border border-white/10 rounded-xl shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-              {/* Header avec infos user */}
               <div className="p-4 bg-gradient-to-br from-primary/10 to-accent-violet/10 border-b border-white/10">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-10 h-10 bg-accent-purple rounded-full flex items-center justify-center text-sm font-bold text-white uppercase">
@@ -208,7 +185,6 @@ export function HeaderActions({ isLoggedIn, initialBalance, username, email }: H
                 </div>
               </div>
 
-              {/* Menu items */}
               <div className="p-2">
                 <Link
                   href="/profile"
@@ -238,11 +214,8 @@ export function HeaderActions({ isLoggedIn, initialBalance, username, email }: H
           )}
         </div>
 
-        {/* Notifications */}
-        <button className="p-2 rounded-full hover:bg-white/5 text-text-secondary hover:text-white transition-colors relative">
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-background" />
-        </button>
+        {/* 🔔 NOTIFICATIONS - REMPLACÉ PAR LE COMPOSANT */}
+        <NotificationBell />
       </div>
     </div>
   );
