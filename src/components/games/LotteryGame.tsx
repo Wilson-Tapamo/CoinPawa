@@ -236,11 +236,11 @@ export default function LotteryGame() {
                         </button>
 
                         <h3 className="text-2xl font-display font-bold text-white mb-6 flex items-center gap-3">
-                            <Zap className="w-6 h-6 text-primary" /> Lotto Rapide
+                            <Zap className="w-6 h-6 text-primary" /> Créneau d'Or
                         </h3>
 
                         <div className="space-y-4 text-text-secondary leading-relaxed">
-                            <p>Le Lotto Rapide est un tirage instantané basé sur 3 chiffres entre 1 et 9.</p>
+                            <p>Le Créneau d'Or est un tirage instantané basé sur 3 chiffres entre 1 et 9.</p>
                             <div className="space-y-2 bg-black/20 p-4 rounded-2xl border border-white/5">
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="font-bold text-white">3 chiffres identiques</span>

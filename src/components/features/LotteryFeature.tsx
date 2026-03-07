@@ -70,9 +70,9 @@ export function LotteryFeature() {
         const diff = Date.now() - new Date(timestamp).getTime();
         const mins = Math.floor(diff / 60000);
         if (mins < 1) return "à l'instant";
-        if (mins < 60) return `${mins}m ago`;
+        if (mins < 60) return `il y a ${mins} min`;
         const hours = Math.floor(mins / 60);
-        return `${hours}h ago`;
+        return `il y a ${hours} h`;
     };
 
     return (
@@ -80,7 +80,7 @@ export function LotteryFeature() {
             {/* BACKGROUND */}
             <div className="absolute inset-0 z-0">
                 <Image
-                    src="/games/lottery_bg.png" // Assure-toi d'avoir une image, sinon fallback css
+                    src="/games/loto.png" // Image corrigée
                     alt="Lottery Background"
                     fill
                     className="object-cover opacity-40 group-hover:scale-105 transition-transform duration-1000"

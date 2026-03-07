@@ -162,7 +162,7 @@ export default function LotoGame() {
                         <div className="relative z-10 space-y-8">
                             <div className="flex items-center justify-between">
                                 <div className="space-y-1">
-                                    <h1 className="text-4xl font-display font-black text-white">LA <span className="text-primary">LOTO</span></h1>
+                                    <h1 className="text-4xl font-display font-black text-white">LOTTERIE <span className="text-primary">GAGNANTE</span></h1>
                                     <p className="text-text-secondary text-sm font-medium">Choisissez 5 numéros porte-bonheur</p>
                                 </div>
                                 <div className="flex gap-2">
@@ -323,7 +323,7 @@ export default function LotoGame() {
                 <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
                     <div className="glass-panel p-8 max-w-md w-full relative animate-in zoom-in duration-300">
                         <button onClick={() => setShowRules(false)} className="absolute top-4 right-4 p-2 text-text-tertiary hover:text-white transition-colors"><X className="w-6 h-6" /></button>
-                        <h3 className="text-2xl font-display font-bold text-white mb-6 flex items-center gap-3"><Trophy className="w-6 h-6 text-primary" /> La Loto : Gain</h3>
+                        <h3 className="text-2xl font-display font-bold text-white mb-6 flex items-center gap-3"><Trophy className="w-6 h-6 text-primary" /> Lotterie Gagnante : Gain</h3>
                         <div className="space-y-4">
                             <div className="bg-black/20 p-4 rounded-2xl space-y-2">
                                 <div className="flex justify-between font-bold text-sm"><span className="text-white">5 Bons numéros</span><span className="text-primary font-black">X5000</span></div>
