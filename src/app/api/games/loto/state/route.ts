@@ -184,7 +184,7 @@ export async function GET() {
         // Formatter pour le frontend
         const formattedWinners = recentWinners.map(tx => ({
             user: tx.wallet.user.username,
-            amount: Number(tx.amountSats) / 2000, // Conversion rapide SATS -> USD (ou utiliser utils si dispo)
+            amount: Number(tx.amountSats) / 100_000_000, // Conversion SATS -> USD
             time: tx.createdAt
         }));
 
