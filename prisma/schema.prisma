@@ -479,7 +479,7 @@ model DailyStats {
 }
 
 // 🆕 ÉVÉNEMENTS & PROMOTIONS (POUR LA PAGE D'ACCUEIL)
-model Event {
+model HomepageEvent {
   id          String   @id @default(uuid())
   title       String
   description String?  @db.Text

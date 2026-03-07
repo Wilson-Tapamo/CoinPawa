@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
-interface Event {
+interface HomepageEvent {
     id: string;
     title: string;
     description: string | null;
@@ -16,7 +16,7 @@ interface Event {
 }
 
 export function EventCarousel() {
-    const [events, setEvents] = useState<Event[]>([]);
+    const [events, setEvents] = useState<HomepageEvent[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
 
