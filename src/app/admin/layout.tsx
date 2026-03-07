@@ -9,16 +9,13 @@ import {
   CreditCard,
   Gamepad2,
   ArrowDownToLine,
-  Settings,
+  Megaphone,
+  ArrowLeft,
+  X,
   LogOut,
   Menu,
-  X,
-  Bell,
   Search,
-  ArrowLeft,
-  ShieldAlert,
-  FileText,
-  Megaphone
+  Bell
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -48,6 +45,11 @@ const MENU_ITEMS = [
     href: "/admin/withdrawals",
     icon: ArrowDownToLine,
     badgeKey: "pendingWithdrawals",
+  },
+  {
+    label: "Événements",
+    href: "/admin/events",
+    icon: Megaphone,
   },
 ];
 
@@ -141,22 +143,6 @@ export default function AdminLayout({
                     );
                   })}
                 </ul>
-              </li>
-
-              {/* Événements */}
-              <li>
-                <Link
-                  href="/admin/events"
-                  className={cn(
-                    "group flex gap-x-3 rounded-xl p-3 text-sm font-bold leading-6 transition-all",
-                    pathname === "/admin/events"
-                      ? "bg-primary text-background shadow-glow-gold"
-                      : "text-text-secondary hover:text-white hover:bg-white/5"
-                  )}
-                >
-                  <Megaphone className="h-5 w-5 shrink-0" />
-                  Événements
-                </Link>
               </li>
 
               {/* Retour à l'application */}
@@ -262,23 +248,6 @@ export default function AdminLayout({
                         );
                       })}
                     </ul>
-                  </li>
-
-                  {/* Événements Mobile */}
-                  <li>
-                    <Link
-                      href="/admin/events"
-                      onClick={() => setSidebarOpen(false)}
-                      className={cn(
-                        "group flex gap-x-3 rounded-xl p-3 text-sm font-bold leading-6 transition-all",
-                        pathname === "/admin/events"
-                          ? "bg-primary text-background shadow-glow-gold"
-                          : "text-text-secondary hover:text-white hover:bg-white/5"
-                      )}
-                    >
-                      <Megaphone className="h-5 w-5 shrink-0" />
-                      Événements
-                    </Link>
                   </li>
 
                   <li className="mt-auto">

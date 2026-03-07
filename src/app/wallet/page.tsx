@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import {
     ArrowUpRight,
     ArrowDownLeft,
@@ -15,7 +16,8 @@ import {
     ChevronRight,
     Zap,
     ExternalLink,
-    History
+    History,
+    ArrowLeft
 } from "lucide-react";
 import { cn, formatToUSD, satsToUsd, formatSatsToUSD } from "@/lib/utils";
 import PendingWithdrawals from "@/components/wallet/PendingWithdrawals";
@@ -302,9 +304,17 @@ export default function WalletPage() {
 
             {/* HEADER */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-display font-bold text-white">Portefeuille</h1>
-                    <p className="text-text-secondary text-sm">Gérez vos cryptos et convertissez en solde de jeu</p>
+                <div className="flex items-center gap-4">
+                    <Link
+                        href="/"
+                        className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors border border-white/5 group"
+                    >
+                        <ArrowLeft className="w-5 h-5 text-text-secondary group-hover:text-white" />
+                    </Link>
+                    <div>
+                        <h1 className="text-3xl font-display font-bold text-white">Portefeuille</h1>
+                        <p className="text-text-secondary text-sm">Gérez vos cryptos et convertissez en solde de jeu</p>
+                    </div>
                 </div>
                 <button
                     onClick={fetchBalance}
