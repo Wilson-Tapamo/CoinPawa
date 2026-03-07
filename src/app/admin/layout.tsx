@@ -9,7 +9,9 @@ import {
   CreditCard,
   Gamepad2,
   ArrowDownToLine,
-  Megaphone
+  Megaphone,
+  ArrowLeft,
+  X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
