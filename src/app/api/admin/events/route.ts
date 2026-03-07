@@ -10,8 +10,13 @@ export async function GET(req: NextRequest) {
             orderBy: { createdAt: "desc" }
         });
         return NextResponse.json(events);
-    } catch (error) {
-        return NextResponse.json({ error: "Fail to fetch events" }, { status: 500 });
+    } catch (error: any) {
+        console.error("DEBUG_ADMIN_EVENTS_FETCH_ERROR:", error);
+        return NextResponse.json({
+            error: "Fail to fetch events",
+            details: error.message,
+            stack: process.env.NODE_ENV === "development" ? error.stack : undefined
+        }, { status: 500 });
     }
 }
 
