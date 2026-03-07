@@ -5,6 +5,7 @@ import { LayoutWrapper } from "@/components/LayoutWrapper";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { NotificationToast } from "@/components/NotificationToast"; // 🆕 AJOUTÉ
+import { CookieConsent } from "@/components/features/CookieConsent";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,7 +19,7 @@ export default function RootLayout({
       <body className={inter.className}>
         {/* Sidebar globale (masquée conditionnellement via son propre code) */}
         <Sidebar />
-        
+
         {/* Wrapper qui gère Header + padding conditionnels */}
         <LayoutWrapper header={<Header />}>
           {children}
@@ -26,6 +27,9 @@ export default function RootLayout({
 
         {/* 🆕 Toast de notifications */}
         <NotificationToast />
+
+        {/* 🆕 RGPD Consent */}
+        <CookieConsent />
       </body>
     </html>
   );

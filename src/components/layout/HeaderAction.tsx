@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Bell, Wallet, LogOut, Loader2, User, Mail, ChevronDown } from "lucide-react";
+import { Bell, Wallet, LogOut, Loader2, User, Mail, ChevronDown, Info } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatToUSD, formatSatsToUSD } from "@/lib/utils";
@@ -50,15 +50,15 @@ export function HeaderActions({ isLoggedIn, initialBalance, username, email }: H
       try {
         const res = await fetch("/api/wallet/balance");
         const data = await res.json();
-        
+
         if (data.success) {
           const newBalance = data.balance;
-          
+
           if (newBalance !== balance) {
             setBalanceChangeType(newBalance > balance ? 'increase' : 'decrease');
             setIsBalanceChanged(true);
             setBalance(newBalance);
-            
+
             setTimeout(() => {
               setIsBalanceChanged(false);
               setBalanceChangeType(null);
@@ -119,17 +119,17 @@ export function HeaderActions({ isLoggedIn, initialBalance, username, email }: H
           )}>
             <Wallet className={cn(
               "w-4 h-4 transition-colors",
-              isBalanceChanged && balanceChangeType === 'increase' ? "text-success" : 
-              isBalanceChanged && balanceChangeType === 'decrease' ? "text-accent-rose" : 
-              "text-primary"
+              isBalanceChanged && balanceChangeType === 'increase' ? "text-success" :
+                isBalanceChanged && balanceChangeType === 'decrease' ? "text-accent-rose" :
+                  "text-primary"
             )} />
           </div>
           <div className="flex flex-col md:flex-row md:items-baseline gap-1">
             <span className={cn(
               "text-sm font-bold font-display transition-colors",
-              isBalanceChanged && balanceChangeType === 'increase' ? "text-success" : 
-              isBalanceChanged && balanceChangeType === 'decrease' ? "text-accent-rose" : 
-              "text-white"
+              isBalanceChanged && balanceChangeType === 'increase' ? "text-success" :
+                isBalanceChanged && balanceChangeType === 'decrease' ? "text-accent-rose" :
+                  "text-white"
             )}>
               {formatSatsToUSD(balance)}
             </span>
@@ -155,11 +155,11 @@ export function HeaderActions({ isLoggedIn, initialBalance, username, email }: H
             <span className="text-xs font-bold text-white max-w-[100px] truncate">
               {username || "Joueur"}
             </span>
-            <ChevronDown 
+            <ChevronDown
               className={cn(
                 "w-4 h-4 text-text-secondary transition-transform",
                 isDropdownOpen && "rotate-180"
-              )} 
+              )}
             />
           </button>
 
@@ -193,6 +193,15 @@ export function HeaderActions({ isLoggedIn, initialBalance, username, email }: H
                 >
                   <User className="w-4 h-4 text-text-secondary group-hover:text-primary transition-colors" />
                   <span className="text-sm font-medium text-white">Mon Profil</span>
+                </Link>
+
+                <Link
+                  href="/politique-de-confidentialite"
+                  onClick={() => setIsDropdownOpen(false)}
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors group"
+                >
+                  <Info className="w-4 h-4 text-text-secondary group-hover:text-primary transition-colors" />
+                  <span className="text-sm font-medium text-white">Confidentialité</span>
                 </Link>
 
                 <button

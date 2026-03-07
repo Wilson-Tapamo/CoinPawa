@@ -42,6 +42,10 @@ export default function CrashGame() {
     const [liveBets, setLiveBets] = useState<Bet[]>([]);
     const [isPolling, setIsPolling] = useState(true);
 
+    // Faux utilisateurs pour l'animation
+    const [fakeBets, setFakeBets] = useState<Bet[]>([]);
+    const displayMultiplierRef = useRef(1.0);
+
     // États utilisateur
     const [betAmount, setBetAmount] = useState<string>("100");
     const [isPlacingBet, setIsPlacingBet] = useState(false);
@@ -102,6 +106,58 @@ export default function CrashGame() {
         animationFrame = requestAnimationFrame(update);
         return () => cancelAnimationFrame(animationFrame);
     }, [state]);
+
+    useEffect(() => {
+        displayMultiplierRef.current = displayMultiplier;
+    }, [displayMultiplier]);
+
+    // Générateur de faux utilisateurs
+    useEffect(() => {
+        if (!state) return;
+        let interval: NodeJS.Timeout;
+
+        if (state.phase === 'BETTING') {
+            // Réinitialiser les faux paris au début de la phase de pari
+            const timeRemaining = state.nextPhaseTime - Date.now();
+            if (timeRemaining > 8000) {
+                setFakeBets([]);
+            }
+
+            const names = ["Alex", "CryptoKing", "Satoshi", "Whale99", "LuckyBoy", "QueenZ", "DogeLover", "MoonWalker", "TraderJoe", "DiamondHands"];
+            interval = setInterval(() => {
+                setFakeBets(prev => {
+                    if (prev.length > 15 || Math.random() > 0.4) return prev;
+                    const newBet: Bet = {
+                        id: `fake-${Date.now()}`,
+                        username: names[Math.floor(Math.random() * names.length)],
+                        amount: Math.floor(Math.random() * 5000000) + 100000,
+                        multiplier: null,
+                        payout: null,
+                        status: 'ACTIVE'
+                    };
+                    return [...prev, newBet];
+                });
+            }, 1000);
+        } else if (state.phase === 'FLYING') {
+            interval = setInterval(() => {
+                setFakeBets(prev => prev.map(bet => {
+                    if (bet.status === 'ACTIVE' && Math.random() > 0.8) {
+                        return {
+                            ...bet,
+                            status: 'COMPLETED',
+                            multiplier: displayMultiplierRef.current,
+                            payout: bet.amount * displayMultiplierRef.current
+                        };
+                    }
+                    return bet;
+                }));
+            }, 1000);
+        } else if (state.phase === 'CRASHED') {
+            setFakeBets(prev => prev.map(bet => bet.status === 'ACTIVE' ? { ...bet, status: 'FAILED' } : bet));
+        }
+
+        return () => clearInterval(interval);
+    }, [state?.phase, state?.nextPhaseTime]);
 
     // --- CANVAS DRAWING (Graph & Airplane) ---
     const particles = useRef<{ x: number, y: number, size: number, opacity: number, vx: number, vy: number }[]>([]);
@@ -511,12 +567,12 @@ export default function CrashGame() {
                             </div>
                             <div>
                                 <div className="text-[10px] text-text-tertiary font-bold uppercase">En ligne</div>
-                                <div className="text-sm font-bold text-white">{liveBets.length + 42} Joueurs</div>
+                                <div className="text-sm font-bold text-white">{liveBets.length + fakeBets.length + 42} Joueurs</div>
                             </div>
                         </div>
                         <div className="text-right">
                             <div className="text-[10px] text-text-tertiary font-bold uppercase">Misé total</div>
-                            <div className="text-sm font-bold text-primary">{formatSatsToUSD(liveBets.reduce((a, b) => a + b.amount, 0))}</div>
+                            <div className="text-sm font-bold text-primary">{formatSatsToUSD(liveBets.reduce((a, b) => a + b.amount, 0) + fakeBets.reduce((a, b) => a + b.amount, 0))}</div>
                         </div>
                     </div>
                 </div>
@@ -584,11 +640,11 @@ export default function CrashGame() {
                             <h3 className="text-xs font-bold text-text-secondary flex items-center gap-2 uppercase tracking-widest">
                                 <Users className="w-4 h-4" /> Paris en Direct
                             </h3>
-                            <span className="px-2 py-0.5 bg-white/5 rounded text-[10px] font-bold text-text-tertiary">{liveBets.length}</span>
+                            <span className="px-2 py-0.5 bg-white/5 rounded text-[10px] font-bold text-text-tertiary">{liveBets.length + fakeBets.length}</span>
                         </div>
 
                         <div className="flex-1 overflow-y-auto no-scrollbar p-2 space-y-1">
-                            {liveBets.map((bet, i) => (
+                            {[...liveBets, ...fakeBets].sort((a, b) => b.amount - a.amount).map((bet, i) => (
                                 <div
                                     key={i}
                                     className={cn(
