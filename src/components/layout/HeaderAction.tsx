@@ -143,7 +143,7 @@ export function HeaderActions({ isLoggedIn, initialBalance, username, email }: H
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className={cn(
-              "hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all",
+              "flex items-center gap-2 px-2 md:px-3 py-1.5 rounded-full border transition-all",
               isDropdownOpen
                 ? "bg-primary/10 border-primary/30"
                 : "bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10"
@@ -152,7 +152,7 @@ export function HeaderActions({ isLoggedIn, initialBalance, username, email }: H
             <div className="w-6 h-6 bg-accent-purple rounded-full flex items-center justify-center text-[10px] font-bold text-white uppercase">
               {username ? username[0] : "U"}
             </div>
-            <span className="text-xs font-bold text-white max-w-[100px] truncate">
+            <span className="hidden sm:inline text-xs font-bold text-white max-w-[100px] truncate">
               {username || "Joueur"}
             </span>
             <ChevronDown
