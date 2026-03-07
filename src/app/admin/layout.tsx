@@ -15,7 +15,10 @@ import {
   X,
   Bell,
   Search,
-  ArrowLeft
+  ArrowLeft,
+  ShieldAlert,
+  FileText,
+  Megaphone
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -114,7 +117,7 @@ export default function AdminLayout({
                     const Icon = item.icon;
                     const isActive = pathname === item.href;
                     const badge = item.badgeKey ? badges[item.badgeKey] : undefined;
-                    
+
                     return (
                       <li key={item.href}>
                         <Link
@@ -138,6 +141,22 @@ export default function AdminLayout({
                     );
                   })}
                 </ul>
+              </li>
+
+              {/* Événements */}
+              <li>
+                <Link
+                  href="/admin/events"
+                  className={cn(
+                    "group flex gap-x-3 rounded-xl p-3 text-sm font-bold leading-6 transition-all",
+                    pathname === "/admin/events"
+                      ? "bg-primary text-background shadow-glow-gold"
+                      : "text-text-secondary hover:text-white hover:bg-white/5"
+                  )}
+                >
+                  <Megaphone className="h-5 w-5 shrink-0" />
+                  Événements
+                </Link>
               </li>
 
               {/* Retour à l'application */}
@@ -218,7 +237,7 @@ export default function AdminLayout({
                         const Icon = item.icon;
                         const isActive = pathname === item.href;
                         const badge = item.badgeKey ? badges[item.badgeKey] : undefined;
-                        
+
                         return (
                           <li key={item.href}>
                             <Link
@@ -243,6 +262,23 @@ export default function AdminLayout({
                         );
                       })}
                     </ul>
+                  </li>
+
+                  {/* Événements Mobile */}
+                  <li>
+                    <Link
+                      href="/admin/events"
+                      onClick={() => setSidebarOpen(false)}
+                      className={cn(
+                        "group flex gap-x-3 rounded-xl p-3 text-sm font-bold leading-6 transition-all",
+                        pathname === "/admin/events"
+                          ? "bg-primary text-background shadow-glow-gold"
+                          : "text-text-secondary hover:text-white hover:bg-white/5"
+                      )}
+                    >
+                      <Megaphone className="h-5 w-5 shrink-0" />
+                      Événements
+                    </Link>
                   </li>
 
                   <li className="mt-auto">

@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { GameCard } from "@/components/features/GameCard";
 import { LotteryWinnersHistory } from "@/components/features/LotteryWinnersHistory";
 import { LotteryFeature } from "@/components/features/LotteryFeature";
+import { EventCarousel } from "@/components/features/EventCarousel";
 import { cn, formatToUSD, formatSatsToUSD, satsToUsd } from "@/lib/utils";
 import Image from "next/image";
 
@@ -190,29 +191,9 @@ export default function Home() {
           )}
         </div>
 
-        {/* Promotions / Mini Banner */}
-        <div className="hidden lg:block h-80 rounded-2xl border border-white/5 relative overflow-hidden group">
-          <Image
-            src="/bonus_bg.png"
-            alt="Bonus Background"
-            fill
-            className="object-cover opacity-80 group-hover:scale-110 transition-transform duration-700"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 z-10" />
-          <div className="absolute inset-0 bg-gradient-to-tr from-accent-rose/20 to-orange-500/20 z-0" />
-
-          <div className="relative z-20 h-full p-6 flex flex-col justify-end">
-            <div className="px-3 py-1 bg-accent-rose text-white text-xs font-bold uppercase tracking-wide rounded-full w-fit mb-3">
-              Bonus
-            </div>
-            <h3 className="text-2xl font-bold font-display text-white mb-2 leading-tight">
-              Doublez Votre <br /> Premier Dépôt
-            </h3>
-            <p className="text-text-secondary text-sm mb-4">Jusqu'à 1 BTC + 50 Tours Gratuits</p>
-            <Link href="/wallet" className="w-full py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-white text-sm font-bold transition-colors flex items-center justify-center">
-              {isLoggedIn ? "Déposer Maintenant" : "Réclamer le Bonus"}
-            </Link>
-          </div>
+        {/* Promotions / Dynamic Event Carousel */}
+        <div className="lg:col-span-1 min-h-[280px]">
+          <EventCarousel />
         </div>
       </section>
 
