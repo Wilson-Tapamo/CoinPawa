@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Plus, Edit2, Trash2, Calendar, Image as ImageIcon, Link as LinkIcon, AlertCircle, Loader2 } from "lucide-react";
 import Image from "next/image";
 
-interface Event {
+interface HomepageEvent {
     id: string;
     title: string;
     description: string | null;
@@ -17,12 +17,12 @@ interface Event {
 }
 
 export default function AdminEventsPage() {
-    const [events, setEvents] = useState<Event[]>([]);
+    const [events, setEvents] = useState<HomepageEvent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+    const [editingEvent, setEditingEvent] = useState<HomepageEvent | null>(null);
 
     // Form inputs
     const [title, setTitle] = useState("");
@@ -53,7 +53,7 @@ export default function AdminEventsPage() {
         fetchEvents();
     }, []);
 
-    const openModal = (evt: Event | null = null) => {
+    const openModal = (evt: HomepageEvent | null = null) => {
         setEditingEvent(evt);
         if (evt) {
             setTitle(evt.title);

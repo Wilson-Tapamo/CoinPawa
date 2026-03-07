@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
     try {
-        const events = await prisma.event.findMany({
+        const events = await prisma.homepageEvent.findMany({
             orderBy: { createdAt: "desc" }
         });
         return NextResponse.json(events);
@@ -25,15 +25,15 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const { title, description, imageUrl, buttonText, buttonLink, startDate, endDate, isActive } = body;
 
-        const newEvent = await prisma.event.create({
+        const newEvent = await prisma.homepageEvent.create({
             data: {
                 title,
                 description,
                 imageUrl,
                 buttonText,
                 buttonLink,
-                startDate: new Date(startDate),
-                endDate: new Date(endDate),
+                startDate: new Date(startDate || new Date()),
+                endDate: new Date(endDate || new Date()),
                 isActive: isActive ?? true
             }
         });
@@ -51,7 +51,7 @@ export async function PUT(req: NextRequest) {
 
         if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
 
-        const updatedEvent = await prisma.event.update({
+        const updatedEvent = await prisma.homepageEvent.update({
             where: { id },
             data: {
                 title,
@@ -78,7 +78,7 @@ export async function DELETE(req: NextRequest) {
 
         if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
 
-        await prisma.event.delete({ where: { id } });
+        await prisma.homepageEvent.delete({ where: { id } });
 
         return NextResponse.json({ success: true });
     } catch (error) {

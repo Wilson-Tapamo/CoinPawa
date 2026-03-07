@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
     try {
         const now = new Date();
-        const activeEvents = await prisma.event.findMany({
+        const activeEvents = await prisma.homepageEvent.findMany({
             where: {
                 isActive: true,
                 startDate: { lte: now },
