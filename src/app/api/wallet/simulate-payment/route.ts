@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifySession } from '@/lib/auth'
 import { usdToSats } from '@/lib/payment-limits'
+import { notifyDepositConfirmed } from '@/lib/notifications' // 🆕 AJOUTÉ
 
 /**
  * Route de TEST pour simuler un paiement réussi
@@ -134,6 +135,16 @@ export async function POST(request: Request) {
         })
       }
     })
+
+    // 🆕 6. CRÉER LA NOTIFICATION
+    try {
+      const currency = transaction.cryptoCurrency || 'USDT'
+      await notifyDepositConfirmed(userId, receivedAmount, currency)
+      console.log(`🔔 Notification envoyée (simulation) pour user ${userId}`)
+    } catch (notifError) {
+      console.error('❌ Erreur création notification:', notifError)
+      // Ne pas faire échouer la simulation
+    }
 
     return NextResponse.json({
       success: true,

@@ -4,6 +4,7 @@ import "./globals.css";
 import { LayoutWrapper } from "@/components/LayoutWrapper";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
+import { NotificationToast } from "@/components/NotificationToast"; // 🆕 AJOUTÉ
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -22,6 +23,9 @@ export default function RootLayout({
         <LayoutWrapper header={<Header />}>
           {children}
         </LayoutWrapper>
+
+        {/* 🆕 Toast de notifications */}
+        <NotificationToast />
       </body>
     </html>
   );

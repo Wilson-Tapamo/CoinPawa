@@ -61,6 +61,15 @@ enum AdminActionType {
   VIEW_SENSITIVE_DATA
 }
 
+enum NotificationType {
+  DEPOSIT_CONFIRMED
+  WITHDRAWAL_APPROVED
+  WITHDRAWAL_REJECTED
+  LOTTERY_WIN
+  GAME_WIN_BIG
+  SYSTEM_MESSAGE
+}
+
 // --- 2. MODÈLES ---
 
 model User {
@@ -112,6 +121,7 @@ model User {
   adminActions     AdminAction[] @relation("PerformedActions")
   targetedActions  AdminAction[] @relation("TargetedUser")
   notes            AdminNote[]
+  notifications    Notification[]
   
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -417,6 +427,26 @@ model SystemAlert {
   @@index([isResolved])
   @@index([severity])
   @@index([createdAt])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String   @db.Text
+  data      Json?
+  read      Boolean  @default(false)
+  readAt    DateTime?
+  icon      String?
+  actionUrl String?
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+  @@index([userId, read])
+  @@index([createdAt])
+  @@index([type])
 }
 
 // Stats journalières pour les graphiques

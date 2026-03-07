@@ -1,35 +1,91 @@
+// components/layout/HeaderAction.tsx
 "use client";
 
-import { useState } from "react";
-import { Bell, Wallet, LogOut, Loader2 } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Bell, Wallet, LogOut, Loader2, User, Mail, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatToUSD, formatSatsToUSD } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { NotificationBell } from "@/components/NotificationBell"; // 🆕 IMPORT
 
-// ✅ AJOUT : On définit bien que username est attendu (string ou null/undefined)
 interface HeaderActionsProps {
   isLoggedIn: boolean;
   initialBalance: number;
   username?: string;
+  email?: string;
 }
 
-export function HeaderActions({ isLoggedIn, initialBalance, username }: HeaderActionsProps) {
+export function HeaderActions({ isLoggedIn, initialBalance, username, email }: HeaderActionsProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [balance, setBalance] = useState(initialBalance);
+  const [isBalanceChanged, setIsBalanceChanged] = useState(false);
+  const [balanceChangeType, setBalanceChangeType] = useState<'increase' | 'decrease' | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Fermer le dropdown quand on clique dehors
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isDropdownOpen]);
+
+  // Actualisation automatique du wallet toutes les 5 secondes
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    const fetchBalance = async () => {
+      try {
+        const res = await fetch("/api/wallet/balance");
+        const data = await res.json();
+        
+        if (data.success) {
+          const newBalance = data.balance;
+          
+          if (newBalance !== balance) {
+            setBalanceChangeType(newBalance > balance ? 'increase' : 'decrease');
+            setIsBalanceChanged(true);
+            setBalance(newBalance);
+            
+            setTimeout(() => {
+              setIsBalanceChanged(false);
+              setBalanceChangeType(null);
+            }, 2000);
+          }
+        }
+      } catch (error) {
+        console.error("Erreur actualisation balance:", error);
+      }
+    };
+
+    fetchBalance();
+    const interval = setInterval(fetchBalance, 5000);
+
+    return () => clearInterval(interval);
+  }, [isLoggedIn, balance]);
 
   const handleLogout = async () => {
     setIsLoading(true);
+    setIsDropdownOpen(false);
     try {
-      // Appel API
       await fetch("/api/auth/logout", { method: "POST" });
-
-      // ✅ CORRECTION : On force la redirection vers login au lieu de juste refresh
-      // Ça "nettoie" l'état et arrête le spinner car la page change.
       router.push("/login");
       router.refresh();
     } catch (error) {
       console.error("Logout failed", error);
-      setIsLoading(false); // Arrête le spinner si erreur
+      setIsLoading(false);
     }
   };
 
@@ -56,45 +112,110 @@ export function HeaderActions({ isLoggedIn, initialBalance, username }: HeaderAc
       {/* Wallet Display */}
       <Link href="/wallet">
         <div className="flex items-center gap-3 bg-surface border border-white/5 rounded-full p-1 pr-4 hover:border-primary/30 transition-colors cursor-pointer group">
-          <div className="bg-primary/10 p-2 rounded-full group-hover:bg-primary/20 transition-colors">
-            <Wallet className="w-4 h-4 text-primary" />
+          <div className={cn(
+            "bg-primary/10 p-2 rounded-full group-hover:bg-primary/20 transition-all",
+            isBalanceChanged && balanceChangeType === 'increase' && "animate-pulse bg-success/20",
+            isBalanceChanged && balanceChangeType === 'decrease' && "animate-pulse bg-accent-rose/20"
+          )}>
+            <Wallet className={cn(
+              "w-4 h-4 transition-colors",
+              isBalanceChanged && balanceChangeType === 'increase' ? "text-success" : 
+              isBalanceChanged && balanceChangeType === 'decrease' ? "text-accent-rose" : 
+              "text-primary"
+            )} />
           </div>
           <div className="flex flex-col md:flex-row md:items-baseline gap-1">
-            <span className="text-sm font-bold text-white font-display">
-              {formatSatsToUSD(initialBalance)}
+            <span className={cn(
+              "text-sm font-bold font-display transition-colors",
+              isBalanceChanged && balanceChangeType === 'increase' ? "text-success" : 
+              isBalanceChanged && balanceChangeType === 'decrease' ? "text-accent-rose" : 
+              "text-white"
+            )}>
+              {formatSatsToUSD(balance)}
             </span>
           </div>
         </div>
       </Link>
 
       <div className="flex items-center gap-2">
-        {/* ✅ AFFICHAGE DU PSEUDO */}
-        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full border border-white/5">
-          <div className="w-6 h-6 bg-accent-purple rounded-full flex items-center justify-center text-[10px] font-bold text-white uppercase">
-            {/* On prend la 1ère lettre du pseudo ou 'U' par défaut */}
-            {username ? username[0] : "U"}
-          </div>
-          <span className="text-xs font-bold text-white max-w-[100px] truncate">
-            {username || "Joueur"}
-          </span>
+        {/* USER DROPDOWN */}
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className={cn(
+              "hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all",
+              isDropdownOpen
+                ? "bg-primary/10 border-primary/30"
+                : "bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10"
+            )}
+          >
+            <div className="w-6 h-6 bg-accent-purple rounded-full flex items-center justify-center text-[10px] font-bold text-white uppercase">
+              {username ? username[0] : "U"}
+            </div>
+            <span className="text-xs font-bold text-white max-w-[100px] truncate">
+              {username || "Joueur"}
+            </span>
+            <ChevronDown 
+              className={cn(
+                "w-4 h-4 text-text-secondary transition-transform",
+                isDropdownOpen && "rotate-180"
+              )} 
+            />
+          </button>
+
+          {/* DROPDOWN MENU */}
+          {isDropdownOpen && (
+            <div className="absolute right-0 top-full mt-2 w-64 bg-surface border border-white/10 rounded-xl shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="p-4 bg-gradient-to-br from-primary/10 to-accent-violet/10 border-b border-white/10">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-accent-purple rounded-full flex items-center justify-center text-sm font-bold text-white uppercase">
+                    {username ? username[0] : "U"}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-white truncate">
+                      {username || "Joueur"}
+                    </p>
+                    {email && (
+                      <p className="text-xs text-text-tertiary truncate flex items-center gap-1">
+                        <Mail className="w-3 h-3" />
+                        {email}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-2">
+                <Link
+                  href="/profile"
+                  onClick={() => setIsDropdownOpen(false)}
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors group"
+                >
+                  <User className="w-4 h-4 text-text-secondary group-hover:text-primary transition-colors" />
+                  <span className="text-sm font-medium text-white">Mon Profil</span>
+                </Link>
+
+                <button
+                  onClick={handleLogout}
+                  disabled={isLoading}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-red-500/10 transition-colors group disabled:opacity-50"
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 text-text-secondary animate-spin" />
+                  ) : (
+                    <LogOut className="w-4 h-4 text-text-secondary group-hover:text-red-500 transition-colors" />
+                  )}
+                  <span className="text-sm font-medium text-white group-hover:text-red-500 transition-colors">
+                    Déconnexion
+                  </span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Notifications */}
-        <button className="p-2 rounded-full hover:bg-white/5 text-text-secondary hover:text-white transition-colors relative">
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-background" />
-        </button>
-
-        {/* Bouton Logout */}
-        <button
-          onClick={handleLogout}
-          disabled={isLoading}
-          className="flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-red-500/10 text-text-secondary hover:text-red-500 text-xs font-bold rounded-lg border border-white/10 hover:border-red-500/20 transition-all ml-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Déconnexion"
-        >
-          {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
-          <span className="hidden md:inline">Déconnexion</span>
-        </button>
+        {/* 🔔 NOTIFICATIONS - REMPLACÉ PAR LE COMPOSANT */}
+        <NotificationBell />
       </div>
     </div>
   );
