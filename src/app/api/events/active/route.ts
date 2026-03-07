@@ -14,8 +14,11 @@ export async function GET() {
         });
 
         return NextResponse.json(activeEvents);
-    } catch (error) {
+    } catch (error: any) {
         console.error("Fetch active events error:", error);
-        return NextResponse.json({ error: "Failed to fetch active events" }, { status: 500 });
+        return NextResponse.json({
+            error: "Failed to fetch active events",
+            details: error.message
+        }, { status: 500 });
     }
 }
