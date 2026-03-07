@@ -12,7 +12,10 @@ import {
   Megaphone,
   ArrowLeft,
   X,
-  LogOut
+  LogOut,
+  Menu,
+  Search,
+  Bell
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
