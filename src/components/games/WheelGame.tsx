@@ -58,8 +58,11 @@ export default function WheelGame() {
                 // If we want value X at Top, we need to rotate Wheel so X is at Top.
                 // Usually Top is 0deg.
 
-                const spin = 1800 + (360 - targetAngle); // Invert angle to put it at top
-                setRotation(rotation + spin);
+                const currentMod = rotation % 360;
+                const spinToZero = 360 - currentMod;
+                const newRotation = rotation + 1800 + spinToZero - targetAngle;
+
+                setRotation(newRotation);
 
                 setTimeout(() => {
                     setLastResult({
@@ -114,14 +117,14 @@ export default function WheelGame() {
                     <div className="space-y-8">
                         <div>
                             <h2 className="text-3xl font-display font-bold text-white mb-2 flex items-center gap-3">
-                                <Sparkles className="w-8 h-8 text-amber-400" /> Spin Wheel
+                                <Sparkles className="w-8 h-8 text-amber-400" /> Roue de la Fortune
                             </h2>
-                            <p className="text-text-secondary">Spin the wheel and multiply your bet up to 50x!</p>
+                            <p className="text-text-secondary">Faites tourner la roue et multipliez votre mise jusqu'à 50x !</p>
                         </div>
 
                         {/* Bet Amount */}
                         <div className="bg-background-secondary p-4 rounded-2xl border border-white/5 shadow-inner">
-                            <label className="text-xs font-bold text-text-tertiary uppercase mb-2 block">Bet Amount ($ USD)</label>
+                            <label className="text-xs font-bold text-text-tertiary uppercase mb-2 block">Montant de la mise ($ USD)</label>
                             <div className="flex gap-2">
                                 <input
                                     type="number"
@@ -165,7 +168,7 @@ export default function WheelGame() {
                                     : "bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white shadow-glow-gold"
                             )}
                         >
-                            {isSpinning ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : "SPIN NOW"}
+                            {isSpinning ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : "LANCER LA ROUE"}
                         </button>
 
                         {error && (
@@ -233,7 +236,7 @@ export default function WheelGame() {
                         {lastResult && !isSpinning && (
                             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center z-40 animate-in zoom-in fade-in duration-300">
                                 <div className="bg-black/80 backdrop-blur-xl border border-white/20 p-8 rounded-3xl text-center shadow-2xl skew-y-0 hover:skew-y-1 transition-transform">
-                                    <div className="text-sm font-bold text-text-secondary uppercase tracking-widest mb-1">Result</div>
+                                    <div className="text-sm font-bold text-text-secondary uppercase tracking-widest mb-1">RÉSULTAT</div>
                                     <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-400 mb-2">
                                         {lastResult.multiplier}x
                                     </div>
@@ -244,7 +247,7 @@ export default function WheelGame() {
                                         </div>
                                     ) : (
                                         <div className="text-lg font-bold text-red-400">
-                                            Try Again
+                                            Réessayez
                                         </div>
                                     )}
                                 </div>

@@ -5,15 +5,15 @@ import { Bitcoin, Plus, ArrowUpRight, TrendingUp, Sparkles, Filter, LogIn, UserP
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { GameCard } from "@/components/features/GameCard";
-import { LiveWinsTable } from "@/components/features/LiveWinsTable";
+import { LotteryWinnersHistory } from "@/components/features/LotteryWinnersHistory";
 import { LotteryFeature } from "@/components/features/LotteryFeature";
 import { cn, formatToUSD, formatSatsToUSD, satsToUsd } from "@/lib/utils";
 import Image from "next/image";
 
 // --- DONNÉES DES JEUX ---
 const ALL_GAMES = [
-  { title: "La Loto", provider: "CoinPower Originals", image: "from-blue-400 to-cyan-600", imageSrc: "/games/loto.png", isNew: true, isHot: true, RTP: "97.5", link: "/games/loto", category: "originals", highlight: true },
-  { title: "Lotto Rapide", provider: "CoinPower Originals", image: "from-amber-400 to-yellow-600", imageSrc: "/games/lottery.png", isNew: true, isHot: true, RTP: "98.0", link: "/games/lottery", category: "originals" },
+  { title: "Lotterie Gagnante", provider: "CoinPower Originals", image: "from-blue-400 to-cyan-600", imageSrc: "/games/loto.png", isNew: true, isHot: true, RTP: "97.5", link: "/games/loto", category: "originals", highlight: true },
+  { title: "Créneau d'Or", provider: "CoinPower Originals", image: "from-amber-400 to-yellow-600", imageSrc: "/games/lottery.png", isNew: true, isHot: true, RTP: "98.0", link: "/games/lottery", category: "originals" },
   { title: "Dés", provider: "CoinPower Originals", image: "from-blue-600 to-indigo-600", imageSrc: "/games/dice.png", isHot: true, RTP: "99.0", link: "/games/dice", category: "originals" },
   { title: "Roulette", provider: "CoinPower Originals", image: "from-red-600 to-rose-600", imageSrc: "/games/roulette.png", isHot: true, RTP: "97.3", link: "/games/roulette", category: "originals" },
   { title: "Roue de la Fortune", provider: "CoinPower Originals", image: "from-purple-600 to-violet-500", imageSrc: "/games/wheel.png", isNew: true, RTP: "95.0", link: "/games/wheel", category: "originals" },
@@ -266,10 +266,10 @@ export default function Home() {
         )}
       </section>
 
-      {/* 4. GAINS EN DIRECT */}
+      {/* 4. HISTORIQUE DES GAGNANTS */}
       <section className="grid grid-cols-1 gap-8">
         <div className="w-full">
-          <LiveWinsTable />
+          <LotteryWinnersHistory />
         </div>
       </section>
     </div>
