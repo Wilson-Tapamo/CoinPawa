@@ -8,16 +8,16 @@ export const dynamic = 'force-dynamic'
 const connections = new Map<string, ReadableStreamDefaultController>()
 
 // 🆕 Fonction pour envoyer une notification via SSE
-export function sendNotificationToUser(userId: string, notification: any) {
+function sendNotificationToUser(userId: string, notification: any) {
   const controller = connections.get(userId)
-  
+
   if (controller) {
     try {
-      const data = `data: ${JSON.stringify({ 
-        type: 'notification', 
-        notification 
+      const data = `data: ${JSON.stringify({
+        type: 'notification',
+        notification
       })}\n\n`
-      
+
       controller.enqueue(new TextEncoder().encode(data))
       console.log(`📡 SSE envoyé à user ${userId}`)
     } catch (error) {
@@ -53,9 +53,9 @@ export async function GET(request: Request) {
 
         // Envoyer les notifications initiales
         getUserNotifications(userId, 10).then(notifications => {
-          const data = `data: ${JSON.stringify({ 
-            type: 'initial', 
-            notifications 
+          const data = `data: ${JSON.stringify({
+            type: 'initial',
+            notifications
           })}\n\n`
           controller.enqueue(new TextEncoder().encode(data))
         })

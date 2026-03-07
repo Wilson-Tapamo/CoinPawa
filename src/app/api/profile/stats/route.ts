@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifySession } from '@/lib/auth'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: Request) {
   try {
     // 1. Vérifier la session
@@ -80,11 +82,11 @@ export async function GET(request: Request) {
       .reduce((sum: number, t: any) => sum + Number(t.amountSats), 0) / 100_000_000
 
     // Total misé et gagné
-    const totalWagered = gameRounds.reduce((sum: number, r: any) => 
+    const totalWagered = gameRounds.reduce((sum: number, r: any) =>
       sum + Number(r.betAmountSats), 0
     ) / 100_000_000
 
-    const totalWon = gameRounds.reduce((sum: number, r: any) => 
+    const totalWon = gameRounds.reduce((sum: number, r: any) =>
       sum + Number(r.payoutAmountSats), 0
     ) / 100_000_000
 
@@ -95,7 +97,7 @@ export async function GET(request: Request) {
     const totalBets = gameRounds.length
 
     // Victoires et défaites (isWin = payout > bet)
-    const winCount = gameRounds.filter((r: any) => 
+    const winCount = gameRounds.filter((r: any) =>
       Number(r.payoutAmountSats) > Number(r.betAmountSats)
     ).length
     const lossCount = totalBets - winCount
@@ -162,22 +164,22 @@ export async function GET(request: Request) {
         totalDeposited: totalDeposited,
         totalWithdrawn: totalWithdrawn,
         netProfit: netProfit,
-        
+
         // Activity
         totalWagered: totalWagered,
         totalWon: totalWon,
         totalBets: totalBets,
-        
+
         // Performance
         winCount: winCount,
         lossCount: lossCount,
         winRate: winRate,
         maxWin: maxWin,
-        
+
         // Streaks
         currentStreak: currentStreak,
         bestStreak: bestStreak,
-        
+
         // Favorite Game
         favoriteGame: favoriteGame ? {
           name: favoriteGame[0],
@@ -188,7 +190,7 @@ export async function GET(request: Request) {
 
   } catch (error) {
     console.error('Profile stats error:', error)
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Erreur serveur',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
