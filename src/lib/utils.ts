@@ -25,8 +25,8 @@ export function formatToUSD(amount: number | string) {
   }).format(value);
 }
 
-// Taux de conversion fixe pour la démo (1 BTC = $50,000 => 1 USD = 2000 Sats)
-export const SATS_PER_USD = 2000;
+// Taux de conversion fixe pour la démo (1 BTC = $100,000 => 1 USD = 100,000,000 Sats)
+export const SATS_PER_USD = 100_000_000;
 
 export function usdToSats(usdAmount: number): number {
   return Math.floor(usdAmount * SATS_PER_USD);
