@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 // Middleware like authorization check (assumed to be handled elsewhere, or simplified here)
 // For simplicity, we just allow the action if hit, but in production, check admin session.
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
     try {
         const events = await prisma.homepageEvent.findMany({
