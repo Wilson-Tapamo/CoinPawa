@@ -13,7 +13,7 @@ export const NAV_ITEMS = [
 ];
 
 export const SECONDARY_NAV_ITEMS = [
-    { label: "Paramètres", href: "/settings", icon: Settings },
+
 ];
 
 export function Sidebar() {
@@ -61,30 +61,9 @@ export function Sidebar() {
                     );
                 })}
 
-                <div className="my-6 border-t border-white/5" />
 
-                <div className="text-xs font-semibold text-text-tertiary px-4 mb-2 uppercase tracking-wider">
-                    Explorer
-                </div>
-                {SECONDARY_NAV_ITEMS.map((item) => {
-                    const isActive = pathname === item.href;
-                    const Icon = item.icon;
-                    return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            className={cn(
-                                "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
-                                isActive
-                                    ? "bg-surface-active text-primary"
-                                    : "text-text-secondary hover:text-text-primary hover:bg-surface-hover"
-                            )}
-                        >
-                            <Icon className={cn("w-5 h-5", isActive ? "text-primary" : "text-text-tertiary group-hover:text-text-primary")} />
-                            <span className="font-medium font-sans">{item.label}</span>
-                        </Link>
-                    );
-                })}
+
+
             </nav>
         </aside>
     );
