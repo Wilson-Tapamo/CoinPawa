@@ -1,4 +1,4 @@
-// Fichier: prisma/schema.prisma
+// prisma/schema.prisma
 
 generator client {
   provider = "prisma-client-js"
@@ -61,6 +61,16 @@ enum AdminActionType {
   VIEW_SENSITIVE_DATA
 }
 
+// 🆕 ENUMS NOTIFICATIONS
+enum NotificationType {
+  DEPOSIT_CONFIRMED
+  WITHDRAWAL_APPROVED
+  WITHDRAWAL_REJECTED
+  LOTTERY_WIN
+  GAME_WIN_BIG
+  SYSTEM_MESSAGE
+}
+
 // --- 2. MODÈLES ---
 
 model User {
@@ -112,6 +122,7 @@ model User {
   adminActions     AdminAction[] @relation("PerformedActions")
   targetedActions  AdminAction[] @relation("TargetedUser")
   notes            AdminNote[]
+  notifications    Notification[]
   
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -206,6 +217,16 @@ model Transaction {
   userIp           String?
   userAgent        String?
   
+  // 🆕 SYSTÈME DE RETRAITS AUTOMATIQUES
+  processType      String?   // 'AUTOMATIC' | 'MANUAL' | 'PENDING'
+  manualReason     String?   // Raison si passage en manuel
+  processedAt      DateTime? // Date de traitement effectif
+  provider         String?   // 'PLISIO' | 'NOWPAYMENTS'
+  
+  // 🆕 PLISIO (comme nowPaymentId)
+  plisioId         String?   @unique
+  plisioTxUrl      String?   // URL de la transaction Plisio
+  
   metadata         Json?
   
   createdAt   DateTime @default(now())
@@ -218,6 +239,8 @@ model Transaction {
   @@index([createdAt])
   @@index([isFlagged])
   @@index([approvedBy])
+  @@index([plisioId])
+  @@index([processType])
 }
 
 model Game {
@@ -325,7 +348,6 @@ model PaymentSettings {
 
 // 🆕 MODÈLES ADMIN
 
-// Log de toutes les actions admin
 model AdminAction {
   id          String   @id @default(uuid())
   
@@ -354,7 +376,6 @@ model AdminAction {
   @@index([createdAt])
 }
 
-// Notes admin sur les utilisateurs
 model AdminNote {
   id          String   @id @default(uuid())
   
@@ -374,7 +395,6 @@ model AdminNote {
   @@index([isImportant])
 }
 
-// Configuration globale du système
 model SystemConfig {
   id          String   @id @default(uuid())
   
@@ -392,7 +412,6 @@ model SystemConfig {
   @@index([category])
 }
 
-// Alertes système pour les admins
 model SystemAlert {
   id          String   @id @default(uuid())
   
@@ -419,7 +438,6 @@ model SystemAlert {
   @@index([createdAt])
 }
 
-// Stats journalières pour les graphiques
 model DailyStats {
   id              String   @id @default(uuid())
   
@@ -447,4 +465,31 @@ model DailyStats {
   updatedAt       DateTime @updatedAt
   
   @@index([date])
+}
+
+// 🆕 MODÈLE NOTIFICATIONS
+model Notification {
+  id        String   @id @default(uuid())
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type      NotificationType
+  title     String
+  message   String   @db.Text
+  data      Json?    // Données supplémentaires (montant, txId, gameId, etc.)
+  
+  read      Boolean  @default(false)
+  readAt    DateTime?
+  
+  // UI
+  icon      String?  // Emoji ou icon name
+  actionUrl String?  // URL vers la page concernée (/wallet, /transaction/xxx)
+  
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+  @@index([userId, read])
+  @@index([createdAt])
+  @@index([type])
 }
