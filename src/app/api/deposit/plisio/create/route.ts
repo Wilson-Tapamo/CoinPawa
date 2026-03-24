@@ -14,10 +14,13 @@ export async function POST(request: Request) {
 
     // 2. Récupérer les paramètres
     const body = await request.json()
-    const { amount, currency } = body
+    const { amount, amountUsd, currency } = body
+    
+    // Support des 2 formats (amount OU amountUsd)
+    const finalAmount = amount || amountUsd
 
     // Validation montant
-    if (!amount || amount < 10 || amount > 10000) {
+    if (!finalAmount || finalAmount < 10 || finalAmount > 10000) {
       return NextResponse.json({ 
         error: 'Montant invalide (min: $10, max: $10,000)' 
       }, { status: 400 })
@@ -48,7 +51,7 @@ export async function POST(request: Request) {
       data: {
         walletId: user.wallet.id,
         type: 'DEPOSIT',
-        amountSats: BigInt(Math.floor(amount * 100_000_000)),
+        amountSats: BigInt(Math.floor(finalAmount * 100_000_000)),
         status: 'PENDING',
         paymentRef: orderNumber,
         cryptoCurrency: currency
@@ -61,10 +64,10 @@ export async function POST(request: Request) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://coin-power.vercel.app'
     
     const invoice = await createInvoice({
-      sourceAmount: amount,
+      sourceAmount: finalAmount,
       currency: mapCurrency(currency),
       orderNumber: orderNumber,
-      orderName: `Dépôt de $${amount} - ${user.username}`,
+      orderName: `Dépôt de $${finalAmount} - ${user.username}`,
       email: user.email || undefined,
       callbackUrl: `${baseUrl}/api/webhook/plisio`
     })
