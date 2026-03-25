@@ -1,3 +1,5 @@
+// prisma/schema.prisma
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,301 +9,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id                   String         @id @default(uuid())
-  username             String         @unique
-  email                String?        @unique
-  passwordHash         String
-  avatarUrl            String?
-  bannerUrl            String?
-  role                 UserRole       @default(USER)
-  isBanned             Boolean        @default(false)
-  bannedAt             DateTime?
-  banReason            String?
-  bannedBy             String?
-  isEmailVerified      Boolean        @default(false)
-  emailVerifiedAt      DateTime?
-  kycLevel             Int            @default(0)
-  kycData              Json?
-  lastLoginAt          DateTime?
-  lastLoginIp          String?
-  failedLoginAttempts  Int            @default(0)
-  lockedUntil          DateTime?
-  twoFactorEnabled     Boolean        @default(false)
-  twoFactorSecret      String?
-  referrerId           String?
-  referralEarningsSats BigInt         @default(0)
-  totalDeposited       BigInt         @default(0)
-  totalWithdrawn       BigInt         @default(0)
-  totalWagered         BigInt         @default(0)
-  totalWon             BigInt         @default(0)
-  gamesPlayed          Int            @default(0)
-  createdAt            DateTime       @default(now())
-  updatedAt            DateTime       @updatedAt
-  adminActions         AdminAction[]  @relation("PerformedActions")
-  targetedActions      AdminAction[]  @relation("TargetedUser")
-  notes                AdminNote[]
-  notifications        Notification[]
-  referrer             User?          @relation("ReferralHistory", fields: [referrerId], references: [id])
-  referrals            User[]         @relation("ReferralHistory")
-  wallet               Wallet?
-
-  @@index([role])
-  @@index([isBanned])
-  @@index([email])
-  @@index([createdAt])
-}
-
-model Wallet {
-  id                   String        @id @default(uuid())
-  userId               String        @unique
-  balanceSats          BigInt        @default(0)
-  totalDepositedSats   BigInt        @default(0)
-  totalWageredSats     BigInt        @default(0)
-  lastFaucetClaim      DateTime?
-  withdrawalAddress    String?
-  withdrawalNetwork    String?       @default("TRC20")
-  dailyWithdrawLimit   BigInt?
-  monthlyWithdrawLimit BigInt?
-  isWithdrawLocked     Boolean       @default(false)
-  withdrawLockReason   String?
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
-  gameRounds           GameRound[]
-  transactions         Transaction[]
-  user                 User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model Transaction {
-  id              String    @id @default(uuid())
-  walletId        String
-  type            TxType
-  amountSats      BigInt
-  paymentRef      String    @unique
-  status          TxStatus  @default(PENDING)
-  cryptoCurrency  String?
-  cryptoAmount    String?
-  usdtAmount      String?
-  exchangeRate    String?
-  txHash          String?   @unique
-  fromAddress     String?
-  toAddress       String?
-  blockNumber     Int?
-  confirmations   Int?      @default(0)
-  nowPaymentId    String?   @unique
-  paymentUrl      String?
-  paymentExpiry   DateTime?
-  withdrawalFee   BigInt?
-  netAmount       BigInt?
-  approvedBy      String?
-  approvedAt      DateTime?
-  rejectedBy      String?
-  rejectedAt      DateTime?
-  rejectionReason String?
-  riskScore       Float?    @default(0)
-  isFlagged       Boolean   @default(false)
-  flagReason      String?
-  reviewedBy      String?
-  reviewedAt      DateTime?
-  userIp          String?
-  userAgent       String?
-  metadata        Json?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  wallet          Wallet    @relation(fields: [walletId], references: [id], onDelete: Cascade)
-
-  @@index([walletId])
-  @@index([status])
-  @@index([type])
-  @@index([nowPaymentId])
-  @@index([createdAt])
-  @@index([isFlagged])
-  @@index([approvedBy])
-}
-
-model Game {
-  id           String      @id @default(uuid())
-  slug         String      @unique
-  name         String
-  type         GameType
-  isActive     Boolean     @default(true)
-  shortDesc    String?
-  rules        String?
-  imageUrl     String?
-  config       Json?
-  maxWinSats   BigInt?
-  createdBy    String?
-  houseEdge    Float       @default(2.0)
-  totalBets    Int         @default(0)
-  totalWagered BigInt      @default(0)
-  totalPayout  BigInt      @default(0)
-  playCount    Int         @default(0)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  rounds       GameRound[]
-
-  @@index([isActive])
-  @@index([type])
-}
-
-model GameRound {
-  id               String      @id @default(uuid())
-  walletId         String
-  gameId           String
-  status           RoundStatus @default(ACTIVE)
-  betAmountSats    BigInt
-  payoutAmountSats BigInt      @default(0)
-  gameData         Json
-  clientSeed       String
-  serverSeedHash   String
-  serverSeed       String?
-  nonce            Int
-  isSuspicious     Boolean     @default(false)
-  suspicionReason  String?
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
-  game             Game        @relation(fields: [gameId], references: [id])
-  wallet           Wallet      @relation(fields: [walletId], references: [id], onDelete: Cascade)
-
-  @@index([walletId])
-  @@index([gameId])
-  @@index([createdAt])
-  @@index([isSuspicious])
-}
-
-model SupportedCrypto {
-  id            String   @id @default(uuid())
-  symbol        String   @unique
-  name          String
-  network       String?
-  isActive      Boolean  @default(true)
-  minDepositUsd Float    @default(5.0)
-  icon          String?
-  orderIndex    Int      @default(0)
-  totalDeposits Int      @default(0)
-  totalVolume   Float    @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@index([isActive, orderIndex])
-}
-
-model PaymentSettings {
-  id          String   @id @default(uuid())
-  key         String   @unique
-  value       String
-  description String?
-  updatedAt   DateTime @updatedAt
-}
-
-model AdminAction {
-  id               String          @id @default(uuid())
-  adminId          String
-  action           AdminActionType
-  targetUserId     String?
-  targetEntityType String?
-  targetEntityId   String?
-  details          Json?
-  ipAddress        String?
-  userAgent        String?
-  createdAt        DateTime        @default(now())
-  admin            User            @relation("PerformedActions", fields: [adminId], references: [id])
-  targetUser       User?           @relation("TargetedUser", fields: [targetUserId], references: [id])
-
-  @@index([adminId])
-  @@index([targetUserId])
-  @@index([action])
-  @@index([createdAt])
-}
-
-model AdminNote {
-  id          String   @id @default(uuid())
-  userId      String
-  authorId    String
-  authorName  String
-  note        String
-  isImportant Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([isImportant])
-}
-
-model SystemConfig {
-  id             String   @id @default(uuid())
-  key            String   @unique
-  value          Json
-  category       String
-  description    String?
-  isPublic       Boolean  @default(false)
-  lastModifiedBy String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  @@index([category])
-}
-
-model SystemAlert {
-  id         String    @id @default(uuid())
-  type       String
-  severity   String
-  title      String
-  message    String
-  data       Json?
-  isRead     Boolean   @default(false)
-  readBy     String?
-  readAt     DateTime?
-  isResolved Boolean   @default(false)
-  resolvedBy String?
-  resolvedAt DateTime?
-  createdAt  DateTime  @default(now())
-
-  @@index([isRead])
-  @@index([isResolved])
-  @@index([severity])
-  @@index([createdAt])
-}
-
-model Notification {
-  id        String           @id @default(uuid())
-  userId    String
-  type      NotificationType
-  title     String
-  message   String
-  data      Json?
-  read      Boolean          @default(false)
-  readAt    DateTime?
-  icon      String?
-  actionUrl String?
-  createdAt DateTime         @default(now())
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([userId, read])
-  @@index([createdAt])
-  @@index([type])
-}
-
-model DailyStats {
-  id               String   @id @default(uuid())
-  date             DateTime @unique @db.Date
-  newUsers         Int      @default(0)
-  activeUsers      Int      @default(0)
-  totalDeposits    BigInt   @default(0)
-  totalWithdrawals BigInt   @default(0)
-  totalBets        BigInt   @default(0)
-  totalWins        BigInt   @default(0)
-  revenue          BigInt   @default(0)
-  gamesPlayed      Int      @default(0)
-  uniquePlayers    Int      @default(0)
-  houseEdge        Float    @default(0)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  @@index([date])
-}
+// --- 1. ENUMS ---
 
 enum TxType {
   DEPOSIT
@@ -360,22 +68,434 @@ enum NotificationType {
   SYSTEM_MESSAGE
 }
 
-// --- 3. HOMEPAGE EVENTS & PROMOTIONS ---
-model HomepageEvent {
-  id          String  @id @default(uuid())
+// --- 2. MODÈLES ---
+
+model User {
+  id           String   @id @default(uuid())
+  
+  // Auth
+  username     String   @unique
+  email        String?  @unique
+  passwordHash String 
+  avatarUrl    String?
+  bannerUrl    String?
+  
+  // ADMIN & MODÉRATION
+  role         UserRole @default(USER)
+  isBanned     Boolean  @default(false)
+  bannedAt     DateTime?
+  banReason    String?  @db.Text
+  bannedBy     String?  // ID de l'admin qui a banni
+  
+  // KYC / VERIFICATION
+  isEmailVerified Boolean @default(false)
+  emailVerifiedAt DateTime?
+  kycLevel        Int     @default(0) // 0 = None, 1 = Basic, 2 = Full
+  kycData         Json?   // Documents, status, etc.
+  
+  // SÉCURITÉ
+  lastLoginAt     DateTime?
+  lastLoginIp     String?
+  failedLoginAttempts Int @default(0)
+  lockedUntil     DateTime?
+  twoFactorEnabled Boolean @default(false)
+  twoFactorSecret  String?
+  
+  // Système de Parrainage
+  referrerId   String?
+  referrer     User?    @relation("ReferralHistory", fields: [referrerId], references: [id])
+  referrals    User[]   @relation("ReferralHistory")
+  referralEarningsSats BigInt @default(0)
+  
+  // STATS UTILISATEUR
+  totalDeposited   BigInt @default(0)
+  totalWithdrawn   BigInt @default(0)
+  totalWagered     BigInt @default(0)
+  totalWon         BigInt @default(0)
+  gamesPlayed      Int    @default(0)
+  
+  // Relations
+  wallet           Wallet?
+  adminActions     AdminAction[] @relation("PerformedActions")
+  targetedActions  AdminAction[] @relation("TargetedUser")
+  notes            AdminNote[]
+  notifications    Notification[]
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // INDEX
+  @@index([role])
+  @@index([isBanned])
+  @@index([email])
+  @@index([createdAt])
+}
+
+model Wallet {
+  id              String   @id @default(uuid())
+  
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  balanceSats     BigInt   @default(0) 
+  
+  // Wager Requirement
+  totalDepositedSats BigInt @default(0)
+  totalWageredSats   BigInt @default(0)
+  
+  lastFaucetClaim DateTime?
+  
+  // CRYPTO PAYMENT
+  withdrawalAddress String?
+  withdrawalNetwork String? @default("TRC20")
+  
+  // LIMITES & RESTRICTIONS
+  dailyWithdrawLimit  BigInt?  // Limite quotidienne de retrait
+  monthlyWithdrawLimit BigInt? // Limite mensuelle
+  isWithdrawLocked    Boolean @default(false)
+  withdrawLockReason  String?
+  
+  transactions    Transaction[]
+  gameRounds      GameRound[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Transaction {
+  id          String   @id @default(uuid())
+  
+  walletId    String
+  wallet      Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  
+  type        TxType
+  amountSats  BigInt
+  
+  paymentRef  String   @unique
+  status      TxStatus @default(PENDING)
+  
+  // MULTI-CRYPTO
+  cryptoCurrency   String?
+  cryptoAmount     String?
+  usdtAmount       String?
+  exchangeRate     String?
+  
+  // BLOCKCHAIN DATA
+  txHash           String?  @unique
+  fromAddress      String?
+  toAddress        String?
+  blockNumber      Int?
+  confirmations    Int?     @default(0)
+  
+  // NOWPAYMENTS
+  nowPaymentId     String?  @unique
+  paymentUrl       String?
+  paymentExpiry    DateTime?
+  
+  // WITHDRAWAL
+  withdrawalFee    BigInt?
+  netAmount        BigInt?
+  
+  // ADMIN & VALIDATION
+  approvedBy       String?  // ID de l'admin qui a approuvé
+  approvedAt       DateTime?
+  rejectedBy       String?
+  rejectedAt       DateTime?
+  rejectionReason  String?  @db.Text
+  
+  // FRAUD DETECTION
+  riskScore        Float?   @default(0)
+  isFlagged        Boolean  @default(false)
+  flagReason       String?
+  reviewedBy       String?
+  reviewedAt       DateTime?
+  
+  // TRACKING
+  userIp           String?
+  userAgent        String?
+  
+  // SYSTÈME DE RETRAITS AUTOMATIQUES
+  processType      String?   // 'AUTOMATIC' | 'MANUAL' | 'PENDING'
+  manualReason     String?   // Raison si passage en manuel
+  processedAt      DateTime? // Date de traitement effectif
+  provider         String?   // 'PLISIO' | 'NOWPAYMENTS'
+  
+  // PLISIO
+  plisioId         String?   @unique
+  plisioTxUrl      String?   // URL de la transaction Plisio
+  
+  metadata         Json?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([walletId])
+  @@index([status])
+  @@index([type])
+  @@index([nowPaymentId])
+  @@index([createdAt])
+  @@index([isFlagged])
+  @@index([approvedBy])
+  @@index([plisioId])
+  @@index([processType])
+}
+
+model Game {
+  id          String   @id @default(uuid())
+  
+  slug        String   @unique
+  name        String
+  type        GameType
+  isActive    Boolean  @default(true)
+  
+  // UX
+  shortDesc   String?
+  rules       String?  @db.Text
+  imageUrl    String?
+  
+  // Config
+  config      Json?
+  maxWinSats  BigInt?
+  
+  // ADMIN & STATS
+  createdBy   String?  // ID de l'admin créateur
+  houseEdge   Float    @default(2.0) // House edge en %
+  
+  // STATISTICS
+  totalBets   Int      @default(0)
+  totalWagered BigInt  @default(0)
+  totalPayout  BigInt  @default(0)
+  playCount    Int     @default(0)
+  
+  rounds      GameRound[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([isActive])
+  @@index([type])
+}
+
+model GameRound {
+  id          String   @id @default(uuid())
+  
+  walletId    String
+  wallet      Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  
+  gameId      String
+  game        Game     @relation(fields: [gameId], references: [id])
+  
+  status      RoundStatus @default(ACTIVE)
+  
+  betAmountSats    BigInt
+  payoutAmountSats BigInt @default(0)
+  
+  gameData    Json 
+  
+  // Provably Fair
+  clientSeed     String
+  serverSeedHash String
+  serverSeed     String?
+  nonce          Int
+  
+  // FRAUD DETECTION
+  isSuspicious   Boolean @default(false)
+  suspicionReason String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([walletId])
+  @@index([gameId])
+  @@index([createdAt])
+  @@index([isSuspicious])
+}
+
+model SupportedCrypto {
+  id              String   @id @default(uuid())
+  
+  symbol          String   @unique
+  name            String
+  network         String?
+  isActive        Boolean  @default(true)
+  
+  minDepositUsd   Float    @default(5.0)
+  icon            String?
+  orderIndex      Int      @default(0)
+  
+  // Stats
+  totalDeposits   Int      @default(0)
+  totalVolume     Float    @default(0)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([isActive, orderIndex])
+}
+
+model PaymentSettings {
+  id              String   @id @default(uuid())
+  
+  key             String   @unique
+  value           String
+  description     String?
+  
+  updatedAt       DateTime @updatedAt
+}
+
+model AdminAction {
+  id          String   @id @default(uuid())
+  
+  adminId     String
+  admin       User     @relation("PerformedActions", fields: [adminId], references: [id])
+  
+  action      AdminActionType
+  
+  // Cible de l'action (optionnel)
+  targetUserId    String?
+  targetUser      User?   @relation("TargetedUser", fields: [targetUserId], references: [id])
+  
+  targetEntityType String? // "Transaction", "Game", "Settings", etc.
+  targetEntityId   String? // ID de l'entité
+  
+  // Détails
+  details     Json?    // Données avant/après, raison, etc.
+  ipAddress   String?
+  userAgent   String?
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([adminId])
+  @@index([targetUserId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model AdminNote {
+  id          String   @id @default(uuid())
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  authorId    String   // ID de l'admin qui a écrit la note
+  authorName  String   // Nom de l'admin (pour historique)
+  
+  note        String   @db.Text
+  isImportant Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([isImportant])
+}
+
+model SystemConfig {
+  id          String   @id @default(uuid())
+  
+  key         String   @unique
+  value       Json
+  category    String   // "payment", "game", "security", etc.
+  description String?  @db.Text
+  isPublic    Boolean  @default(false) // Visible aux non-admins ?
+  
+  lastModifiedBy String? // ID de l'admin
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([category])
+}
+
+model SystemAlert {
+  id          String   @id @default(uuid())
+  
+  type        String   // "withdrawal_pending", "suspicious_activity", etc.
+  severity    String   // "low", "medium", "high", "critical"
   title       String
-  description String? @db.Text
+  message     String   @db.Text
+  data        Json?
+  
+  isRead      Boolean   @default(false)
+  readBy      String?
+  readAt      DateTime?
+  
+  isResolved  Boolean   @default(false)
+  resolvedBy  String?
+  resolvedAt  DateTime?
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([isRead])
+  @@index([isResolved])
+  @@index([severity])
+  @@index([createdAt])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type      NotificationType
+  title     String
+  message   String   @db.Text
+  data      Json?    // Données supplémentaires (montant, txId, gameId, etc.)
+  
+  read      Boolean  @default(false)
+  readAt    DateTime?
+  
+  // UI
+  icon      String?  // Emoji ou icon name
+  actionUrl String?  // URL vers la page concernée (/wallet, /transaction/xxx)
+  
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+  @@index([userId, read])
+  @@index([createdAt])
+  @@index([type])
+}
+
+model DailyStats {
+  id               String   @id @default(uuid())
+  date             DateTime @unique @db.Date
+  
+  newUsers         Int      @default(0)
+  activeUsers      Int      @default(0)
+  
+  totalDeposits    BigInt   @default(0)
+  totalWithdrawals BigInt  @default(0)
+  totalBets        BigInt   @default(0)
+  totalWins        BigInt   @default(0)
+  revenue          BigInt   @default(0)
+  
+  gamesPlayed      Int      @default(0)
+  uniquePlayers    Int      @default(0)
+  
+  houseEdge        Float    @default(0)
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  @@index([date])
+}
+
+model HomepageEvent {
+  id          String   @id @default(uuid())
+  title       String
+  description String?  @db.Text
   imageUrl    String?
   buttonText  String?
   buttonLink  String?
-
-  startDate DateTime
-  endDate   DateTime
-  isActive  Boolean  @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean  @default(true)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
   @@index([isActive])
   @@index([startDate, endDate])
 }
