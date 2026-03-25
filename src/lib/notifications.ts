@@ -152,20 +152,6 @@ export async function getUnreadCount(userId: string) {
 // HELPERS SPÉCIFIQUES PAR TYPE
 // =====================================
 
-/**
- * Notifier un dépôt confirmé
- */
-export async function notifyDepositConfirmed(userId: string, amount: number, currency: string) {
-  return createNotification({
-    userId,
-    type: 'DEPOSIT_CONFIRMED',
-    title: 'Dépôt confirmé !',
-    message: `Votre dépôt de $${amount.toFixed(2)} en ${currency} a été confirmé.`,
-    icon: '💰',
-    actionUrl: '/wallet',
-    data: { amount, currency }
-  })
-}
 
 /**
  * Notifier un retrait approuvé

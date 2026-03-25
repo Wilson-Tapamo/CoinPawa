@@ -13,21 +13,15 @@ import {
     Loader2,
     Coins,
     RefreshCw,
-<<<<<<< HEAD
+    ArrowLeft,
     ChevronRight,
     Zap,
     ExternalLink,
-    History,
-    ArrowLeft
-=======
-    History,
-    Zap
->>>>>>> origin/coinbase-commerce-payment
+    History
 } from "lucide-react";
 import { cn, formatToUSD, satsToUsd } from "@/lib/utils";
 import PendingWithdrawals from "@/components/wallet/PendingWithdrawals";
 import TransactionHistory from "@/components/wallet/TransactionHistory";
-import Link from "next/link";
 
 // Types
 interface SupportedCrypto {
