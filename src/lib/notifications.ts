@@ -20,7 +20,6 @@ export function setSendNotificationCallback(fn: (userId: string, notification: a
   sendNotificationToUserFn = fn
   console.log('✅ SSE callback enregistré')
 }
-
 /**
  * Crée une notification pour un utilisateur
  */
@@ -47,7 +46,6 @@ export async function createNotification({
     })
 
     console.log(`🔔 Notification créée: ${type} pour user ${userId}`)
-    
     // 🆕 Déclencher l'événement SSE si disponible
     if (sendNotificationToUserFn) {
       try {
@@ -59,7 +57,6 @@ export async function createNotification({
     } else {
       console.warn('⚠️ SSE callback non enregistré - notification visible après refresh')
     }
-    
     return notification
   } catch (error) {
     console.error('❌ Erreur création notification:', error)
@@ -67,6 +64,7 @@ export async function createNotification({
   }
 }
 
+/**
 /**
  * Marque des notifications comme lues
  */
@@ -179,7 +177,7 @@ export async function notifyWithdrawalApproved(userId: string, amount: number, t
     title: 'Retrait approuvé !',
     message: `Votre retrait de $${amount.toFixed(2)} a été approuvé et sera traité sous peu.`,
     icon: '✅',
-    actionUrl: `/transaction/${txId}`,
+    actionUrl: `/wallet`,
     data: { amount, txId }
   })
 }
