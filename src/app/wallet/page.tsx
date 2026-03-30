@@ -14,10 +14,10 @@ import {
     Coins,
     RefreshCw,
     ArrowLeft,
-    ChevronRight,
     Zap,
-    ExternalLink,
-    History
+    History,
+    ChevronDown,
+    ChevronUp
 } from "lucide-react";
 import { cn, formatToUSD, satsToUsd } from "@/lib/utils";
 import PendingWithdrawals from "@/components/wallet/PendingWithdrawals";
@@ -49,6 +49,7 @@ interface PaymentData {
 export default function WalletPage() {
 
     const [activeTab, setActiveTab] = useState<"deposit" | "withdraw" | "history">("deposit");
+    const [showCryptoList, setShowCryptoList] = useState(false);
 
     // États UI
     const [copied, setCopied] = useState(false);
@@ -147,7 +148,6 @@ export default function WalletPage() {
                     text: `Paiement créé ! Envoyez ${data.payment.payAmount} ${selectedCoin.symbol}`
                 });
 
-                // Commencer à vérifier le paiement toutes les 10 secondes
                 startPaymentCheck(data.payment.id);
             } else {
                 setMessage({ type: 'error', text: data.error || data.details || "Erreur création paiement" });
@@ -237,159 +237,91 @@ export default function WalletPage() {
     };
 
     return (
-        <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 p-4 md:p-8">
+        <div className="max-w-5xl mx-auto space-y-6 p-4 md:p-6">
 
-            {/* HEADER */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                    <Link
-                        href="/"
-                        className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors border border-white/5 group"
-                    >
-                        <ArrowLeft className="w-5 h-5 text-text-secondary group-hover:text-white" />
+            {/* HEADER COMPACT */}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <Link href="/" className="p-2 hover:bg-white/5 rounded-lg transition-colors">
+                        <ArrowLeft className="w-5 h-5 text-text-secondary" />
                     </Link>
                     <div>
-                        <h1 className="text-3xl font-display font-bold text-white">Portefeuille</h1>
-                        <p className="text-text-secondary text-sm">Gérez vos cryptos et convertissez en solde de jeu</p>
+                        <h1 className="text-2xl font-display font-bold text-white">Portefeuille</h1>
+                        <p className="text-text-tertiary text-xs">Balance: {formatToUSD(balance)}</p>
                     </div>
                 </div>
                 <button
                     onClick={fetchBalance}
-                    className="flex items-center gap-2 text-sm text-primary hover:text-primary-hover font-bold bg-primary/10 px-4 py-2 rounded-lg transition-colors border border-primary/20"
+                    className="p-2 hover:bg-white/5 rounded-lg transition-colors"
                 >
-                    <RefreshCw className="w-4 h-4" /> Actualiser
+                    <RefreshCw className="w-5 h-5 text-text-secondary hover:text-white" />
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* TABS */}
+            <div className="flex gap-2 bg-surface/50 p-1 rounded-xl">
+                <button
+                    onClick={() => setActiveTab("deposit")}
+                    className={cn(
+                        "flex-1 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2",
+                        activeTab === "deposit"
+                            ? "bg-accent-purple text-white shadow-lg"
+                            : "text-text-secondary hover:text-white"
+                    )}
+                >
+                    <ArrowDownLeft className="w-4 h-4" />
+                    Dépôt
+                </button>
 
-                {/* --- COLONNE GAUCHE : BALANCE & PORTFOLIO --- */}
-                <div className="lg:col-span-2 space-y-6">
-                    {/* Carte Solde Principal */}
-                    <div className="bg-gradient-to-br from-[#1A1D26] to-[#0F1218] p-8 rounded-2xl border border-white/5 relative overflow-hidden shadow-2xl">
-                        <div className="absolute top-0 right-0 p-8 opacity-5">
-                            <WalletIcon className="w-64 h-64 text-white" />
-                        </div>
+                <button
+                    onClick={() => setActiveTab("withdraw")}
+                    className={cn(
+                        "flex-1 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2",
+                        activeTab === "withdraw"
+                            ? "bg-primary text-background shadow-lg"
+                            : "text-text-secondary hover:text-white"
+                    )}
+                >
+                    <ArrowUpRight className="w-4 h-4" />
+                    Retrait
+                </button>
 
-                        <div className="relative z-10">
-                            <p className="text-text-secondary font-medium mb-2 uppercase tracking-wider text-xs">Solde Disponible (USD)</p>
-                            <div className="flex items-baseline gap-3 mb-8">
-                                <span className="text-5xl font-display font-bold text-white">
-                                    {formatToUSD(balance)}
-                                </span>
-                            </div>
+                <button
+                    onClick={() => setActiveTab("history")}
+                    className={cn(
+                        "flex-1 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2",
+                        activeTab === "history"
+                            ? "bg-blue-500 text-white shadow-lg"
+                            : "text-text-secondary hover:text-white"
+                    )}
+                >
+                    <History className="w-4 h-4" />
+                    Historique
+                </button>
+            </div>
 
-                            <div className="grid grid-cols-3 gap-2 mb-6">
-                                {/* Dépôt */}
-                                <button
-                                    onClick={() => setActiveTab("deposit")}
-                                    className={cn(
-                                        "py-3 px-4 rounded-xl font-bold text-sm transition-all",
-                                        "flex items-center justify-center gap-2 min-h-[48px]",
-                                        activeTab === "deposit"
-                                            ? "bg-accent-purple text-white"
-                                            : "bg-background-secondary text-text-secondary hover:bg-white/5"
-                                    )}
-                                >
-                                    <ArrowDownLeft className="w-4 h-4" />
-                                    <span>Dépôt</span>
-                                </button>
-
-                                {/* Retrait */}
-                                <button
-                                    onClick={() => setActiveTab("withdraw")}
-                                    className={cn(
-                                        "py-3 px-4 rounded-xl font-bold text-sm transition-all",
-                                        "flex items-center justify-center gap-2 min-h-[48px]",
-                                        activeTab === "withdraw"
-                                            ? "bg-primary text-background"
-                                            : "bg-background-secondary text-text-secondary hover:bg-white/5"
-                                    )}
-                                >
-                                    <ArrowUpRight className="w-4 h-4" />
-                                    <span>Retrait</span>
-                                </button>
-
-                                {/* Historique */}
-                                <button
-                                    onClick={() => setActiveTab("history")}
-                                    className={cn(
-                                        "py-3 px-4 rounded-xl font-bold text-sm transition-all",
-                                        "flex items-center justify-center gap-2 min-h-[48px]",
-                                        activeTab === "history"
-                                            ? "bg-blue-500 text-white"
-                                            : "bg-background-secondary text-text-secondary hover:bg-white/5"
-                                    )}
-                                >
-                                    <History className="w-4 h-4" />
-                                    <span>Historique</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Liste des Cryptos Acceptées */}
-                    <div className="bg-[#1A1D26]/50 rounded-2xl border border-white/5 overflow-hidden">
-                        <div className="p-4 border-b border-white/5">
-                            <h3 className="font-bold text-white flex items-center gap-2">
-                                <Coins className="w-4 h-4 text-primary" /> Cryptos Acceptées
-                            </h3>
-                        </div>
-                        <div className="divide-y divide-white/5">
-                            {cryptos.map((crypto) => {
-                                const style = getCryptoStyle(crypto.symbol);
-                                return (
-                                    <div key={crypto.symbol} className="flex items-center justify-between p-4 hover:bg-white/5 transition-colors group">
-                                        <div className="flex items-center gap-4">
-                                            <div className={cn("w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold", style.bg, style.color)}>
-                                                {crypto.icon || crypto.symbol[0]}
-                                            </div>
-                                            <div>
-                                                <p className="font-bold text-white text-sm">{crypto.name}</p>
-                                                <p className="text-xs text-text-tertiary">
-                                                    {crypto.network} {crypto.recommended && <span className="text-primary">• Recommandé</span>}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={() => { setActiveTab("deposit"); setSelectedCoin(crypto); }}
-                                            className="text-xs font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity"
-                                        >
-                                            Déposer
-                                        </button>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
+            {/* MESSAGE DE FEEDBACK */}
+            {message && (
+                <div className={cn(
+                    "p-3 rounded-xl text-xs font-bold flex items-center gap-2",
+                    message.type === 'success' ? "bg-green-500/10 text-green-500 border border-green-500/20" : "bg-red-500/10 text-red-500 border border-red-500/20"
+                )}>
+                    {message.type === 'error' && <AlertCircle className="w-4 h-4" />}
+                    {message.text}
                 </div>
+            )}
 
-                {/* --- COLONNE DROITE : PANNEAU D'ACTION --- */}
-                <div className="lg:col-span-1">
-                    <div className="bg-[#1A1D26] p-6 rounded-2xl border border-white/5 h-full flex flex-col min-h-[500px]">
-                        {/* MESSAGE DE FEEDBACK */}
-                        {message && (
-                            <div className={cn(
-                                "p-3 rounded-xl mb-4 text-xs font-bold flex items-center gap-2",
-                                message.type === 'success' ? "bg-green-500/10 text-green-500 border border-green-500/20" : "bg-red-500/10 text-red-500 border border-red-500/20"
-                            )}>
-                                {message.type === 'error' && <AlertCircle className="w-4 h-4" />}
-                                {message.text}
-                            </div>
-                        )}
+            {/* CONTENU */}
+            <div className="bg-surface rounded-xl border border-white/5 p-6">
+                
+                {/* ================= ONGLET DÉPÔT ================= */}
+                {activeTab === "deposit" && (
+                    <div className="space-y-4">
+                        <h3 className="font-bold text-white">Dépôt via NOWPayments</h3>
 
-                        {/* ================= ONGLET DÉPÔT ================= */}
-                        {activeTab === "deposit" && (
-                            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-
-                                <div className="mb-2">
-                                    <h3 className="font-bold text-white text-lg">Dépôt {selectedCoin?.name}</h3>
-                                    <p className="text-xs text-text-tertiary">
-                                        Via NOWPayments
-                                    </p>
-                                </div>
-
-                                {/* Sélecteur de coin */}
+                        {!paymentData ? (
+                            <>
+                                {/* Sélecteur crypto */}
                                 <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                                     {cryptos.map((coin) => {
                                         const style = getCryptoStyle(coin.symbol);
@@ -413,182 +345,158 @@ export default function WalletPage() {
                                     })}
                                 </div>
 
-                                {/* Affichage paiement ou formulaire */}
-                                {paymentData ? (
-                                    <div className="space-y-4">
-                                        <div className="p-4 bg-background-secondary rounded-xl border border-white/5 flex flex-col items-center">
-                                            <div className="p-2 bg-white rounded-lg mb-4 shadow-lg">
-                                                <QrCode className="w-32 h-32 text-black" />
-                                            </div>
-                                            <div className="space-y-3 w-full">
-                                                <label className="text-xs font-bold text-primary uppercase">
-                                                    📍 Adresse de paiement
-                                                </label>
+                                {/* Input montant */}
+                                <div className="relative">
+                                    <input
+                                        type="number"
+                                        placeholder="Montant en USD"
+                                        value={depositAmountUsd}
+                                        onChange={(e) => setDepositAmountUsd(e.target.value)}
+                                        className="w-full bg-background-secondary rounded-xl border border-white/10 py-3 pl-3 pr-12 text-white text-sm focus:outline-none focus:border-accent-purple"
+                                    />
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-text-tertiary">
+                                        USD
+                                    </span>
+                                </div>
 
-                                                <input
-                                                    type="text"
-                                                    readOnly
-                                                    value={paymentData.payAddress}
-                                                    onClick={(e) => {
-                                                        e.currentTarget.select();
-                                                        handleCopy();
-                                                    }}
-                                                    className="w-full bg-background-secondary text-white font-mono text-sm p-3 rounded-lg border-2 border-primary/30 cursor-pointer hover:border-primary transition-colors"
-                                                />
+                                <button
+                                    onClick={handleDeposit}
+                                    disabled={isLoading || !depositAmountUsd || parseFloat(depositAmountUsd) <= 0}
+                                    className="w-full py-3 bg-accent-purple hover:bg-accent-purple/80 text-white text-sm font-bold rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "CRÉER LE PAIEMENT"}
+                                </button>
 
-                                                {copied && (
-                                                    <p className="text-xs text-green-500 font-bold flex items-center gap-1">
-                                                        <Check className="w-3 h-3" /> Adresse copiée !
-                                                    </p>
-                                                )}
-                                            </div>
+                                {/* Accordéon liste crypto */}
+                                <div className="border-t border-white/5 pt-4">
+                                    <button
+                                        onClick={() => setShowCryptoList(!showCryptoList)}
+                                        className="w-full flex items-center justify-between text-sm text-text-secondary hover:text-white transition-colors"
+                                    >
+                                        <span className="flex items-center gap-2">
+                                            <Coins className="w-4 h-4" />
+                                            Cryptos acceptées ({cryptos.length})
+                                        </span>
+                                        {showCryptoList ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                    </button>
+
+                                    {showCryptoList && (
+                                        <div className="mt-3 space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                                            {cryptos.map((crypto) => {
+                                                const style = getCryptoStyle(crypto.symbol);
+                                                return (
+                                                    <div key={crypto.symbol} className="flex items-center justify-between p-3 bg-background-secondary rounded-lg hover:bg-white/5 transition-colors">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold", style.bg, style.color)}>
+                                                                {crypto.icon || crypto.symbol[0]}
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-bold text-white text-xs">{crypto.name}</p>
+                                                                <p className="text-[10px] text-text-tertiary">{crypto.network}</p>
+                                                            </div>
+                                                        </div>
+                                                        {crypto.recommended && (
+                                                            <span className="text-[10px] text-primary font-bold">Recommandé</span>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
+                                    )}
+                                </div>
 
-                                        <div className="p-4 bg-accent-purple/10 rounded-xl border border-accent-purple/20">
-                                            <div className="flex justify-between text-xs mb-2">
-                                                <span className="text-text-secondary">Montant à envoyer :</span>
-                                                <span className="text-white font-bold">{paymentData.payAmount} {paymentData.payCurrency.toUpperCase()}</span>
-                                            </div>
-                                            <div className="flex justify-between text-xs">
-                                                <span className="text-text-secondary">Vous recevrez :</span>
-                                                <span className="text-primary font-bold">{formatToUSD(paymentData.priceAmount)}</span>
-                                            </div>
-                                        </div>
-
-                                        {isCheckingPayment && (
-                                            <div className="flex items-center justify-center gap-2 text-xs text-accent-purple">
-                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                                <span>Vérification en cours...</span>
-                                            </div>
-                                        )}
-
-                                        <button
-                                            onClick={() => {
-                                                setPaymentData(null);
-                                                setDepositAmountUsd("");
-                                                setIsCheckingPayment(false);
-                                            }}
-                                            className="w-full py-2 text-xs text-text-secondary hover:text-white transition-colors"
-                                        >
-                                            Annuler
-                                        </button>
-
-                                        {/* Boutons simulation */}
-                                        <div className="mt-4 p-4 bg-purple-500/10 rounded-xl border border-purple-500/20 space-y-3">
-                                            <p className="text-xs font-bold text-purple-400">🧪 MODE TEST</p>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={async () => {
-                                                        setIsLoading(true);
-                                                        try {
-                                                            const res = await fetch('/api/wallet/simulate-payment', {
-                                                                method: 'POST',
-                                                                headers: { 'Content-Type': 'application/json' },
-                                                                body: JSON.stringify({
-                                                                    paymentId: paymentData?.id,
-                                                                    amountUsd: paymentData?.priceAmount,
-                                                                    withSurplus: false,
-                                                                }),
-                                                            });
-                                                            const data = await res.json();
-                                                            if (res.ok) {
-                                                                setMessage({ type: 'success', text: data.message });
-                                                                fetchBalance();
-                                                                setPaymentData(null);
-                                                            }
-                                                        } finally {
-                                                            setIsLoading(false);
-                                                        }
-                                                    }}
-                                                    className="flex-1 py-2 bg-green-500/20 text-green-400 text-xs font-bold rounded-lg"
-                                                >
-                                                    ✅ Simuler paiement
-                                                </button>
-                                            </div>
-                                        </div>
+                                {/* Lien Plisio */}
+                                <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                                    <p className="text-xs text-text-secondary mb-2">
+                                        Alternative : <Link href="/deposit" className="text-primary hover:underline font-bold">Déposer via Plisio →</Link>
+                                    </p>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="space-y-4">
+                                <div className="p-4 bg-background-secondary rounded-xl border border-white/5 flex flex-col items-center">
+                                    <div className="p-2 bg-white rounded-lg mb-4">
+                                        <QrCode className="w-32 h-32 text-black" />
                                     </div>
-                                ) : (
-                                    <div className="border-t border-white/10 pt-4 space-y-4">
-                                        <label className="text-xs text-text-tertiary mb-2 font-bold block">
-                                            Montant (USD)
-                                        </label>
+                                    <input
+                                        type="text"
+                                        readOnly
+                                        value={paymentData.payAddress}
+                                        onClick={(e) => {
+                                            e.currentTarget.select();
+                                            handleCopy();
+                                        }}
+                                        className="w-full bg-background-secondary text-white font-mono text-xs p-3 rounded-lg border-2 border-primary/30 cursor-pointer hover:border-primary transition-colors"
+                                    />
+                                    {copied && (
+                                        <p className="text-xs text-green-500 font-bold flex items-center gap-1 mt-2">
+                                            <Check className="w-3 h-3" /> Copié !
+                                        </p>
+                                    )}
+                                </div>
 
-                                        <div className="space-y-3">
-                                            <div className="relative">
-                                                <input
-                                                    type="number"
-                                                    placeholder="10.00"
-                                                    value={depositAmountUsd}
-                                                    onChange={(e) => setDepositAmountUsd(e.target.value)}
-                                                    className="w-full bg-background-secondary rounded-xl border border-white/10 py-3 pl-3 pr-12 text-white text-sm focus:outline-none focus:border-accent-purple"
-                                                />
-                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-text-tertiary">
-                                                    USD
-                                                </span>
-                                            </div>
+                                <div className="p-3 bg-accent-purple/10 rounded-lg border border-accent-purple/20 space-y-1 text-xs">
+                                    <div className="flex justify-between">
+                                        <span className="text-text-secondary">À envoyer:</span>
+                                        <span className="text-white font-bold">{paymentData.payAmount} {paymentData.payCurrency.toUpperCase()}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-text-secondary">Vous recevrez:</span>
+                                        <span className="text-primary font-bold">{formatToUSD(paymentData.priceAmount)}</span>
+                                    </div>
+                                </div>
 
-                                            <button
-                                                onClick={handleDeposit}
-                                                disabled={isLoading || !depositAmountUsd || parseFloat(depositAmountUsd) <= 0}
-                                                className="w-full py-3 bg-accent-purple hover:bg-accent-purple/80 text-white text-sm font-bold rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                                            >
-                                                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "CRÉER LE PAIEMENT"}
-                                            </button>
-                                        </div>
-
-                                        {/* Message moyen alternatif + Lien Plisio */}
-                                        <div className="mt-6 p-4 bg-blue-500/10 rounded-xl border border-blue-500/20">
-                                            <p className="text-xs font-bold text-blue-400 mb-2">ℹ️ Moyen de paiement alternatif</p>
-                                            <p className="text-xs text-text-secondary mb-3">
-                                                Vous pouvez également utiliser Plisio pour vos dépôts
-                                            </p>
-                                            <Link
-                                                href="/deposit"
-                                                className="flex items-center justify-center gap-2 w-full py-2 bg-primary/20 hover:bg-primary/30 text-primary text-xs font-bold rounded-lg transition-colors border border-primary/30"
-                                            >
-                                                Déposer via Plisio →
-                                            </Link>
-                                        </div>
+                                {isCheckingPayment && (
+                                    <div className="flex items-center justify-center gap-2 text-xs text-accent-purple">
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Vérification...
                                     </div>
                                 )}
-                            </div>
-                        )}
 
-                        {/* ================= ONGLET RETRAIT ================= */}
-                        {activeTab === "withdraw" && (
-                            <div className="space-y-6">
-                                <div>
-                                    <h3 className="font-bold text-white text-lg mb-2">Retrait des Fonds</h3>
-                                    <p className="text-xs text-text-tertiary mb-4">
-                                        Système automatique avec Plisio (instantané jusqu'à $500)
-                                    </p>
-
-                                    <Link 
-                                        href="/withdraw"
-                                        className="w-full flex items-center justify-center gap-2 py-4 bg-primary hover:bg-primary-hover text-background font-bold rounded-xl transition-all shadow-lg"
-                                    >
-                                        <Zap className="w-5 h-5" />
-                                        Demander un retrait
-                                    </Link>
-                                </div>
-
-                                {/* Retraits en attente */}
-                                <div className="border-t border-white/5 pt-4">
-                                    <h4 className="text-sm font-bold text-white mb-3">Retraits en cours</h4>
-                                    <PendingWithdrawals />
-                                </div>
-                            </div>
-                        )}
-
-                        {/* ================= ONGLET HISTORIQUE ================= */}
-                        {activeTab === "history" && (
-                            <div>
-                                <h3 className="font-bold text-white text-lg mb-4">Historique</h3>
-                                <TransactionHistory />
+                                <button
+                                    onClick={() => {
+                                        setPaymentData(null);
+                                        setDepositAmountUsd("");
+                                    }}
+                                    className="w-full py-2 text-xs text-text-secondary hover:text-white"
+                                >
+                                    ← Annuler
+                                </button>
                             </div>
                         )}
                     </div>
-                </div>
+                )}
+
+                {/* ================= ONGLET RETRAIT ================= */}
+                {activeTab === "withdraw" && (
+                    <div className="space-y-4">
+                        <h3 className="font-bold text-white">Retraits automatiques</h3>
+                        <p className="text-xs text-text-secondary">
+                            Instantané jusqu'à $500 via Plisio
+                        </p>
+
+                        <Link 
+                            href="/withdraw"
+                            className="w-full flex items-center justify-center gap-2 py-3 bg-primary hover:bg-primary-hover text-background font-bold rounded-xl transition-all"
+                        >
+                            <Zap className="w-5 h-5" />
+                            Demander un retrait
+                        </Link>
+
+                        <div className="border-t border-white/5 pt-4">
+                            <h4 className="text-sm font-bold text-white mb-3">Retraits en cours</h4>
+                            <PendingWithdrawals />
+                        </div>
+                    </div>
+                )}
+
+                {/* ================= ONGLET HISTORIQUE ================= */}
+                {activeTab === "history" && (
+                    <div>
+                        <h3 className="font-bold text-white mb-4">Historique des transactions</h3>
+                        <TransactionHistory />
+                    </div>
+                )}
             </div>
         </div>
     );
