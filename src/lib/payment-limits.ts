@@ -3,12 +3,12 @@
 
 export const PAYMENT_LIMITS = {
   development: {
-    minDeposit: 10.0,     // 10 USD minimum (requis par NOWPayments)
+    minDeposit: 15.0,     // ✅ 15 USD minimum (requis par NOWPayments pour USDT)
     maxDeposit: 100.0,    // 100 USD maximum en dev (pour sécurité)
     maxWithdraw: 50.0,    // 50 USD maximum en retrait
   },
   production: {
-    minDeposit: 10.0,     // 10 USD minimum en production
+    minDeposit: 15.0,     // ✅ 15 USD minimum en production (NOWPayments USDT)
     maxDeposit: 10000.0,  // 10,000 USD maximum
     maxWithdraw: 5000.0,  // 5,000 USD maximum par retrait
   },
