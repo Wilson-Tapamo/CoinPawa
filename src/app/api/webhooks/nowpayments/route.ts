@@ -2,8 +2,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logPayment } from '@/lib/nowpayments'
-import { usdToSats } from '@/lib/payment-limits'
-import { notifyDepositConfirmed } from '@/lib/notifications' // 🆕 AJOUTÉ
+import { usdToSats, satsToUsd } from '@/lib/payment-limits'
+import { notifyDepositConfirmed } from '@/lib/notifications'
 import crypto from 'crypto'
 
 const NOWPAYMENTS_IPN_SECRET = process.env.NOWPAYMENTS_IPN_SECRET!
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
     // 4. Récupérer la transaction en BDD
     const transaction = await prisma.transaction.findUnique({
       where: { nowPaymentId: payment_id },
-      include: { wallet: { include: { user: true } } }, // 🆕 INCLURE USER
+      include: { wallet: { include: { user: true } } },
     })
 
     if (!transaction) {
@@ -136,8 +136,15 @@ async function handleSuccessfulPayment(transaction: any, webhookData: any) {
     actually_paid,
   } = webhookData
 
-  const usdtReceived = parseFloat(outcome_amount)
-  const usdtExpected = parseFloat(price_amount)
+  // ✅ FIX #1 : Validation + conversion sécurisée
+  const usdtReceived = outcome_amount ? parseFloat(outcome_amount.toString()) : 0
+  const usdtExpected = parseFloat(price_amount.toString())
+  
+  if (usdtReceived <= 0) {
+    console.error('❌ Invalid outcome_amount:', outcome_amount)
+    logPayment('PAYMENT_INVALID_OUTCOME', { payment_id, outcome_amount })
+    return
+  }
   
   // Calculer le surplus
   const surplus = usdtReceived - usdtExpected
@@ -152,6 +159,7 @@ async function handleSuccessfulPayment(transaction: any, webhookData: any) {
     received: usdtReceived,
     surplus: surplus > 0 ? surplus : 0,
     mainAmount,
+    mainAmountSats: mainAmountSats.toString(), // ✅ FIX #3
   })
 
   // Transaction atomique
@@ -163,7 +171,7 @@ async function handleSuccessfulPayment(transaction: any, webhookData: any) {
         status: 'COMPLETED',
         amountSats: mainAmountSats,
         usdtAmount: outcome_amount.toString(),
-        exchangeRate: (parseFloat(pay_amount) / usdtReceived).toString(),
+        exchangeRate: (parseFloat(pay_amount.toString()) / usdtReceived).toString(),
         confirmations: 1,
         metadata: {
           ...transaction.metadata,
@@ -186,10 +194,18 @@ async function handleSuccessfulPayment(transaction: any, webhookData: any) {
       },
     })
 
+    // ✅ FIX #3 : Récupérer la nouvelle balance
+    const updatedWallet = await tx.wallet.findUnique({
+      where: { id: transaction.walletId },
+      select: { balanceSats: true }
+    })
+
     logPayment('MAIN_AMOUNT_CREDITED', {
       walletId: transaction.walletId,
       amountSats: mainAmountSats.toString(),
       amountUsd: mainAmount,
+      newBalanceSats: updatedWallet?.balanceSats.toString(),
+      newBalanceUsd: updatedWallet ? satsToUsd(updatedWallet.balanceSats) : 0,
     })
 
     // 3. Si surplus positif → Créer une transaction bonus (95% crédité)
@@ -239,10 +255,10 @@ async function handleSuccessfulPayment(transaction: any, webhookData: any) {
     }
   })
 
-  // 🆕 4. CRÉER LA NOTIFICATION
+  // 4. CRÉER LA NOTIFICATION
   try {
     const userId = transaction.wallet.user.id
-    const totalAmount = usdtReceived // Montant total reçu
+    const totalAmount = usdtReceived
     const currency = outcome_currency || pay_currency || 'USDT'
 
     await notifyDepositConfirmed(userId, totalAmount, currency)
@@ -250,7 +266,6 @@ async function handleSuccessfulPayment(transaction: any, webhookData: any) {
     console.log(`🔔 Notification envoyée pour user ${userId}`)
   } catch (notifError) {
     console.error('❌ Erreur création notification:', notifError)
-    // Ne pas faire échouer le webhook si la notification échoue
   }
 
   logPayment('PAYMENT_FULLY_PROCESSED', {
@@ -262,30 +277,46 @@ async function handleSuccessfulPayment(transaction: any, webhookData: any) {
 }
 
 /**
- * Gérer un paiement partiel
+ * ✅ FIX #2 : Gérer un paiement partiel avec tolérance 99%
  */
 async function handlePartialPayment(transaction: any, webhookData: any) {
-  const { payment_id, actually_paid, pay_amount } = webhookData
+  const { payment_id, actually_paid, pay_amount, outcome_amount } = webhookData
+
+  const paidPercentage = (parseFloat(actually_paid.toString()) / parseFloat(pay_amount.toString())) * 100
 
   logPayment('PAYMENT_PARTIAL', {
     payment_id,
     actually_paid,
     expected: pay_amount,
+    percentage: paidPercentage.toFixed(2) + '%',
   })
 
-  await prisma.transaction.update({
-    where: { id: transaction.id },
-    data: {
-      status: 'FAILED',
-      metadata: {
-        ...transaction.metadata,
-        failure_reason: 'partially_paid',
-        actually_paid,
-        expected_amount: pay_amount,
-        webhook_received_at: new Date().toISOString(),
+  // Si > 99% payé ET outcome_amount existe, on accepte
+  if (paidPercentage >= 99.0 && outcome_amount && parseFloat(outcome_amount.toString()) > 0) {
+    console.log(`⚠️ Partially paid mais > 99% → Accepté (${paidPercentage.toFixed(2)}%)`)
+    
+    // Traiter comme un paiement réussi
+    await handleSuccessfulPayment(transaction, webhookData)
+    
+  } else {
+    // Vraiment insuffisant
+    console.log(`❌ Partially paid insuffisant (${paidPercentage.toFixed(2)}%)`)
+    
+    await prisma.transaction.update({
+      where: { id: transaction.id },
+      data: {
+        status: 'FAILED',
+        metadata: {
+          ...transaction.metadata,
+          failure_reason: 'partially_paid',
+          actually_paid,
+          expected_amount: pay_amount,
+          paid_percentage: paidPercentage,
+          webhook_received_at: new Date().toISOString(),
+        },
       },
-    },
-  })
+    })
+  }
 }
 
 /**

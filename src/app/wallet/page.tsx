@@ -23,6 +23,32 @@ import { cn, formatToUSD, satsToUsd } from "@/lib/utils";
 import PendingWithdrawals from "@/components/wallet/PendingWithdrawals";
 import TransactionHistory from "@/components/wallet/TransactionHistory";
 
+// ✅ CONFIGURATION DES FRAIS (basée sur tests réels)
+const CRYPTO_FEES: Record<string, { min: number; percent: number }> = {
+    bnb:       { min: 0,    percent: 1.3  },
+    usdc:      { min: 0.20, percent: 1.2  },
+    ltc:       { min: 0,    percent: 1.6  },
+    sol:       { min: 0,    percent: 1.6  },
+    eth:       { min: 0.15, percent: 1.5  },
+    trx:       { min: 0.05, percent: 1.7  },
+    btc:       { min: 0.35, percent: 1.3  },
+    usdttrc20: { min: 2.95, percent: 1.1  },
+};
+
+// ✅ FONCTION DE CALCUL DES FRAIS
+function calculateFees(crypto: string, amount: number) {
+    const config = CRYPTO_FEES[crypto.toLowerCase()];
+    if (!config) return { fees: 0, percent: 0, final: amount };
+
+    const fees = config.min + (amount * (config.percent / 100));
+    
+    return {
+        fees: parseFloat(fees.toFixed(2)),
+        percent: config.percent,
+        final: parseFloat((amount - fees).toFixed(2))
+    };
+}
+
 // Types
 interface SupportedCrypto {
     symbol: string;
@@ -229,6 +255,9 @@ export default function WalletPage() {
             'eth': { color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
             'sol': { color: 'text-violet-500', bg: 'bg-violet-500/10' },
             'bnb': { color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
+            'trx': { color: 'text-red-400', bg: 'bg-red-400/10' },
+            'ltc': { color: 'text-gray-400', bg: 'bg-gray-400/10' },
+            'usdc': { color: 'text-blue-500', bg: 'bg-blue-500/10' },
             'usdttrc20': { color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
             'usdterc20': { color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
             'usdcmatic': { color: 'text-blue-500', bg: 'bg-blue-500/10' },
@@ -321,30 +350,6 @@ export default function WalletPage() {
 
                         {!paymentData ? (
                             <>
-                                {/* Sélecteur crypto */}
-                                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                                    {cryptos.map((coin) => {
-                                        const style = getCryptoStyle(coin.symbol);
-                                        return (
-                                            <button
-                                                key={coin.symbol}
-                                                onClick={() => setSelectedCoin(coin)}
-                                                className={cn(
-                                                    "flex items-center gap-2 px-3 py-2 rounded-lg border transition-all whitespace-nowrap",
-                                                    selectedCoin?.symbol === coin.symbol
-                                                        ? "bg-primary/10 border-primary text-white"
-                                                        : "bg-background-secondary border-white/5 text-text-tertiary hover:bg-white/5"
-                                                )}
-                                            >
-                                                <div className={cn("w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold", style.bg, style.color)}>
-                                                    {coin.icon || coin.symbol[0]}
-                                                </div>
-                                                <span className="text-xs font-bold">{coin.symbol.toUpperCase()}</span>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-
                                 {/* Input montant */}
                                 <div className="relative">
                                     <input
@@ -357,6 +362,45 @@ export default function WalletPage() {
                                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-text-tertiary">
                                         USD
                                     </span>
+                                </div>
+
+                                {/* ✅ Sélecteur crypto AVEC FRAIS */}
+                                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                                    {cryptos.map((coin) => {
+                                        const style = getCryptoStyle(coin.symbol);
+                                        const fees = CRYPTO_FEES[coin.symbol.toLowerCase()];
+                                        
+                                        // ✅ Ignorer les cryptos sans config de frais
+                                        if (!fees) return null;
+                                        
+                                        return (
+                                            <button
+                                                key={coin.symbol}
+                                                onClick={() => setSelectedCoin(coin)}
+                                                className={cn(
+                                                    "flex flex-col items-start gap-1 px-2.5 py-2 rounded-lg border transition-all whitespace-nowrap shrink-0",
+                                                    selectedCoin?.symbol === coin.symbol
+                                                        ? "bg-primary/10 border-primary"
+                                                        : "bg-background-secondary border-white/5 hover:bg-white/5"
+                                                )}
+                                            >
+                                                <div className="flex items-center gap-1.5 w-full">
+                                                    <div className={cn("w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold", style.bg, style.color)}>
+                                                        {coin.icon || coin.symbol[0]}
+                                                    </div>
+                                                    <span className={cn("text-xs font-bold", selectedCoin?.symbol === coin.symbol ? "text-white" : "text-text-tertiary")}>
+                                                        {coin.symbol.toUpperCase()}
+                                                    </span>
+                                                </div>
+                                                <span className="text-[9px] text-text-secondary leading-tight">
+                                                    {fees.min > 0 
+                                                        ? `$${fees.min}+${fees.percent}%`
+                                                        : `~${fees.percent}%`
+                                                    }
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
 
                                 <button
@@ -375,15 +419,18 @@ export default function WalletPage() {
                                     >
                                         <span className="flex items-center gap-2">
                                             <Coins className="w-4 h-4" />
-                                            Cryptos acceptées ({cryptos.length})
+                                            Cryptos acceptées ({cryptos.filter((c) => CRYPTO_FEES[c.symbol.toLowerCase()]).length})
                                         </span>
                                         {showCryptoList ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                                     </button>
 
                                     {showCryptoList && (
                                         <div className="mt-3 space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                                            {cryptos.map((crypto) => {
+                                            {cryptos
+                                                .filter((crypto) => CRYPTO_FEES[crypto.symbol.toLowerCase()]) // ✅ Filtrer uniquement celles avec frais
+                                                .map((crypto) => {
                                                 const style = getCryptoStyle(crypto.symbol);
+                                                const fees = CRYPTO_FEES[crypto.symbol.toLowerCase()];
                                                 return (
                                                     <div key={crypto.symbol} className="flex items-center justify-between p-3 bg-background-secondary rounded-lg hover:bg-white/5 transition-colors">
                                                         <div className="flex items-center gap-3">
@@ -395,9 +442,19 @@ export default function WalletPage() {
                                                                 <p className="text-[10px] text-text-tertiary">{crypto.network}</p>
                                                             </div>
                                                         </div>
-                                                        {crypto.recommended && (
-                                                            <span className="text-[10px] text-primary font-bold">Recommandé</span>
-                                                        )}
+                                                        <div className="text-right">
+                                                            {fees && (
+                                                                <p className="text-[10px] text-text-secondary">
+                                                                    {fees.min > 0 
+                                                                        ? `$${fees.min} + ${fees.percent}%`
+                                                                        : `~${fees.percent}%`
+                                                                    }
+                                                                </p>
+                                                            )}
+                                                            {crypto.recommended && (
+                                                                <span className="text-[10px] text-primary font-bold">✅ Recommandé</span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 );
                                             })}
@@ -426,7 +483,7 @@ export default function WalletPage() {
                                             e.currentTarget.select();
                                             handleCopy();
                                         }}
-                                        className="w-full bg-background-secondary text-white font-mono text-xs p-3 rounded-lg border-2 border-primary/30 cursor-pointer hover:border-primary transition-colors"
+                                        className="w-full bg-background-secondary text-white font-mono text-xs p-3 rounded-lg border-2 border-primary/30 cursor-pointer hover:border-primary transition-colors break-all"
                                     />
                                     {copied && (
                                         <p className="text-xs text-green-500 font-bold flex items-center gap-1 mt-2">
@@ -438,13 +495,42 @@ export default function WalletPage() {
                                 <div className="p-3 bg-accent-purple/10 rounded-lg border border-accent-purple/20 space-y-1 text-xs">
                                     <div className="flex justify-between">
                                         <span className="text-text-secondary">À envoyer:</span>
-                                        <span className="text-white font-bold">{paymentData.payAmount} {paymentData.payCurrency.toUpperCase()}</span>
+                                        <span className="text-white font-bold font-mono">{parseFloat(paymentData.payAmount.toString()).toFixed(6)} {paymentData.payCurrency.toUpperCase()}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-text-secondary">Vous recevrez:</span>
                                         <span className="text-primary font-bold">{formatToUSD(paymentData.priceAmount)}</span>
                                     </div>
                                 </div>
+
+                                {/* ✅ ESTIMATION APRÈS CRÉATION */}
+                                {selectedCoin && CRYPTO_FEES[selectedCoin.symbol.toLowerCase()] && (
+                                    <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-3">
+                                        <p className="text-xs text-blue-400 mb-2 font-semibold">
+                                            💡 Estimation des frais
+                                        </p>
+                                        <div className="space-y-1 text-xs">
+                                            <div className="flex justify-between">
+                                                <span className="text-text-secondary">
+                                                    Frais estimés (
+                                                    {CRYPTO_FEES[selectedCoin.symbol.toLowerCase()].min > 0 
+                                                        ? `$${CRYPTO_FEES[selectedCoin.symbol.toLowerCase()].min} + ${CRYPTO_FEES[selectedCoin.symbol.toLowerCase()].percent}%`
+                                                        : `~${CRYPTO_FEES[selectedCoin.symbol.toLowerCase()].percent}%`
+                                                    }
+                                                    ):
+                                                </span>
+                                                <span className="text-red-400 font-mono">-${calculateFees(selectedCoin.symbol.toLowerCase(), paymentData.priceAmount).fees}</span>
+                                            </div>
+                                            <div className="flex justify-between pt-1 border-t border-blue-500/10">
+                                                <span className="text-text-secondary font-semibold">Crédit estimé:</span>
+                                                <span className="text-green-400 font-bold font-mono">${calculateFees(selectedCoin.symbol.toLowerCase(), paymentData.priceAmount).final}</span>
+                                            </div>
+                                        </div>
+                                        <p className="text-[10px] text-text-secondary/70 mt-2">
+                                            Montant exact confirmé après réception du paiement
+                                        </p>
+                                    </div>
+                                )}
 
                                 {isCheckingPayment && (
                                     <div className="flex items-center justify-center gap-2 text-xs text-accent-purple">
