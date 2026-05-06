@@ -1,5 +1,6 @@
 // app/api/deposit/coingate/status/route.ts
 import { NextResponse } from 'next/server'
+export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
 import { verifySession } from '@/lib/auth'
 import { getOrder } from '@/lib/coingate'

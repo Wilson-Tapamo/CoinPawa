@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { HeaderActions } from "./HeaderAction";
 import { HeaderSearch } from "./HeaderSearch";
 import { Menu } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 
 export async function Header() {
     const userId = await verifySession();
@@ -37,7 +39,14 @@ export async function Header() {
                 <button className="p-2 -ml-2 text-text-secondary hover:text-white transition-colors">
                     <Menu className="w-6 h-6" />
                 </button>
-                <span className="text-xl font-display font-bold text-white tracking-tight">CoinPower</span>
+                <Link href="/" className="relative w-8 h-8">
+                    <Image
+                        src="/logo.png"
+                        alt="CoinPawa"
+                        fill
+                        className="object-contain"
+                    />
+                </Link>
             </div>
 
             {/* Barre de recherche */}
