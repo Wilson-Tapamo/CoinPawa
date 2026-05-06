@@ -26,6 +26,7 @@ import WheelGame from "@/components/games/WheelGame";
 import CrashGame from "@/components/games/CrashGame";
 import LotteryGame from "@/components/games/LotteryGame";
 import LotoGame from "@/components/games/LotoGame";
+import TowerRushGame from "@/components/games/TowerRushGame";
 
 export default function GameDetailsPage({ params }: { params: { id: string } }) {
     const [isPlaying, setIsPlaying] = useState(false);
@@ -38,6 +39,7 @@ export default function GameDetailsPage({ params }: { params: { id: string } }) 
     if (params.id === 'crash') return <CrashGame />;
     if (params.id === 'lottery') return <LotteryGame />;
     if (params.id === 'loto') return <LotoGame />;
+    if (params.id === 'tower-rush') return <TowerRushGame />;
 
     return (
         <div className="max-w-6xl mx-auto space-y-6">

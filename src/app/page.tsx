@@ -19,6 +19,7 @@ const ALL_GAMES = [
   { title: "Roulette", provider: "CoinPower Originals", image: "from-red-600 to-rose-600", imageSrc: "/games/roulette.png", isHot: true, RTP: "97.3", link: "/games/roulette", category: "originals" },
   { title: "Roue de la Fortune", provider: "CoinPower Originals", image: "from-purple-600 to-violet-500", imageSrc: "/games/wheel.png", isNew: true, RTP: "95.0", link: "/games/wheel", category: "originals" },
   { title: "Crash", provider: "CoinPower Originals", image: "from-orange-600 to-amber-500", imageSrc: "/games/crash.png", isHot: false, RTP: "99.0", link: "/games/crash", category: "originals" },
+  { title: "Tower Rush", provider: "CoinPower Originals", image: "from-cyan-500 to-blue-600", imageSrc: "/games/tower-rush.png", isNew: true, isHot: true, RTP: "97.0", link: "/games/tower-rush", category: "originals" },
 ];
 
 // Catégories avec mapping
