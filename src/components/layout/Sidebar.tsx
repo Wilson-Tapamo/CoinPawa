@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Home, Wallet, User, Settings, Menu, X } from "lucide-react";
@@ -78,9 +79,14 @@ export function Sidebar() {
             >
                 {/* Logo Area */}
                 <div className="h-20 flex items-center px-6">
-                    <h1 className="text-3xl font-bold font-display text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary-light">
-                        CoinPower
-                    </h1>
+                    <div className="relative w-12 h-12">
+                        <Image
+                            src="/logo.png"
+                            alt="CoinPawa"
+                            fill
+                            className="object-contain"
+                        />
+                    </div>
                 </div>
 
                 {/* Main Navigation */}
