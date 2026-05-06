@@ -78,8 +78,8 @@ export function Sidebar() {
                 )}
             >
                 {/* Logo Area */}
-                <div className="h-24 flex items-center px-6">
-                    <div className="relative w-20 h-20">
+                <div className="h-26 flex items-center px-6">
+                    <div className="relative w-24 h-24">
                         <Image
                             src="/logo.png"
                             alt="CoinPawa"
@@ -145,4 +145,4 @@ export function Sidebar() {
             </aside>
         </>
     );
-}
+}
