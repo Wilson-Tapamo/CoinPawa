@@ -39,7 +39,7 @@ export async function Header() {
                 <button className="p-2 -ml-2 text-text-secondary hover:text-white transition-colors">
                     <Menu className="w-6 h-6" />
                 </button>
-                <Link href="/" className="relative w-8 h-8">
+                <Link href="/" className="relative w-12 h-12">
                     <Image
                         src="/logo.png"
                         alt="CoinPawa"
