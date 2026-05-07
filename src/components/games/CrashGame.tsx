@@ -84,11 +84,14 @@ export default function CrashGame() {
     }, []);
 
     // --- ANIMATION LOCALE (Smooth multiplier) ---
-    const [displayMultiplier, setDisplayMultiplier] = useState(1.0);
+    // Remove state for multiplier to avoid 60fps re-renders
     const stateRef = useRef<GameState | null>(null);
+    const multiplierTextRef = useRef<HTMLDivElement>(null);
+    const cashoutValueRef = useRef<HTMLSpanElement>(null);
 
     useEffect(() => {
         stateRef.current = state;
+        // ... (rest of history logic remains same)
 
         // Add crash point to local history IMMEDIATELY when crash is detected
         if (state?.phase === 'CRASHED' && prevPhaseRef.current === 'FLYING' && state.crashPoint) {
@@ -101,38 +104,40 @@ export default function CrashGame() {
         prevPhaseRef.current = state?.phase ?? null;
     }, [state]);
 
-    // Single RAF loop for multiplier — never restarts, reads state via ref
+    // Single RAF loop for multiplier & UI updates — direct DOM manipulation for performance
     useEffect(() => {
         let animationFrame: number;
         const update = () => {
             const s = stateRef.current;
             if (s) {
                 const now = Date.now();
+                let m = 1.0;
                 if (s.phase === 'FLYING') {
                     const elapsed = now - (s.startTime + 10000);
                     if (elapsed > 0) {
-                        const m = Math.exp(0.06 * (elapsed / 1000));
-                        const rounded = Math.floor(m * 100) / 100;
-                        displayMultiplierRef.current = rounded;
-                        setDisplayMultiplier(rounded);
-                    } else {
-                        displayMultiplierRef.current = 1.0;
-                        setDisplayMultiplier(1.0);
+                        m = Math.exp(0.06 * (elapsed / 1000));
                     }
                 } else if (s.phase === 'CRASHED') {
-                    const v = s.crashPoint || 1.0;
-                    displayMultiplierRef.current = v;
-                    setDisplayMultiplier(v);
-                } else {
-                    displayMultiplierRef.current = 1.0;
-                    setDisplayMultiplier(1.0);
+                    m = s.crashPoint || 1.0;
+                }
+
+                const rounded = Math.floor(m * 100) / 100;
+                displayMultiplierRef.current = rounded;
+
+                // Update DOM directly via refs to avoid React re-renders
+                if (multiplierTextRef.current) {
+                    multiplierTextRef.current.textContent = rounded.toFixed(2) + "x";
+                }
+                if (cashoutValueRef.current) {
+                    const amount = parseFloat(betAmount) || 0;
+                    cashoutValueRef.current.textContent = formatToUSD(amount * rounded);
                 }
             }
             animationFrame = requestAnimationFrame(update);
         };
         animationFrame = requestAnimationFrame(update);
         return () => cancelAnimationFrame(animationFrame);
-    }, []); // ← runs once, reads state via ref
+    }, [betAmount]); // Only restart if betAmount changes to keep closure fresh
 
     // Générateur de faux utilisateurs
     useEffect(() => {
@@ -540,7 +545,7 @@ export default function CrashGame() {
                                     {isCashingOut ? <Loader2 className="animate-spin" /> : (
                                         <>
                                             <span>CASHOUT</span>
-                                            <span className="text-base opacity-90">{formatToUSD(parseFloat(betAmount) * displayMultiplier)}</span>
+                                            <span ref={cashoutValueRef} className="text-base opacity-90">{formatToUSD(parseFloat(betAmount) * displayMultiplierRef.current)}</span>
                                         </>
                                     )}
                                 </button>
@@ -615,15 +620,20 @@ export default function CrashGame() {
                                 </div>
                             ) : state?.phase === 'FLYING' ? (
                                 <div className="text-center animate-in zoom-in duration-200">
-                                    <div className="text-5xl md:text-7xl font-display font-black text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.4)] tracking-tighter">
-                                        {displayMultiplier.toFixed(2)}x
+                                    <div 
+                                        ref={multiplierTextRef}
+                                        className="text-5xl md:text-7xl font-display font-black text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.4)] tracking-tighter"
+                                    >
+                                        1.00x
                                     </div>
                                     <div className="mt-1 text-[10px] font-black text-primary uppercase tracking-[0.4em] drop-shadow-md">VOL EN COURS...</div>
                                 </div>
                             ) : (
                                 <div className="text-center animate-in zoom-in duration-300">
                                     <div className="text-base font-black text-red-500 uppercase tracking-[0.6em] mb-2 drop-shadow-md">CROQUÉ !</div>
-                                    <div className="text-5xl md:text-7xl font-display font-black text-red-500 drop-shadow-[0_0_50px_rgba(239,68,68,0.6)] animate-pulse">
+                                    <div 
+                                        className="text-5xl md:text-7xl font-display font-black text-red-500 drop-shadow-[0_0_50px_rgba(239,68,68,0.6)] animate-pulse"
+                                    >
                                         {state?.crashPoint?.toFixed(2)}x
                                     </div>
                                 </div>
