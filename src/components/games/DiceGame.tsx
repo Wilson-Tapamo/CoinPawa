@@ -16,23 +16,19 @@ interface Dice3DProps {
 }
 
 function Dice3D({ value, isRolling, index }: Dice3DProps) {
-    const [rotation, setRotation] = useState({ x: 0, y: 0 });
+    // Rotation finale basée sur la valeur du dé
+    const rotations: Record<number, { x: number; y: number }> = {
+        0: { x: 45, y: 45 }, // Rolling/Neutral
+        1: { x: 0, y: 0 },
+        2: { x: 0, y: -90 },
+        3: { x: -90, y: 0 },
+        4: { x: 90, y: 0 },
+        5: { x: 0, y: 90 },
+        6: { x: 180, y: 0 },
+    };
 
-    useEffect(() => {
-        if (!isRolling && value) {
-            // Rotation finale basée sur la valeur du dé
-            const rotations: Record<number, { x: number; y: number }> = {
-                0: { x: 45, y: 45 }, // Rolling/Neutral
-                1: { x: 0, y: 0 },
-                2: { x: 0, y: -90 },
-                3: { x: -90, y: 0 },
-                4: { x: 90, y: 0 },
-                5: { x: 0, y: 90 },
-                6: { x: 180, y: 0 },
-            };
-            setRotation(rotations[value] || { x: 45, y: 45 });
-        }
-    }, [isRolling, value]);
+    const rotation = rotations[value] || rotations[0];
+
 
     // Points du dé
     const DotPattern = ({ count }: { count: number }) => {
@@ -220,14 +216,14 @@ export default function DiceGame() {
             const data = await res.json();
 
             if (res.ok) {
-                // Attendre l'animation
+                // Attendre l'animation (1.2s dans globals.css)
                 setTimeout(() => {
                     setDiceValues([data.result.dice1, data.result.dice2]);
                     setLastResults(data.result.betResults);
-                    setTotalPayout(satsToUsd(data.result.totalPayout)); // Convertir le payout SATS -> USD
+                    setTotalPayout(satsToUsd(data.result.totalPayout));
                     setIsRolling(false);
                     router.refresh();
-                }, 1500);
+                }, 1200);
             } else {
                 setError(data.error || "Une erreur est survenue");
                 setIsRolling(false);
