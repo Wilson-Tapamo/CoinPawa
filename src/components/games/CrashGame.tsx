@@ -40,7 +40,9 @@ export default function CrashGame() {
     // États du jeu
     const [state, setState] = useState<GameState | null>(null);
     const [liveBets, setLiveBets] = useState<Bet[]>([]);
-    const [isPolling, setIsPolling] = useState(true);
+    // Local history enriched immediately on crash (before next poll)
+    const [localHistory, setLocalHistory] = useState<number[]>([]);
+    const prevPhaseRef = useRef<Phase | null>(null);
 
     // Faux utilisateurs pour l'animation
     const [fakeBets, setFakeBets] = useState<Bet[]>([]);
@@ -61,55 +63,76 @@ export default function CrashGame() {
                 const res = await fetch("/api/games/crash/state");
                 const data = await res.json();
                 if (data.success) {
-                    setState(data.state);
+                    setState(prev => {
+                        const next = data.state as GameState;
+                        // When transitioning CRASHED→BETTING, sync history from server
+                        if (prev?.phase === 'CRASHED' && next.phase === 'BETTING') {
+                            setLocalHistory(next.history);
+                        }
+                        return next;
+                    });
                     setLiveBets(data.bets);
-
-                    // Vérifier si l'utilisateur a un pari dans la liste
-                    // (Plus simple pour la démo que de stocker un ID local)
                 }
             } catch (err) {
                 console.error("State poll failed", err);
             }
         };
 
-        const interval = setInterval(fetchState, 2000); // Poll every 2s
+        const interval = setInterval(fetchState, 1000); // Poll every 1s
         fetchState();
         return () => clearInterval(interval);
     }, []);
 
     // --- ANIMATION LOCALE (Smooth multiplier) ---
     const [displayMultiplier, setDisplayMultiplier] = useState(1.0);
+    const stateRef = useRef<GameState | null>(null);
 
     useEffect(() => {
-        if (!state) return;
+        stateRef.current = state;
 
+        // Add crash point to local history IMMEDIATELY when crash is detected
+        if (state?.phase === 'CRASHED' && prevPhaseRef.current === 'FLYING' && state.crashPoint) {
+            setLocalHistory(prev => {
+                // Avoid duplicates
+                if (prev[0] === state.crashPoint) return prev;
+                return [state.crashPoint!, ...prev].slice(0, 20);
+            });
+        }
+        prevPhaseRef.current = state?.phase ?? null;
+    }, [state]);
+
+    // Single RAF loop for multiplier — never restarts, reads state via ref
+    useEffect(() => {
         let animationFrame: number;
-
         const update = () => {
-            const now = Date.now();
-            if (state.phase === 'FLYING') {
-                const elapsed = now - (state.startTime + 10000); // 10s betting
-                if (elapsed > 0) {
-                    const m = Math.exp(0.06 * (elapsed / 1000));
-                    setDisplayMultiplier(Math.floor(m * 100) / 100);
+            const s = stateRef.current;
+            if (s) {
+                const now = Date.now();
+                if (s.phase === 'FLYING') {
+                    const elapsed = now - (s.startTime + 10000);
+                    if (elapsed > 0) {
+                        const m = Math.exp(0.06 * (elapsed / 1000));
+                        const rounded = Math.floor(m * 100) / 100;
+                        displayMultiplierRef.current = rounded;
+                        setDisplayMultiplier(rounded);
+                    } else {
+                        displayMultiplierRef.current = 1.0;
+                        setDisplayMultiplier(1.0);
+                    }
+                } else if (s.phase === 'CRASHED') {
+                    const v = s.crashPoint || 1.0;
+                    displayMultiplierRef.current = v;
+                    setDisplayMultiplier(v);
                 } else {
+                    displayMultiplierRef.current = 1.0;
                     setDisplayMultiplier(1.0);
                 }
-            } else if (state.phase === 'CRASHED') {
-                setDisplayMultiplier(state.crashPoint || 1.0);
-            } else {
-                setDisplayMultiplier(1.0);
             }
             animationFrame = requestAnimationFrame(update);
         };
-
         animationFrame = requestAnimationFrame(update);
         return () => cancelAnimationFrame(animationFrame);
-    }, [state]);
-
-    useEffect(() => {
-        displayMultiplierRef.current = displayMultiplier;
-    }, [displayMultiplier]);
+    }, []); // ← runs once, reads state via ref
 
     // Générateur de faux utilisateurs
     useEffect(() => {
@@ -161,10 +184,10 @@ export default function CrashGame() {
 
     // --- CANVAS DRAWING (Graph & Airplane) ---
     const particles = useRef<{ x: number, y: number, size: number, opacity: number, vx: number, vy: number }[]>([]);
-    const [shake, setShake] = useState(0);
+    const shakeRef = useRef(0);
 
     useEffect(() => {
-        if (!canvasRef.current || !state) return;
+        if (!canvasRef.current) return;
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
@@ -222,6 +245,7 @@ export default function CrashGame() {
         };
 
         const draw = () => {
+            const s = stateRef.current;
             const now = Date.now();
             const deltaTime = now - lastTime;
             lastTime = now;
@@ -230,20 +254,21 @@ export default function CrashGame() {
             const h = canvas.height;
             ctx.clearRect(0, 0, w, h);
 
-            // Screen Shake
-            if (shake > 0) {
-                const sx = (Math.random() - 0.5) * shake;
-                const sy = (Math.random() - 0.5) * shake;
+            // Screen Shake (ref-based, no setState)
+            if (shakeRef.current > 0) {
+                const sx = (Math.random() - 0.5) * shakeRef.current;
+                const sy = (Math.random() - 0.5) * shakeRef.current;
                 ctx.translate(sx, sy);
-                setShake(prev => Math.max(0, prev - deltaTime * 0.1));
+                shakeRef.current = Math.max(0, shakeRef.current - deltaTime * 0.1);
             }
+
+            if (!s) { frame = requestAnimationFrame(draw); return; }
 
             // Background Grid (moving)
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
             ctx.lineWidth = 1;
             const gridSize = 50;
-            const offset = (state.phase === 'FLYING' ? (now % 1000) / 1000 : 0) * gridSize;
-
+            const offset = (s.phase === 'FLYING' ? (now % 1000) / 1000 : 0) * gridSize;
             for (let x = -gridSize; x < w + gridSize; x += gridSize) {
                 ctx.beginPath();
                 ctx.moveTo(x - offset, 0);
@@ -257,17 +282,17 @@ export default function CrashGame() {
                 ctx.stroke();
             }
 
-            if (state.phase === 'FLYING' || state.phase === 'CRASHED') {
-                const flyElapsed = Math.max(0, now - (state.startTime + 10000));
+            if (s.phase === 'FLYING' || s.phase === 'CRASHED') {
+                const flyElapsed = Math.max(0, now - (s.startTime + 10000));
                 const points = 100;
                 const xBase = 40;
                 const yBase = h - 60;
-                const xScale = (w - 120) / 10; // Scale 10s of flight horizontally
-                const yScale = 60; // Pixels per multiplier unit
+                const xScale = (w - 120) / 10;
+                const yScale = 60;
 
                 ctx.beginPath();
                 ctx.lineWidth = 4;
-                ctx.strokeStyle = state.phase === 'CRASHED' ? '#ef4444' : '#6366f1';
+                ctx.strokeStyle = s.phase === 'CRASHED' ? '#ef4444' : '#6366f1';
                 ctx.lineCap = 'round';
                 ctx.lineJoin = 'round';
 
@@ -280,71 +305,54 @@ export default function CrashGame() {
                     const m = Math.exp(0.06 * (t / 1000));
                     const x = xBase + (t / 1000) * xScale;
                     const y = yBase - Math.log(m) * yScale;
-
                     if (x > w - 40 || y < 40) break;
-
                     ctx.lineTo(x, y);
                     lastX = x;
                     lastY = y;
                 }
                 ctx.stroke();
 
-                // Smoke Particles
-                if (state.phase === 'FLYING') {
-                    if (Math.random() > 0.3) {
-                        particles.current.push({
-                            x: lastX,
-                            y: lastY,
-                            size: Math.random() * 5 + 2,
-                            opacity: 1,
-                            vx: -Math.random() * 2 - 1,
-                            vy: (Math.random() - 0.5) * 1
-                        });
-                    }
+                if (s.phase === 'FLYING' && Math.random() > 0.3) {
+                    particles.current.push({
+                        x: lastX, y: lastY,
+                        size: Math.random() * 5 + 2, opacity: 1,
+                        vx: -Math.random() * 2 - 1, vy: (Math.random() - 0.5)
+                    });
                 }
 
-                // Update & Draw Particles
                 ctx.save();
-                particles.current.forEach((p, i) => {
-                    p.x += p.vx;
-                    p.y += p.vy;
-                    p.opacity -= 0.02;
-                    p.size += 0.1;
-
-                    ctx.fillStyle = state.phase === 'CRASHED' ? `rgba(239, 68, 68, ${p.opacity})` : `rgba(165, 180, 252, ${p.opacity * 0.5})`;
+                for (let i = particles.current.length - 1; i >= 0; i--) {
+                    const p = particles.current[i];
+                    p.x += p.vx; p.y += p.vy;
+                    p.opacity -= 0.02; p.size += 0.1;
+                    ctx.fillStyle = s.phase === 'CRASHED'
+                        ? `rgba(239,68,68,${p.opacity})`
+                        : `rgba(165,180,252,${p.opacity * 0.5})`;
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
                     ctx.fill();
-
                     if (p.opacity <= 0) particles.current.splice(i, 1);
-                });
+                }
                 ctx.restore();
 
-                // Draw Airplane at current tip
-                if (state.phase === 'FLYING') {
-                    const angle = -0.15; // fixed upward angle for better "takeoff" look
-                    drawAirplane(ctx, lastX, lastY, angle);
-                } else if (state.phase === 'CRASHED') {
-                    // Explosion visual at crash site
+                if (s.phase === 'FLYING') {
+                    drawAirplane(ctx, lastX, lastY, -0.15);
+                } else if (s.phase === 'CRASHED') {
                     const gradient = ctx.createRadialGradient(lastX, lastY, 0, lastX, lastY, 40);
                     gradient.addColorStop(0, '#ff4d4d');
                     gradient.addColorStop(0.5, '#ff8000');
                     gradient.addColorStop(1, 'transparent');
-
                     ctx.fillStyle = gradient;
                     ctx.beginPath();
                     ctx.arc(lastX, lastY, 40, 0, Math.PI * 2);
                     ctx.fill();
 
-                    // More particles for explosion
-                    if (shake === 0) {
-                        setShake(30);
+                    if (shakeRef.current === 0) {
+                        shakeRef.current = 30;
                         for (let i = 0; i < 20; i++) {
                             particles.current.push({
-                                x: lastX,
-                                y: lastY,
-                                size: Math.random() * 8 + 4,
-                                opacity: 1,
+                                x: lastX, y: lastY,
+                                size: Math.random() * 8 + 4, opacity: 1,
                                 vx: (Math.random() - 0.5) * 15,
                                 vy: (Math.random() - 0.5) * 15
                             });
@@ -353,13 +361,10 @@ export default function CrashGame() {
                 }
             }
 
-            // Axes Labels (Simples)
             ctx.fillStyle = 'rgba(255,255,255,0.3)';
             ctx.font = '10px monospace';
             ctx.fillText('1.00x', 10, h - 55);
             ctx.fillText('Temps', w - 50, h - 30);
-
-            // Reset transform for next frame (after shake)
             ctx.setTransform(1, 0, 0, 1, 0, 0);
 
             frame = requestAnimationFrame(draw);
@@ -367,7 +372,7 @@ export default function CrashGame() {
 
         frame = requestAnimationFrame(draw);
         return () => cancelAnimationFrame(frame);
-    }, [state, displayMultiplier, shake]);
+    }, []); // ← runs once, reads state via stateRef
 
     // --- ACTIONS ---
     const handlePlaceBet = async () => {
@@ -466,7 +471,7 @@ export default function CrashGame() {
                     <History className="w-4 h-4 text-text-tertiary" />
                     <span className="text-xs font-bold text-text-tertiary uppercase tracking-tight">Historique</span>
                 </div>
-                {state?.history.map((val, i) => (
+                {localHistory.map((val, i) => (
                     <div
                         key={i}
                         className={cn(
@@ -609,16 +614,16 @@ export default function CrashGame() {
                                     </div>
                                 </div>
                             ) : state?.phase === 'FLYING' ? (
-                                <div className="text-center scale-150 md:scale-[2] animate-in zoom-in duration-200">
-                                    <div className="text-7xl md:text-9xl font-display font-black text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.4)] tracking-tighter">
+                                <div className="text-center animate-in zoom-in duration-200">
+                                    <div className="text-5xl md:text-7xl font-display font-black text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.4)] tracking-tighter">
                                         {displayMultiplier.toFixed(2)}x
                                     </div>
-                                    <div className="mt-2 text-[12px] font-black text-primary uppercase tracking-[0.4em] drop-shadow-md">VOL EN COURS...</div>
+                                    <div className="mt-1 text-[10px] font-black text-primary uppercase tracking-[0.4em] drop-shadow-md">VOL EN COURS...</div>
                                 </div>
                             ) : (
                                 <div className="text-center animate-in zoom-in duration-300">
-                                    <div className="text-xl font-black text-red-500 uppercase tracking-[0.6em] mb-4 drop-shadow-md">CROQUÉ !</div>
-                                    <div className="text-8xl md:text-[12rem] font-display font-black text-red-500 drop-shadow-[0_0_50px_rgba(239,68,68,0.6)] animate-pulse">
+                                    <div className="text-base font-black text-red-500 uppercase tracking-[0.6em] mb-2 drop-shadow-md">CROQUÉ !</div>
+                                    <div className="text-5xl md:text-7xl font-display font-black text-red-500 drop-shadow-[0_0_50px_rgba(239,68,68,0.6)] animate-pulse">
                                         {state?.crashPoint?.toFixed(2)}x
                                     </div>
                                 </div>
