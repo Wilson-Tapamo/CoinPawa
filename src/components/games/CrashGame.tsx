@@ -112,10 +112,29 @@ export default function CrashGame() {
             if (s) {
                 const now = Date.now();
                 let m = 1.0;
+                
+                // Calcul du temps écoulé et du temps maximum autorisé (crash point)
+                const bettingEnd = s.startTime + 10000;
+                const elapsed = now - bettingEnd;
+                const maxElapsed = s.nextPhaseTime - bettingEnd;
+
                 if (s.phase === 'FLYING') {
-                    const elapsed = now - (s.startTime + 10000);
-                    if (elapsed > 0) {
-                        m = Math.exp(0.06 * (elapsed / 1000));
+                    // Si on dépasse le temps de crash prévu, on fige le multiplicateur
+                    const effectiveElapsed = Math.min(elapsed, maxElapsed);
+                    
+                    if (effectiveElapsed > 0) {
+                        m = Math.exp(0.06 * (effectiveElapsed / 1000));
+                    }
+
+                    // Si on a dépassé le temps, on force l'affichage du crash localement
+                    if (elapsed >= maxElapsed) {
+                        if (multiplierTextRef.current) {
+                            multiplierTextRef.current.classList.add('text-red-500', 'animate-pulse');
+                        }
+                    } else {
+                        if (multiplierTextRef.current) {
+                            multiplierTextRef.current.classList.remove('text-red-500', 'animate-pulse');
+                        }
                     }
                 } else if (s.phase === 'CRASHED') {
                     m = s.crashPoint || 1.0;
@@ -137,7 +156,7 @@ export default function CrashGame() {
         };
         animationFrame = requestAnimationFrame(update);
         return () => cancelAnimationFrame(animationFrame);
-    }, [betAmount]); // Only restart if betAmount changes to keep closure fresh
+    }, [betAmount]);
 
     // Générateur de faux utilisateurs
     useEffect(() => {
