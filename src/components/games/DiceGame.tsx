@@ -136,6 +136,7 @@ export default function DiceGame() {
 
     // États du jeu
     const [isRolling, setIsRolling] = useState(false);
+    const [showVerdict, setShowVerdict] = useState(false);
     const [diceValues, setDiceValues] = useState<[number, number] | null>(null);
     const [lastResults, setLastResults] = useState<BetResult[] | null>(null);
     const [error, setError] = useState("");
@@ -176,11 +177,11 @@ export default function DiceGame() {
         }
 
         setIsRolling(true);
+        setShowVerdict(false);
+        setDiceValues(null);
         setLastResults(null);
         setError("");
         setTotalPayout(0);
-
-        const startTime = Date.now();
 
         try {
             const betsInSats = {
@@ -198,21 +199,18 @@ export default function DiceGame() {
             const data = await res.json();
 
             if (res.ok) {
-                // 1. On met à jour les valeurs des dés immédiatement pour que l'animation de "lancer"
-                // sache vers quelle face se diriger pendant la transition.
+                // On définit les valeurs pour que le dé commence sa transition vers la face finale
                 setDiceValues([data.result.dice1, data.result.dice2]);
+                // On arrête le mode "jitter" (isRolling), ce qui déclenche la transition CSS de 1.2s
+                setIsRolling(false);
 
-                // 2. On attend la fin de l'animation (1.2s) avant d'afficher le verdict
-                const elapsed = Date.now() - startTime;
-                const remaining = Math.max(0, 1200 - elapsed);
-
+                // On attend que la transition CSS se termine (1.2s) avant d'afficher le verdict
                 setTimeout(() => {
-                    // Affichage des résultats et des gains seulement ici
                     setLastResults(data.result.betResults);
                     setTotalPayout(satsToUsd(data.result.totalPayout));
-                    setIsRolling(false);
+                    setShowVerdict(true);
                     router.refresh();
-                }, remaining);
+                }, 1200);
             } else {
                 setError(data.error || "Une erreur est survenue");
                 setIsRolling(false);
@@ -299,7 +297,7 @@ export default function DiceGame() {
 
                     {/* Résultat du Total */}
                     <div className="min-h-[120px] flex flex-col items-center justify-center mb-8">
-                        {total !== null && !isRolling && (
+                        {showVerdict && total !== null && (
                             <div className="text-center animate-in zoom-in slide-in-from-bottom-4 fade-in duration-500">
                                 <div className={cn(
                                     "inline-flex flex-col md:flex-row items-center gap-4 px-8 py-4 rounded-3xl border-2 shadow-2xl backdrop-blur-md transition-all",
@@ -377,9 +375,9 @@ export default function DiceGame() {
                                 ))}
                             </div>
 
-                            {lastResults?.find((r) => r.type === "under7") && (
+                            {showVerdict && lastResults?.find((r) => r.type === "under7") && (
                                 <div className={cn(
-                                    "mt-3 text-center text-sm font-bold",
+                                    "mt-3 text-center text-sm font-bold animate-in zoom-in",
                                     lastResults.find((r) => r.type === "under7")?.isWin ? "text-green-400" : "text-red-400"
                                 )}>
                                     {lastResults.find((r) => r.type === "under7")?.isWin ? "GAGNÉ !" : "PERDU"}
@@ -434,9 +432,9 @@ export default function DiceGame() {
                                 ))}
                             </div>
 
-                            {lastResults?.find((r) => r.type === "exact7") && (
+                            {showVerdict && lastResults?.find((r) => r.type === "exact7") && (
                                 <div className={cn(
-                                    "mt-3 text-center text-sm font-bold",
+                                    "mt-3 text-center text-sm font-bold animate-in zoom-in",
                                     lastResults.find((r) => r.type === "exact7")?.isWin ? "text-green-400" : "text-red-400"
                                 )}>
                                     {lastResults.find((r) => r.type === "exact7")?.isWin ? "GAGNÉ !" : "PERDU"}
@@ -491,9 +489,9 @@ export default function DiceGame() {
                                 ))}
                             </div>
 
-                            {lastResults?.find((r) => r.type === "over7") && (
+                            {showVerdict && lastResults?.find((r) => r.type === "over7") && (
                                 <div className={cn(
-                                    "mt-3 text-center text-sm font-bold",
+                                    "mt-3 text-center text-sm font-bold animate-in zoom-in",
                                     lastResults.find((r) => r.type === "over7")?.isWin ? "text-green-400" : "text-red-400"
                                 )}>
                                     {lastResults.find((r) => r.type === "over7")?.isWin ? "GAGNÉ !" : "PERDU"}
