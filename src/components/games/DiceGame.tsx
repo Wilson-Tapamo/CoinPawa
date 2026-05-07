@@ -198,16 +198,18 @@ export default function DiceGame() {
             const data = await res.json();
 
             if (res.ok) {
-                // On met à jour les valeurs immédiatement pour que le dé sache où aller
+                // 1. On met à jour les valeurs des dés immédiatement pour que l'animation de "lancer"
+                // sache vers quelle face se diriger pendant la transition.
                 setDiceValues([data.result.dice1, data.result.dice2]);
-                setLastResults(data.result.betResults);
-                setTotalPayout(satsToUsd(data.result.totalPayout));
 
-                // On attend que l'animation de "lancer" se termine (1.2s total depuis le clic)
+                // 2. On attend la fin de l'animation (1.2s) avant d'afficher le verdict
                 const elapsed = Date.now() - startTime;
                 const remaining = Math.max(0, 1200 - elapsed);
 
                 setTimeout(() => {
+                    // Affichage des résultats et des gains seulement ici
+                    setLastResults(data.result.betResults);
+                    setTotalPayout(satsToUsd(data.result.totalPayout));
                     setIsRolling(false);
                     router.refresh();
                 }, remaining);
