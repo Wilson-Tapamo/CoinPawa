@@ -16,9 +16,8 @@ interface Dice3DProps {
 }
 
 function Dice3D({ value, isRolling, index }: Dice3DProps) {
-    // Rotation finale basée sur la valeur du dé
     const rotations: Record<number, { x: number; y: number }> = {
-        0: { x: 45, y: 45 }, // Rolling/Neutral
+        0: { x: 45, y: 45 },
         1: { x: 0, y: 0 },
         2: { x: 0, y: -90 },
         3: { x: -90, y: 0 },
@@ -27,8 +26,12 @@ function Dice3D({ value, isRolling, index }: Dice3DProps) {
         6: { x: 180, y: 0 },
     };
 
-    const rotation = rotations[value] || rotations[0];
-
+    // Pour l'effet de roulement, on ajoute plusieurs tours complets (720deg+)
+    // Cela crée une animation riche qui atterrit exactement sur la face voulue.
+    const targetRotation = rotations[value] || rotations[1];
+    const displayRotation = isRolling
+        ? { x: targetRotation.x + 1080 + (index * 90), y: targetRotation.y + 1080 }
+        : targetRotation;
 
     // Points du dé
     const DotPattern = ({ count }: { count: number }) => {
@@ -70,63 +73,41 @@ function Dice3D({ value, isRolling, index }: Dice3DProps) {
         <div
             className="w-20 h-20 md:w-24 md:h-24 relative"
             style={{
-                perspective: "400px",
-                perspectiveOrigin: "50% 50%",
+                perspective: "600px",
             }}
         >
             <div
                 className={cn(
-                    "w-full h-full relative transition-transform duration-700 ease-out",
-                    isRolling && "animate-dice-roll"
+                    "w-full h-full relative",
+                    isRolling ? "animate-dice-rolling" : "dice-stop-transition"
                 )}
                 style={{
                     transformStyle: "preserve-3d",
-                    transform: isRolling
-                        ? undefined
-                        : `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
-                    animationDelay: `${index * 100}ms`,
+                    transform: `rotateX(${displayRotation.x}deg) rotateY(${displayRotation.y}deg)`,
                 }}
             >
-                {/* Face 1 (avant) */}
-                <div
-                    className="absolute inset-0 bg-gradient-to-br from-white to-gray-200 rounded-xl border-2 border-gray-300 shadow-lg"
-                    style={{ transform: "translateZ(40px)" }}
-                >
+                {/* Face 1 */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white to-gray-100 rounded-xl border-2 border-gray-300 shadow-lg flex items-center justify-center" style={{ transform: "translateZ(40px)" }}>
                     <DotPattern count={1} />
                 </div>
-                {/* Face 6 (arrière) */}
-                <div
-                    className="absolute inset-0 bg-gradient-to-br from-white to-gray-200 rounded-xl border-2 border-gray-300"
-                    style={{ transform: "rotateY(180deg) translateZ(40px)" }}
-                >
+                {/* Face 6 */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white to-gray-100 rounded-xl border-2 border-gray-300 flex items-center justify-center" style={{ transform: "rotateY(180deg) translateZ(40px)" }}>
                     <DotPattern count={6} />
                 </div>
-                {/* Face 2 (droite) */}
-                <div
-                    className="absolute inset-0 bg-gradient-to-br from-white to-gray-200 rounded-xl border-2 border-gray-300"
-                    style={{ transform: "rotateY(90deg) translateZ(40px)" }}
-                >
+                {/* Face 2 */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white to-gray-100 rounded-xl border-2 border-gray-300 flex items-center justify-center" style={{ transform: "rotateY(90deg) translateZ(40px)" }}>
                     <DotPattern count={2} />
                 </div>
-                {/* Face 5 (gauche) */}
-                <div
-                    className="absolute inset-0 bg-gradient-to-br from-white to-gray-200 rounded-xl border-2 border-gray-300"
-                    style={{ transform: "rotateY(-90deg) translateZ(40px)" }}
-                >
+                {/* Face 5 */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white to-gray-100 rounded-xl border-2 border-gray-300 flex items-center justify-center" style={{ transform: "rotateY(-90deg) translateZ(40px)" }}>
                     <DotPattern count={5} />
                 </div>
-                {/* Face 3 (haut) */}
-                <div
-                    className="absolute inset-0 bg-gradient-to-br from-white to-gray-200 rounded-xl border-2 border-gray-300"
-                    style={{ transform: "rotateX(90deg) translateZ(40px)" }}
-                >
+                {/* Face 3 */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white to-gray-100 rounded-xl border-2 border-gray-300 flex items-center justify-center" style={{ transform: "rotateX(90deg) translateZ(40px)" }}>
                     <DotPattern count={3} />
                 </div>
-                {/* Face 4 (bas) */}
-                <div
-                    className="absolute inset-0 bg-gradient-to-br from-white to-gray-200 rounded-xl border-2 border-gray-300"
-                    style={{ transform: "rotateX(-90deg) translateZ(40px)" }}
-                >
+                {/* Face 4 */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white to-gray-100 rounded-xl border-2 border-gray-300 flex items-center justify-center" style={{ transform: "rotateX(-90deg) translateZ(40px)" }}>
                     <DotPattern count={4} />
                 </div>
             </div>
@@ -199,8 +180,9 @@ export default function DiceGame() {
         setError("");
         setTotalPayout(0);
 
+        const startTime = Date.now();
+
         try {
-            // Convertir les mises en SATS avant l'envoi
             const betsInSats = {
                 under7: usdToSats(bets.under7),
                 exact7: usdToSats(bets.exact7),
@@ -216,14 +198,19 @@ export default function DiceGame() {
             const data = await res.json();
 
             if (res.ok) {
-                // Attendre l'animation (1.2s dans globals.css)
+                // On met à jour les valeurs immédiatement pour que le dé sache où aller
+                setDiceValues([data.result.dice1, data.result.dice2]);
+                setLastResults(data.result.betResults);
+                setTotalPayout(satsToUsd(data.result.totalPayout));
+
+                // On attend que l'animation de "lancer" se termine (1.2s total depuis le clic)
+                const elapsed = Date.now() - startTime;
+                const remaining = Math.max(0, 1200 - elapsed);
+
                 setTimeout(() => {
-                    setDiceValues([data.result.dice1, data.result.dice2]);
-                    setLastResults(data.result.betResults);
-                    setTotalPayout(satsToUsd(data.result.totalPayout));
                     setIsRolling(false);
                     router.refresh();
-                }, 1200);
+                }, remaining);
             } else {
                 setError(data.error || "Une erreur est survenue");
                 setIsRolling(false);
@@ -232,6 +219,7 @@ export default function DiceGame() {
             setError("Erreur de connexion");
             setIsRolling(false);
         }
+
     };
 
     // Réinitialiser les paris
@@ -285,12 +273,12 @@ export default function DiceGame() {
                         {isRolling || diceValues ? (
                             <>
                                 <Dice3D
-                                    value={isRolling ? 0 : (diceValues?.[0] || 1)}
+                                    value={diceValues?.[0] || 1}
                                     isRolling={isRolling}
                                     index={0}
                                 />
                                 <Dice3D
-                                    value={isRolling ? 0 : (diceValues?.[1] || 1)}
+                                    value={diceValues?.[1] || 1}
                                     isRolling={isRolling}
                                     index={1}
                                 />
