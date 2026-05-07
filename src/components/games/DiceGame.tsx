@@ -33,6 +33,42 @@ function Dice3D({ value, isRolling, index }: Dice3DProps) {
         ? { x: targetRotation.x + 1080 + (index * 90), y: targetRotation.y + 1080 }
         : targetRotation;
 
+    // Points du dé
+    const DotPattern = ({ count }: { count: number }) => {
+        const patterns: Record<number, string[]> = {
+            1: ["center"],
+            2: ["top-right", "bottom-left"],
+            3: ["top-right", "center", "bottom-left"],
+            4: ["top-left", "top-right", "bottom-left", "bottom-right"],
+            5: ["top-left", "top-right", "center", "bottom-left", "bottom-right"],
+            6: ["top-left", "top-right", "middle-left", "middle-right", "bottom-left", "bottom-right"],
+        };
+
+        const positions: Record<string, string> = {
+            "top-left": "top-2 left-2",
+            "top-right": "top-2 right-2",
+            "middle-left": "top-1/2 -translate-y-1/2 left-2",
+            "middle-right": "top-1/2 -translate-y-1/2 right-2",
+            "center": "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
+            "bottom-left": "bottom-2 left-2",
+            "bottom-right": "bottom-2 right-2",
+        };
+
+        return (
+            <>
+                {(patterns[count] || []).map((pos, i) => (
+                    <div
+                        key={i}
+                        className={cn(
+                            "absolute w-3 h-3 md:w-4 md:h-4 bg-gray-800 rounded-full shadow-inner",
+                            positions[pos]
+                        )}
+                    />
+                ))}
+            </>
+        );
+    };
+
     return (
         <div
             className="w-20 h-20 md:w-24 md:h-24 relative"
