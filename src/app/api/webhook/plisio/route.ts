@@ -158,34 +158,42 @@ export async function POST(request: Request) {
       if (transaction.status !== 'COMPLETED') {
         console.log('💰 CRÉDIT DU WALLET...')
 
+        // ✅ CALCULER LE MONTANT REÇU (après frais Plisio)
+        const receivedAmount = parseFloat(data.amount) // Montant REÇU selon Plisio
+        const receivedSats = BigInt(Math.floor(receivedAmount * 100_000_000))
+        
+        console.log('💵 Montant initial:', Number(transaction.amountSats) / 100_000_000, 'USD')
+        console.log('💵 Montant reçu:', receivedAmount, 'USD')
+        console.log('💸 Frais Plisio:', (Number(transaction.amountSats) / 100_000_000) - receivedAmount, 'USD')
+
         await prisma.$transaction(async (tx) => {
           // Mettre à jour la transaction
           await tx.transaction.update({
             where: { id: transaction.id },
             data: { 
               status: 'COMPLETED',
+              amountSats: receivedSats, // ✅ Mettre à jour avec le montant REÇU
               updatedAt: new Date()
             }
           })
 
-          // Créditer le wallet
+          // Créditer le wallet avec le montant REÇU
           const updatedWallet = await tx.wallet.update({
             where: { id: transaction.walletId },
             data: {
-              balanceSats: { increment: transaction.amountSats },
-              totalDepositedSats: { increment: transaction.amountSats }
+              balanceSats: { increment: receivedSats }, // ✅ Créditer montant REÇU
+              totalDepositedSats: { increment: receivedSats }
             }
           })
           
           console.log('💰 Wallet crédité:')
           console.log('  walletId:', transaction.walletId)
-          console.log('  creditSats:', transaction.amountSats.toString())
+          console.log('  creditSats:', receivedSats.toString())
           console.log('  newBalanceSats:', updatedWallet.balanceSats.toString())
           console.log('  newBalanceUSD: $' + (Number(updatedWallet.balanceSats) / 100_000_000).toFixed(2))
         })
 
-        const amountUSD = Number(transaction.amountSats) / 100_000_000
-        console.log(`✅ DÉPÔT COMPLÉTÉ: $${amountUSD} pour user ${transaction.wallet.userId}`)
+        console.log(`✅ DÉPÔT COMPLÉTÉ: $${receivedAmount} pour user ${transaction.wallet.userId}`)
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
         
       } else {
