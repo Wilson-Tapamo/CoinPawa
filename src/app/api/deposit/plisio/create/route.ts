@@ -46,21 +46,7 @@ export async function POST(request: Request) {
     // 4. Créer un ID de commande unique
     const orderNumber = `PL_${userId.substring(0, 8)}_${Date.now()}`
 
-    // 5. Créer la transaction en BDD (statut PENDING)
-    const transaction = await prisma.transaction.create({
-      data: {
-        walletId: user.wallet.id,
-        type: 'DEPOSIT',
-        amountSats: BigInt(Math.floor(finalAmount * 100_000_000)),
-        status: 'PENDING',
-        paymentRef: orderNumber,
-        cryptoCurrency: currency
-      }
-    })
-
-    console.log(`📝 Transaction créée: ${transaction.id}`)
-
-    // 6. Créer l'invoice Plisio
+    // 5. Créer l'invoice Plisio AVANT la transaction
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://coin-power.vercel.app'
     
     const invoice = await createInvoice({
@@ -72,17 +58,24 @@ export async function POST(request: Request) {
       callbackUrl: `${baseUrl}/api/webhook/plisio`
     })
 
-    // 7. Mettre à jour la transaction avec l'ID Plisio
-    await prisma.transaction.update({
-      where: { id: transaction.id },
+    console.log(`✅ Invoice Plisio créée: ${invoice.txn_id}`)
+
+    // 6. Créer la transaction en BDD avec le txn_id Plisio
+    const transaction = await prisma.transaction.create({
       data: {
-        paymentRef: invoice.txn_id
+        walletId: user.wallet.id,
+        type: 'DEPOSIT',
+        amountSats: BigInt(Math.floor(finalAmount * 100_000_000)),
+        status: 'PENDING',
+        paymentRef: invoice.txn_id,   // ✅ Utiliser txn_id directement
+        plisioId: invoice.txn_id,     // ✅ AJOUTÉ : Sauvegarder aussi dans plisioId
+        cryptoCurrency: currency
       }
     })
 
-    console.log(`✅ Invoice Plisio créée: ${invoice.txn_id}`)
+    console.log(`📝 Transaction créée: ${transaction.id}`)
 
-    // 8. Retourner les infos de paiement
+    // 7. Retourner les infos de paiement
     return NextResponse.json({
       success: true,
       payment: {

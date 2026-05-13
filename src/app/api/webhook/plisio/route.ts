@@ -92,7 +92,7 @@ export async function POST(request: Request) {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 
     // ✅ STRATÉGIE : Chercher par plisioId (le txn_id Plisio)
-    console.log('🔍 Recherche par plisioId =', data.txn_id)
+    console.log('🔍 Tentative 1: plisioId =', data.txn_id)
     let transaction = await prisma.transaction.findFirst({
       where: { plisioId: data.txn_id },
       include: { wallet: true }
@@ -101,8 +101,19 @@ export async function POST(request: Request) {
     if (!transaction) {
       console.log('❌ Pas trouvé avec plisioId')
       
-      // Chercher par paymentRef (order_number)
-      console.log('🔍 Recherche par paymentRef =', data.order_number)
+      // ✅ FALLBACK 1 : Chercher par paymentRef = txn_id (cas actuel - plisioId pas sauvegardé)
+      console.log('🔍 Tentative 2: paymentRef =', data.txn_id)
+      transaction = await prisma.transaction.findFirst({
+        where: { paymentRef: data.txn_id },
+        include: { wallet: true }
+      })
+    }
+
+    if (!transaction) {
+      console.log('❌ Pas trouvé avec txn_id dans paymentRef')
+      
+      // ✅ FALLBACK 2 : Chercher par paymentRef = order_number (au cas où)
+      console.log('🔍 Tentative 3: paymentRef =', data.order_number)
       transaction = await prisma.transaction.findFirst({
         where: { paymentRef: data.order_number },
         include: { wallet: true }
