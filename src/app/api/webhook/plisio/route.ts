@@ -1,80 +1,151 @@
 // app/api/webhook/plisio/route.ts
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifyWebhookSignature, PlisioWebhook } from '@/lib/plisio'
+
+interface PlisioWebhook {
+  txn_id: string
+  status: string
+  status_code?: number
+  order_number: string
+  amount: string
+  currency: string
+  source_amount?: string
+  source_currency?: string
+  verify_hash?: string
+}
+
+/**
+ * Parser multipart/form-data de Plisio
+ */
+function parseMultipartFormData(body: string): PlisioWebhook {
+  const fields: Record<string, string> = {}
+  
+  // Extraire chaque champ
+  const fieldRegex = /name="([^"]+)"\r?\n\r?\n([^\r\n-]+)/g
+  let match
+  
+  while ((match = fieldRegex.exec(body)) !== null) {
+    const [, name, value] = match
+    fields[name] = value.trim()
+  }
+  
+  console.log('📦 Champs extraits:', fields)
+  
+  return {
+    txn_id: fields.txn_id || '',
+    status: fields.status || '',
+    status_code: fields.status === 'completed' ? 2 : 1,
+    order_number: fields.order_number || '',
+    amount: fields.amount || '',
+    currency: fields.currency || '',
+    source_amount: fields.source_amount,
+    source_currency: fields.source_currency,
+    verify_hash: fields.verify_hash,
+  }
+}
 
 export async function POST(request: Request) {
   try {
     const body = await request.text()
     
-    console.log('🔔 Webhook Plisio reçu')
-    console.log('📦 Body brut:', body) // ✅ AJOUTÉ pour debug
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    console.log('🔔 WEBHOOK PLISIO REÇU')
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 
     let data: PlisioWebhook
 
-    // ✅ FIX : Plisio peut envoyer en JSON OU en form-urlencoded
-    try {
-      // Essayer JSON d'abord
+    // Détecter le format et parser
+    if (body.includes('Content-Disposition')) {
+      console.log('✅ Format: multipart/form-data')
+      data = parseMultipartFormData(body)
+    } else if (body.startsWith('{')) {
+      console.log('✅ Format: JSON')
       data = JSON.parse(body)
-      console.log('✅ Parsé comme JSON')
-    } catch (jsonError) {
-      // Si JSON échoue, essayer form-urlencoded
-      console.log('⚠️ Pas du JSON, essai form-urlencoded...')
-      
+      if (!data.status_code && data.status) {
+        data.status_code = data.status === 'completed' ? 2 : 1
+      }
+    } else {
+      console.log('✅ Format: form-urlencoded')
       const params = new URLSearchParams(body)
       data = {
         txn_id: params.get('txn_id') || '',
         status: params.get('status') || '',
-        status_code: parseInt(params.get('status_code') || '0'),
+        status_code: params.get('status') === 'completed' ? 2 : 1,
         order_number: params.get('order_number') || '',
         amount: params.get('amount') || '',
         currency: params.get('currency') || '',
-        source_amount: params.get('source_amount') || '',
-        source_currency: params.get('source_currency') || '',
-        verify_hash: params.get('verify_hash') || '',
-      } as PlisioWebhook
-      
-      console.log('✅ Parsé comme form-urlencoded')
+        source_amount: params.get('source_amount') || undefined,
+        source_currency: params.get('source_currency') || undefined,
+        verify_hash: params.get('verify_hash') || undefined,
+      }
     }
     
-    console.log('📦 Données webhook:', {
-      txn_id: data.txn_id,
-      status: data.status,
-      status_code: data.status_code,
-      order_number: data.order_number,
-      amount: data.amount,
-      currency: data.currency
-    })
+    console.log('📦 Données extraites:')
+    console.log('  txn_id:', data.txn_id)
+    console.log('  order_number:', data.order_number)
+    console.log('  status:', data.status)
+    console.log('  amount:', data.amount)
+    console.log('  currency:', data.currency)
 
-    // 2. Vérifier la signature
-    const isValid = verifyWebhookSignature(data)
-    
-    // if (!isValid) {
-    //   console.error('❌ Signature invalide')
-    //   return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
-    // }
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    console.log('🔍 RECHERCHE TRANSACTION EN BDD')
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 
-    console.log('✅ Signature vérifiée')
-
-    // 3. Récupérer la transaction en BDD via l'ID Plisio
-    const transaction = await prisma.transaction.findFirst({
-      where: { paymentRef: data.txn_id },
+    // ✅ STRATÉGIE : Chercher par plisioId (le txn_id Plisio)
+    console.log('🔍 Recherche par plisioId =', data.txn_id)
+    let transaction = await prisma.transaction.findFirst({
+      where: { plisioId: data.txn_id },
       include: { wallet: true }
     })
 
     if (!transaction) {
-      console.error('❌ Transaction non trouvée:', data.txn_id)
-      return NextResponse.json({ error: 'Transaction not found' }, { status: 404 })
+      console.log('❌ Pas trouvé avec plisioId')
+      
+      // Chercher par paymentRef (order_number)
+      console.log('🔍 Recherche par paymentRef =', data.order_number)
+      transaction = await prisma.transaction.findFirst({
+        where: { paymentRef: data.order_number },
+        include: { wallet: true }
+      })
     }
 
-    console.log(`📄 Transaction trouvée: ${transaction.id}`)
+    if (!transaction) {
+      console.log('❌ TRANSACTION NON TROUVÉE')
+      
+      // Logger les transactions récentes pour debug
+      const recent = await prisma.transaction.findMany({
+        where: { type: 'DEPOSIT' },
+        orderBy: { createdAt: 'desc' },
+        take: 3,
+        select: {
+          id: true,
+          paymentRef: true,
+          plisioId: true,
+          status: true,
+          createdAt: true
+        }
+      })
+      
+      console.log('📋 Transactions récentes:', JSON.stringify(recent, null, 2))
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+      
+      return NextResponse.json({ 
+        error: 'Transaction not found',
+        searched: {
+          plisioId: data.txn_id,
+          paymentRef: data.order_number
+        }
+      }, { status: 404 })
+    }
 
-    // 4. Traiter selon le statut Plisio
-    if (data.status_code === 2 && data.status === 'completed') {
-      // ✅ PAIEMENT COMPLÉTÉ
+    console.log('✅ TRANSACTION TROUVÉE:', transaction.id)
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+
+    // Traiter selon le statut
+    if (data.status === 'completed') {
       
       if (transaction.status !== 'COMPLETED') {
-        console.log('💰 Crédit du wallet...')
+        console.log('💰 CRÉDIT DU WALLET...')
 
         await prisma.$transaction(async (tx) => {
           // Mettre à jour la transaction
@@ -87,51 +158,47 @@ export async function POST(request: Request) {
           })
 
           // Créditer le wallet
-          await tx.wallet.update({
+          const updatedWallet = await tx.wallet.update({
             where: { id: transaction.walletId },
             data: {
-              balanceSats: {
-                increment: transaction.amountSats
-              },
-              totalDepositedSats: {
-                increment: transaction.amountSats
-              }
+              balanceSats: { increment: transaction.amountSats },
+              totalDepositedSats: { increment: transaction.amountSats }
             }
           })
+          
+          console.log('💰 Wallet crédité:')
+          console.log('  walletId:', transaction.walletId)
+          console.log('  creditSats:', transaction.amountSats.toString())
+          console.log('  newBalanceSats:', updatedWallet.balanceSats.toString())
+          console.log('  newBalanceUSD: $' + (Number(updatedWallet.balanceSats) / 100_000_000).toFixed(2))
         })
 
         const amountUSD = Number(transaction.amountSats) / 100_000_000
-
-        console.log(`✅ Dépôt complété: $${amountUSD} pour user ${transaction.wallet.userId}`)
-        console.log(`💰 Nouveau solde: ${Number(transaction.wallet.balanceSats) + Number(transaction.amountSats)} sats`)
+        console.log(`✅ DÉPÔT COMPLÉTÉ: $${amountUSD} pour user ${transaction.wallet.userId}`)
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+        
       } else {
         console.log('ℹ️ Transaction déjà complétée')
       }
 
-    } else if ([3, 4, 5].includes(data.status_code)) {
-      // ❌ PAIEMENT ÉCHOUÉ / EXPIRÉ / ANNULÉ
+    } else if (data.status === 'pending') {
+      console.log(`⏳ Paiement en attente`)
+      
+    } else if (['error', 'expired', 'cancelled'].includes(data.status)) {
+      console.log(`❌ Paiement échoué: ${data.status}`)
       
       if (transaction.status === 'PENDING') {
         await prisma.transaction.update({
           where: { id: transaction.id },
-          data: { 
-            status: 'FAILED',
-            updatedAt: new Date()
-          }
+          data: { status: 'FAILED' }
         })
-
-        console.log(`❌ Dépôt échoué: ${transaction.id} - Statut: ${data.status}`)
       }
-
-    } else if (data.status_code === 1) {
-      // ⏳ EN ATTENTE
-      console.log(`⏳ Paiement en attente: ${data.status}`)
     }
 
     return NextResponse.json({ success: true })
 
   } catch (error: any) {
-    console.error('❌ Erreur webhook Plisio:', error)
+    console.error('❌ ERREUR WEBHOOK:', error)
     console.error('Stack:', error.stack)
     
     return NextResponse.json({ 
