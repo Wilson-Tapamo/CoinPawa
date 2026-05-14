@@ -158,13 +158,42 @@ export async function POST(request: Request) {
       if (transaction.status !== 'COMPLETED') {
         console.log('💰 CRÉDIT DU WALLET...')
 
-        // ✅ CALCULER LE MONTANT REÇU (après frais Plisio)
-        const receivedAmount = parseFloat(data.amount) // Montant REÇU selon Plisio
+        // ✅ RÉCUPÉRER LES DÉTAILS EXACTS VIA L'API PLISIO
+        let receivedAmount: number
+        let fee: number = 0
+        
+        try {
+          const apiKey = process.env.PLISIO_API_KEY
+          const apiUrl = `https://plisio.net/api/v1/operations/${data.txn_id}?api_key=${apiKey}`
+          
+          console.log('🔍 Récupération détails transaction Plisio...')
+          const apiResponse = await fetch(apiUrl)
+          const apiData = await apiResponse.json()
+          
+          if (apiData.status === 'success' && apiData.data) {
+            const amount = parseFloat(apiData.data.amount || '0')
+            fee = parseFloat(apiData.data.fee || '0')
+            receivedAmount = amount - fee // Montant net = montant - frais
+            
+            console.log('📊 Détails API Plisio:')
+            console.log('  Amount:', amount, apiData.data.currency)
+            console.log('  Fee:', fee, apiData.data.currency)
+            console.log('  Net (received):', receivedAmount, apiData.data.currency)
+          } else {
+            console.warn('⚠️ API Plisio n\'a pas retourné les détails, utilisation montant webhook')
+            receivedAmount = parseFloat(data.amount)
+          }
+        } catch (apiError) {
+          console.error('❌ Erreur API Plisio:', apiError)
+          console.warn('⚠️ Fallback: utilisation montant webhook')
+          receivedAmount = parseFloat(data.amount)
+        }
+        
         const receivedSats = BigInt(Math.floor(receivedAmount * 100_000_000))
         
         console.log('💵 Montant initial:', Number(transaction.amountSats) / 100_000_000, 'USD')
-        console.log('💵 Montant reçu:', receivedAmount, 'USD')
-        console.log('💸 Frais Plisio:', (Number(transaction.amountSats) / 100_000_000) - receivedAmount, 'USD')
+        console.log('💵 Montant reçu (net):', receivedAmount, 'USD')
+        console.log('💸 Frais Plisio:', fee, 'USD')
 
         await prisma.$transaction(async (tx) => {
           // Mettre à jour la transaction
@@ -172,7 +201,7 @@ export async function POST(request: Request) {
             where: { id: transaction.id },
             data: { 
               status: 'COMPLETED',
-              amountSats: receivedSats, // ✅ Mettre à jour avec le montant REÇU
+              amountSats: receivedSats, // ✅ Montant REÇU (après frais)
               updatedAt: new Date()
             }
           })
@@ -181,7 +210,7 @@ export async function POST(request: Request) {
           const updatedWallet = await tx.wallet.update({
             where: { id: transaction.walletId },
             data: {
-              balanceSats: { increment: receivedSats }, // ✅ Créditer montant REÇU
+              balanceSats: { increment: receivedSats },
               totalDepositedSats: { increment: receivedSats }
             }
           })
@@ -193,7 +222,7 @@ export async function POST(request: Request) {
           console.log('  newBalanceUSD: $' + (Number(updatedWallet.balanceSats) / 100_000_000).toFixed(2))
         })
 
-        console.log(`✅ DÉPÔT COMPLÉTÉ: $${receivedAmount} pour user ${transaction.wallet.userId}`)
+        console.log(`✅ DÉPÔT COMPLÉTÉ: $${receivedAmount.toFixed(2)} pour user ${transaction.wallet.userId}`)
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
         
       } else {

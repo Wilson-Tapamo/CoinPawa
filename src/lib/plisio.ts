@@ -1,187 +1,191 @@
 // lib/plisio.ts
-// Service pour l'API Plisio
+import crypto from 'crypto'
 
-const PLISIO_API_KEY = process.env.PLISIO_API_KEY!
-const PLISIO_API_URL = 'https://plisio.net/api/v1'
-
-export interface CreateInvoiceParams {
-  sourceAmount: number      // Montant en USD
-  currency: string          // Crypto (USDT, BTC, ETH, etc.)
-  orderNumber: string       // ID unique de commande
-  orderName: string         // Description
-  email?: string            // Email du user (optionnel)
-  callbackUrl?: string      // Webhook URL
+// Types
+export interface PlisioWebhook {
+  txn_id: string
+  status: string
+  status_code?: number
+  order_number: string
+  amount: string
+  currency: string
+  source_amount?: string
+  source_currency?: string
+  verify_hash?: string
 }
 
 export interface PlisioInvoice {
   txn_id: string
   invoice_url: string
-  amount: string
-  pending_amount: string
   wallet_hash: string
-  psys_cid: string
+  amount: string
   currency: string
-  source_currency: string
-  source_rate: string
   source_amount: string
-  expected_confirmations: number
+  source_currency: string
   qr_code: string
-  verify_hash: string
-  invoice_commission: string
-  invoice_sum: string
-  invoice_total_sum: string
-}
-
-export interface PlisioWebhook {
-  txn_id: string
-  status: string
-  status_code: number
-  amount: string
-  pending_amount: string
-  wallet_hash: string
-  psys_cid: string
-  currency: string
-  source_currency: string
-  source_rate: string
-  source_amount: string
-  confirmations: number
   expected_confirmations: number
-  commission: string
-  order_number: string
-  order_name: string
-  verify_hash: string
+}
+
+export interface CreateInvoiceParams {
+  sourceAmount: number
+  currency: string
+  orderNumber: string
+  orderName: string
+  email?: string
+  callbackUrl: string
 }
 
 /**
- * Créer une nouvelle invoice
- */
-export async function createInvoice(params: CreateInvoiceParams): Promise<PlisioInvoice> {
-  try {
-    const queryParams = new URLSearchParams({
-      source_currency: 'USD',
-      source_amount: params.sourceAmount.toString(),
-      order_number: params.orderNumber,
-      currency: params.currency.toUpperCase(),
-      email: params.email || '',
-      order_name: params.orderName,
-      callback_url: params.callbackUrl || '',
-      api_key: PLISIO_API_KEY,
-    })
-
-    const response = await fetch(`${PLISIO_API_URL}/invoices/new?${queryParams}`, {
-      method: 'GET',
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
-      console.error('Plisio API Error:', error)
-      throw new Error(`Plisio error: ${error.message || JSON.stringify(error)}`)
-    }
-
-    const result = await response.json()
-    
-    if (result.status !== 'success') {
-      throw new Error(`Plisio error: ${result.message || 'Unknown error'}`)
-    }
-
-    logInvoice('INVOICE CREATED', result.data)
-    return result.data
-  } catch (error) {
-    console.error('Failed to create Plisio invoice:', error)
-    throw error
-  }
-}
-
-/**
- * Vérifier la signature du webhook
- */
-export function verifyWebhookSignature(data: PlisioWebhook): boolean {
-  try {
-    const crypto = require('crypto')
-    
-    // Construire la string à vérifier (selon doc Plisio)
-    const verifyString = JSON.stringify(data)
-    
-    const hash = crypto
-      .createHmac('sha1', PLISIO_API_KEY)
-      .update(verifyString)
-      .digest('hex')
-
-    return hash === data.verify_hash
-  } catch (error) {
-    console.error('Failed to verify webhook signature:', error)
-    return false
-  }
-}
-
-/**
- * Obtenir les cryptos disponibles
- */
-export async function getAvailableCurrencies(): Promise<string[]> {
-  try {
-    const response = await fetch(`${PLISIO_API_URL}/currencies?api_key=${PLISIO_API_KEY}`)
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch currencies')
-    }
-
-    const result = await response.json()
-    
-    if (result.status === 'success') {
-      return Object.keys(result.data)
-    }
-
-    return []
-  } catch (error) {
-    console.error('Failed to get Plisio currencies:', error)
-    // Fallback
-    return ['BTC', 'ETH', 'USDT', 'USDC', 'LTC', 'DOGE', 'TRX', 'BNB']
-  }
-}
-
-/**
- * Vérifier si l'API est disponible
- */
-export async function checkStatus(): Promise<boolean> {
-  try {
-    const response = await fetch(`${PLISIO_API_URL}/currencies?api_key=${PLISIO_API_KEY}`)
-    return response.ok
-  } catch (error) {
-    console.error('Plisio API unavailable:', error)
-    return false
-  }
-}
-
-/**
- * Logger pour le développement
- */
-function logInvoice(action: string, data: any) {
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🟣 Plisio: ${action}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
-    console.log(JSON.stringify(data, null, 2))
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n')
-  }
-}
-
-/**
- * Mapper les currencies pour Plisio
+ * Mapper les noms de crypto vers le format Plisio
  */
 export function mapCurrency(currency: string): string {
   const mapping: Record<string, string> = {
-    'usdttrc20': 'USDT_TRX',
-    'usdterc20': 'USDT',
-    'usdt': 'USDT',
-    'usdc': 'USDC',
-    'eth': 'ETH',
-    'btc': 'BTC',
-    'trx': 'TRX',
-    'ltc': 'LTC',
-    'doge': 'DOGE',
-    'bnb': 'BNB'
+    'USDT': 'USDT_TRX',      // USDT sur Tron
+    'USDT_TRC20': 'USDT_TRX',
+    'BTC': 'BTC',
+    'ETH': 'ETH',
+    'LTC': 'LTC',
+    'BNB': 'BNB',
+    'TRX': 'TRX',
+    'USDC': 'USDC',
+    'SOL': 'SOL',
+  }
+  
+  return mapping[currency.toUpperCase()] || currency.toUpperCase()
+}
+
+/**
+ * Créer une invoice Plisio
+ */
+export async function createInvoice(params: CreateInvoiceParams): Promise<PlisioInvoice> {
+  const apiKey = process.env.PLISIO_API_KEY
+  
+  if (!apiKey) {
+    throw new Error('PLISIO_API_KEY non configuré')
   }
 
-  return mapping[currency.toLowerCase()] || currency.toUpperCase()
+  const url = 'https://plisio.net/api/v1/invoices/new'
+  
+  const body = new URLSearchParams({
+    source_currency: 'USD',
+    source_amount: params.sourceAmount.toString(),
+    order_number: params.orderNumber,
+    currency: params.currency,
+    order_name: params.orderName,
+    callback_url: params.callbackUrl,
+    api_key: apiKey,
+    ...(params.email && { email: params.email }),
+  })
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: body.toString(),
+  })
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`Plisio API error: ${response.status} - ${error}`)
+  }
+
+  const data = await response.json()
+
+  if (data.status !== 'success') {
+    throw new Error(`Plisio error: ${data.message || 'Unknown error'}`)
+  }
+
+  return {
+    txn_id: data.data.txn_id,
+    invoice_url: data.data.invoice_url,
+    wallet_hash: data.data.wallet_hash,
+    amount: data.data.amount,
+    currency: data.data.currency,
+    source_amount: data.data.source_amount,
+    source_currency: data.data.source_currency,
+    qr_code: data.data.qr_code,
+    expected_confirmations: data.data.expected_confirmations,
+  }
+}
+
+/**
+ * Vérifier la signature d'un webhook Plisio
+ */
+export function verifyWebhookSignature(data: PlisioWebhook): boolean {
+  const secret = process.env.PLISIO_SECRET_KEY
+  
+  if (!secret) {
+    console.warn('⚠️ PLISIO_SECRET_KEY non configuré, signature non vérifiée')
+    return true // En dev, on accepte sans vérification
+  }
+
+  if (!data.verify_hash) {
+    console.error('❌ verify_hash manquant dans le webhook')
+    return false
+  }
+
+  // Plisio génère le hash avec tous les champs (sauf verify_hash) triés alphabétiquement
+  const fieldsToHash: Record<string, string> = {}
+  
+  // Convertir tous les champs en string
+  Object.entries(data).forEach(([key, value]) => {
+    if (key !== 'verify_hash' && value !== undefined) {
+      fieldsToHash[key] = String(value)
+    }
+  })
+
+  const sortedKeys = Object.keys(fieldsToHash).sort()
+  const dataString = sortedKeys.map(key => fieldsToHash[key]).join('')
+  
+  const calculatedHash = crypto
+    .createHash('sha1')
+    .update(dataString + secret)
+    .digest('hex')
+
+  const isValid = calculatedHash === data.verify_hash
+
+  if (!isValid) {
+    console.error('❌ Signature invalide')
+    console.error('Reçu:', data.verify_hash)
+    console.error('Calculé:', calculatedHash)
+  }
+
+  return isValid
+}
+
+/**
+ * Récupérer les détails d'une transaction Plisio (inclut les frais)
+ */
+export async function getTransactionDetails(txnId: string) {
+  const apiKey = process.env.PLISIO_API_KEY
+  
+  if (!apiKey) {
+    throw new Error('PLISIO_API_KEY non configuré')
+  }
+
+  const url = `https://plisio.net/api/v1/operations/${txnId}?api_key=${apiKey}`
+  
+  const response = await fetch(url)
+  
+  if (!response.ok) {
+    throw new Error(`Plisio API error: ${response.status}`)
+  }
+
+  const data = await response.json()
+  
+  if (data.status !== 'success') {
+    throw new Error(`Plisio API error: ${data.message}`)
+  }
+
+  return {
+    txnId: data.data.id,
+    status: data.data.status,
+    amount: parseFloat(data.data.amount),
+    sourceAmount: parseFloat(data.data.source_amount),
+    fee: parseFloat(data.data.commission || '0'),
+    amountReceived: parseFloat(data.data.amount) - parseFloat(data.data.commission || '0'),
+    currency: data.data.currency,
+    sourceCurrency: data.data.source_currency,
+  }
 }
