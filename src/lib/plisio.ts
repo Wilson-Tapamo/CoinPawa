@@ -64,8 +64,9 @@ export async function createInvoice(params: CreateInvoiceParams): Promise<Plisio
     throw new Error('PLISIO_API_KEY non configuré')
   }
 
-  // ✅ Construire les paramètres correctement
-  const requestParams = {
+  const url = 'https://plisio.net/api/v1/invoices/new'
+  
+  const body = new URLSearchParams({
     source_currency: 'USD',
     source_amount: params.sourceAmount.toString(),
     order_number: params.orderNumber,
@@ -73,24 +74,8 @@ export async function createInvoice(params: CreateInvoiceParams): Promise<Plisio
     order_name: params.orderName,
     callback_url: params.callbackUrl,
     api_key: apiKey,
-  }
-  
-  // Ajouter email si présent
-  if (params.email) {
-    (requestParams as any).email = params.email
-  }
-
-  const url = 'https://plisio.net/api/v1/invoices/new'
-  
-  console.log('📤 Appel API Plisio:', {
-    url,
-    params: {
-      ...requestParams,
-      api_key: '***' // Masquer la clé
-    }
+    ...(params.email && { email: params.email }),
   })
-  
-  const body = new URLSearchParams(requestParams)
 
   const response = await fetch(url, {
     method: 'POST',
@@ -100,27 +85,15 @@ export async function createInvoice(params: CreateInvoiceParams): Promise<Plisio
     body: body.toString(),
   })
 
-  const responseText = await response.text()
-  
-  console.log('📥 Réponse Plisio:', {
-    status: response.status,
-    statusText: response.statusText,
-    body: responseText.substring(0, 500) // Premiers 500 caractères
-  })
-
   if (!response.ok) {
-    throw new Error(`Plisio API error: ${response.status} - ${responseText.substring(0, 200)}`)
+    const error = await response.text()
+    throw new Error(`Plisio API error: ${response.status} - ${error}`)
   }
 
-  let data
-  try {
-    data = JSON.parse(responseText)
-  } catch (e) {
-    throw new Error(`Plisio returned non-JSON: ${responseText.substring(0, 200)}`)
-  }
+  const data = await response.json()
 
   if (data.status !== 'success') {
-    throw new Error(`Plisio error: ${data.message || JSON.stringify(data)}`)
+    throw new Error(`Plisio error: ${data.message || 'Unknown error'}`)
   }
 
   return {
