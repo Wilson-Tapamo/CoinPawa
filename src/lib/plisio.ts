@@ -1,6 +1,9 @@
 // lib/plisio.ts
 import crypto from 'crypto'
 
+const PLISIO_API_KEY = process.env.PLISIO_API_KEY!
+const PLISIO_API_URL = 'https://plisio.net/api/v1'
+
 // Types
 export interface PlisioWebhook {
   txn_id: string
@@ -42,6 +45,8 @@ export function mapCurrency(currency: string): string {
   const mapping: Record<string, string> = {
     'USDT': 'USDT_TRX',      // USDT sur Tron
     'USDT_TRC20': 'USDT_TRX',
+    'usdttrc20': 'USDT_TRX',
+    'usdterc20': 'USDT',
     'BTC': 'BTC',
     'ETH': 'ETH',
     'LTC': 'LTC',
@@ -49,6 +54,7 @@ export function mapCurrency(currency: string): string {
     'TRX': 'TRX',
     'USDC': 'USDC',
     'SOL': 'SOL',
+    'DOGE': 'DOGE',
   }
   
   return mapping[currency.toUpperCase()] || currency.toUpperCase()
@@ -56,48 +62,45 @@ export function mapCurrency(currency: string): string {
 
 /**
  * Créer une invoice Plisio
+ * ✅ IMPORTANT : Plisio utilise GET avec query params, PAS POST !
  */
 export async function createInvoice(params: CreateInvoiceParams): Promise<PlisioInvoice> {
-  const apiKey = process.env.PLISIO_API_KEY
-  
-  if (!apiKey) {
+  if (!PLISIO_API_KEY) {
     throw new Error('PLISIO_API_KEY non configuré')
   }
 
-  // ✅ Construire les paramètres correctement
-  const requestParams = {
+  // ✅ Construire les query params pour GET
+  const queryParams = new URLSearchParams({
     source_currency: 'USD',
     source_amount: params.sourceAmount.toString(),
     order_number: params.orderNumber,
     currency: params.currency,
     order_name: params.orderName,
     callback_url: params.callbackUrl,
-    api_key: apiKey,
-  }
+    api_key: PLISIO_API_KEY,
+  })
   
   // Ajouter email si présent
   if (params.email) {
-    (requestParams as any).email = params.email
+    queryParams.set('email', params.email)
   }
 
-  const url = 'https://plisio.net/api/v1/invoices/new'
+  const url = `${PLISIO_API_URL}/invoices/new?${queryParams}`
   
-  console.log('📤 Appel API Plisio:', {
-    url,
+  console.log('📤 Appel API Plisio (GET):', {
+    url: PLISIO_API_URL + '/invoices/new',
     params: {
-      ...requestParams,
+      source_currency: 'USD',
+      source_amount: params.sourceAmount,
+      order_number: params.orderNumber,
+      currency: params.currency,
       api_key: '***' // Masquer la clé
     }
   })
-  
-  const body = new URLSearchParams(requestParams)
 
+  // ✅ IMPORTANT : Utiliser GET, pas POST !
   const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: body.toString(),
+    method: 'GET',
   })
 
   const responseText = await response.text()
@@ -105,7 +108,7 @@ export async function createInvoice(params: CreateInvoiceParams): Promise<Plisio
   console.log('📥 Réponse Plisio:', {
     status: response.status,
     statusText: response.statusText,
-    body: responseText.substring(0, 500) // Premiers 500 caractères
+    body: responseText.substring(0, 500)
   })
 
   if (!response.ok) {
@@ -144,7 +147,7 @@ export function verifyWebhookSignature(data: PlisioWebhook): boolean {
   
   if (!secret) {
     console.warn('⚠️ PLISIO_SECRET_KEY non configuré, signature non vérifiée')
-    return true // En dev, on accepte sans vérification
+    return true
   }
 
   if (!data.verify_hash) {
@@ -152,10 +155,8 @@ export function verifyWebhookSignature(data: PlisioWebhook): boolean {
     return false
   }
 
-  // Plisio génère le hash avec tous les champs (sauf verify_hash) triés alphabétiquement
   const fieldsToHash: Record<string, string> = {}
   
-  // Convertir tous les champs en string
   Object.entries(data).forEach(([key, value]) => {
     if (key !== 'verify_hash' && value !== undefined) {
       fieldsToHash[key] = String(value)
@@ -185,13 +186,11 @@ export function verifyWebhookSignature(data: PlisioWebhook): boolean {
  * Récupérer les détails d'une transaction Plisio (inclut les frais)
  */
 export async function getTransactionDetails(txnId: string) {
-  const apiKey = process.env.PLISIO_API_KEY
-  
-  if (!apiKey) {
+  if (!PLISIO_API_KEY) {
     throw new Error('PLISIO_API_KEY non configuré')
   }
 
-  const url = `https://plisio.net/api/v1/operations/${txnId}?api_key=${apiKey}`
+  const url = `${PLISIO_API_URL}/operations/${txnId}?api_key=${PLISIO_API_KEY}`
   
   const response = await fetch(url)
   

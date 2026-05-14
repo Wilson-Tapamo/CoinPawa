@@ -1,4 +1,4 @@
-// app/api/webhook/plisio/route.ts
+// src/app/api/webhook/plisio/route.ts
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
@@ -172,7 +172,7 @@ export async function POST(request: Request) {
           
           if (apiData.status === 'success' && apiData.data) {
             const amount = parseFloat(apiData.data.amount || '0')
-            fee = parseFloat(apiData.data.fee || '0')
+            fee = parseFloat(apiData.data.commission || '0')
             receivedAmount = amount - fee // Montant net = montant - frais
             
             console.log('📊 Détails API Plisio:')
