@@ -1,4 +1,4 @@
-// src/app/api/webhook/plisio/route.ts
+// app/api/webhook/plisio/route.ts
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
@@ -171,14 +171,16 @@ export async function POST(request: Request) {
           const apiData = await apiResponse.json()
           
           if (apiData.status === 'success' && apiData.data) {
-            const amount = parseFloat(apiData.data.amount || '0')
-            fee = parseFloat(apiData.data.commission || '0')
+            // ✅ Plisio utilise des noms de champs différents
+            const amount = parseFloat(apiData.data.source_amount || '0')  // Montant en USD
+            fee = parseFloat(apiData.data.invoice_commission || apiData.data.commission || '0')
             receivedAmount = amount - fee // Montant net = montant - frais
             
             console.log('📊 Détails API Plisio:')
-            console.log('  Amount:', amount, apiData.data.currency)
-            console.log('  Fee:', fee, apiData.data.currency)
-            console.log('  Net (received):', receivedAmount, apiData.data.currency)
+            console.log('  Source Amount:', amount, 'USD')
+            console.log('  Commission:', fee, 'USD')
+            console.log('  Net (received):', receivedAmount, 'USD')
+            console.log('  Raw data:', JSON.stringify(apiData.data, null, 2))
           } else {
             console.warn('⚠️ API Plisio n\'a pas retourné les détails, utilisation montant webhook')
             receivedAmount = parseFloat(data.amount)
